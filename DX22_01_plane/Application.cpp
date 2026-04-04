@@ -3,7 +3,6 @@
 #include "Application.h"
 #include "Game.h"
 
-int konca;
 
 const auto ClassName = TEXT("2022 framework ひな型");     //ウィンドウクラス名
 const auto WindowName = TEXT("2023 framework ひな型");    //ウィンドウ名
