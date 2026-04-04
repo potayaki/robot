@@ -71,8 +71,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\assimp\5.2.5\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\directxtk\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\assimp\5.2.5\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\assimp\assimp\5.2.5\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\directxtk\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\assimp\assimp\5.2.5\lib;C:\directxtk\lib\x64\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>C:\assimp\assimp\5.2.5\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\directxtk\include;$(IncludePath)</IncludePath>
@@ -116,8 +116,6 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\directxtk\lib\x64\Debug</AdditionalLibraryDirectories>
-      <AdditionalDependencies>directxtk.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

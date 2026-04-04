@@ -5,8 +5,6 @@
 
 Game* Game::m_instance;//ゲームインスタンス
 
-
-
 // コンストラクタ
 Game::Game()
 {
