@@ -30,7 +30,7 @@ void Game::Init()
 	// カメラ初期化
 	m_instance->m_Camera.Init();
 	//最初のシーンを読み込む
-	m_instance->m_scene = new TitleScene;
+	m_instance->m_scene = new Stage1Scene;//TODO:最初のシーンをタイトルシーンにする
 	
 	
 }

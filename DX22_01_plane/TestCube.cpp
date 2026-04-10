@@ -221,4 +221,9 @@ void TestCube::SetMaterial(DirectX::SimpleMath::Color col) {
 	m_VertexBuffer.Create(m_Vertices);
 }
 
+void TestCube::SetTexture(std::string texture) {
+		bool sts = m_texture.Load(texture);
+	assert(sts == true);
+}
+
 

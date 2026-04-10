@@ -5,8 +5,10 @@
 class CPlayer : public Object
 {
 private:
+	static const int MaxBullet = 5;//Å‘å’e”
 	TestCube* m_body;//body
 	
+	TestCube* m_bullets[MaxBullet];//’e
 
 	DirectX::SimpleMath::Vector3 m_velocity = { 0,0,0 };
 	bool IsGrounded = false;//’…‚¢‚Ä‚¢‚½
@@ -25,7 +27,7 @@ public:
 
 	DirectX::SimpleMath::Vector3 GetVelocity() { return m_velocity; }
 	void SetVelocity(float y) { m_velocity.y = y; }
-	void SetMaterial(DirectX::SimpleMath::Color col);
+	//void SetMaterial(DirectX::SimpleMath::Color col);
 	//’…’n’†‚Ìˆ—.
 	void Onland();
 

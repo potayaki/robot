@@ -66,4 +66,7 @@ template<typename T>std::vector<T*>GetObjects() {
 	}
 	return res;
 }
+
+Scene* GetScene() { return m_scene; }
+
 };

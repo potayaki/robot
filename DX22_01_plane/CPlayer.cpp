@@ -23,17 +23,22 @@ CPlayer::~CPlayer() {
 
 void CPlayer::Init() {
 	m_body = new TestCube;
-
 	m_body->Init();
-
 	m_body->SetScale(1.0f, 1.0f, 1.0f); // バイク本体
+
+	for (size_t i = 0; i < MaxBullet; i++) {
+		m_bullets[i] = new TestCube;
+		m_bullets[i]->Init();
+		m_bullets[i]->SetScale(0.2f, 0.2f, 0.2f); // 弾のサイズ
+		m_bullets[i]->SetTexture("assets/texture/arrow.png"); // 弾のテクスチャ
+	}
 
 }
 
 
 void CPlayer::Update() {
 	
-	m_velocity.y -= Gravity;
+  	m_velocity.y -= Gravity;
 	m_Position += m_velocity;
 	std::vector<Ground*>grounds = Game::GetInstance()->GetObjects<Ground>();
 
@@ -55,13 +60,12 @@ void CPlayer::Update() {
 	if (Input::GetKeyTrigger(VK_SPACE) && IsGrounded) {
 		m_velocity.y = JumpPower;
 		
-		Onland();
+		
 	}
 
 	Move();
 
 	
-
 	m_body->SetPositin(m_Position.x, m_Position.y, m_Position.z); // 仮置き
 }
 
@@ -74,8 +78,8 @@ void CPlayer::Draw(Camera* cam) {
 
 void CPlayer::Onland() {
 	IsGrounded = true;
+	m_velocity.y = 0;
 }
-
 void CPlayer::Uninit() {
 	if (m_body) {
 		m_body->Uninit();

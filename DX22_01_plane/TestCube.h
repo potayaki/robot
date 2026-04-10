@@ -4,6 +4,7 @@
 #include "IndexBuffer.h"
 #include"Texture.h"
 #include"Object.h"
+#include"string"
 //-----------------------------------------------------------------------------
 //TestCubeƒNƒ‰ƒX
 //-----------------------------------------------------------------------------
@@ -29,4 +30,5 @@ public:
 	void Draw(Camera* cam)override;
 	void Uninit()override;
 	void SetMaterial(DirectX::SimpleMath::Color col);
+	void SetTexture(std::string texture);
 };

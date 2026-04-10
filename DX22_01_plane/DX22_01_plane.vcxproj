@@ -116,6 +116,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\assimp\5.2.5\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);assimp-vc143-mtd.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -139,6 +141,8 @@
     <ClCompile Include="Arrow.cpp" />
     <ClCompile Include="AssimpPerse.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CBullet.cpp" />
+    <ClCompile Include="CEnemy.cpp" />
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="CPlayer.cpp" />
     <ClCompile Include="Game.cpp" />
@@ -159,6 +163,7 @@
     <ClCompile Include="TestCube.cpp" />
     <ClCompile Include="TestModel.cpp" />
     <ClCompile Include="TestPlane.cpp" />
+    <ClCompile Include="TestSphere.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Texture2D.cpp" />
     <ClCompile Include="TitleScene.cpp" />
@@ -174,6 +179,8 @@
     <ClInclude Include="Arrow.h" />
     <ClInclude Include="AssimpPerse.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CBullet.h" />
+    <ClInclude Include="CEnemy.h" />
     <ClInclude Include="Collision.h" />
     <ClInclude Include="CPlayer.h" />
     <ClInclude Include="Game.h" />
@@ -194,6 +201,7 @@
     <ClInclude Include="TestCube.h" />
     <ClInclude Include="TestModel.h" />
     <ClInclude Include="TestPlane.h" />
+    <ClInclude Include="TestSphere.h" />
     <ClInclude Include="Texture2D.h" />
     <ClInclude Include="TitleScene.h" />
     <ClInclude Include="utility.h" />

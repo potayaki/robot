@@ -8,6 +8,7 @@
 #include"Texture2D.h"
 #include"CPlayer.h"
 #include"Collision.h"
+#include"CEnemy.h"
 #include<cmath>
 using namespace DirectX::SimpleMath;
 
@@ -36,13 +37,25 @@ void Stage1Scene::Init() {
 	plane->SetPositin(0.0f, -5.0f, 0.0f)->SetScale(5000.0f, 5000.0f, 5000.0f);
 	m_MySceneObjects.push_back(plane);
 	
+	CEnemy* enemy = Game::GetInstance()->AddObject<CEnemy>();
+	enemy->Init();
+	enemy->SetPositin(0.0f, -3.0f, 20.0f)->SetScale(1.0f, 1.0f, 1.0f);
+	m_MySceneObjects.push_back(enemy);
+
+	for (size_t i = 0; i < ; i++) {
+
+	}
+
 }
+
 
 //XV
 void Stage1Scene::Update() {
 	for (auto& a : m_MySceneObjects) {
 		a->Update();
+
 	}
+
 }
 
 
