@@ -1,7 +1,7 @@
 #include "CBullet.h"
 
 CBullet::CBullet() {
-
+	//TODO:ŽŸ‚Í‚±‚±‚©‚ç
 }
 
 CBullet::~CBullet() {
