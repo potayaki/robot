@@ -3,6 +3,7 @@
 CBullet::CBullet() {
 	//TODO:ŽŸ‚Í‚±‚±‚©‚ç
 	//test
+	//‚à‚¤ˆê‰ñ
 }
 
 CBullet::~CBullet() {
