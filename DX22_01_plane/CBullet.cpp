@@ -4,6 +4,7 @@ CBullet::CBullet() {
 	//TODO:ŽŸ‚Í‚±‚±‚©‚ç
 	//test
 	//‚à‚¤ˆê‰ñ
+	//DeskTop‘¤‚É‘—‚é
 }
 
 CBullet::~CBullet() {
