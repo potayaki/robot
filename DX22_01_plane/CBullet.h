@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include"TestModel.h"
 #include "Object.h"
 using namespace DirectX::SimpleMath;
@@ -7,11 +7,12 @@ class CBullet :	public Object
 private:
 		TestModel* m_model;
 	Vector3 m_velocity = { 0,0,0 };
-	int m_life;//õ–½
+	int m_life;//å¯¿å‘½
 public:
 	CBullet();
 		~CBullet();
 
+		
 		void Init()override;
 		void Update()override;
 		void Draw(Camera* cam) override;
@@ -20,7 +21,7 @@ public:
 		void SetVelocity(Vector3 velocity) { m_velocity = velocity; }
 		Vector3 GetVelocity() { return m_velocity; };
 	
-	// ”­Ë•ûŒü‚Æ‰ŠúˆÊ’u‚ğƒZƒbƒg‚·‚éŠÖ”
+	// ç™ºå°„æ–¹å‘ã¨åˆæœŸä½ç½®ã‚’ã‚»ãƒƒãƒˆã™ã‚‹é–¢æ•°
 	void Shoot(DirectX::SimpleMath::Vector3 pos, DirectX::SimpleMath::Vector3 dir);
 };
 
