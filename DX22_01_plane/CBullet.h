@@ -6,12 +6,16 @@ class CBullet :	public Object
 {
 private:
 		TestModel* m_model;
-	Vector3 m_velocity = { 0,0,0 };
+	Vector3 m_velocity;//弾の速度
 	int m_life;//寿命
+
+    Vector3 a{0.0f, 0.0f, 0.0f}; // 弾の初期方向（例: 前方）
+
 public:
 	CBullet();
 		~CBullet();
 
+      
 		
 		void Init()override;
 		void Update()override;
@@ -21,7 +25,7 @@ public:
 		void SetVelocity(Vector3 velocity) { m_velocity = velocity; }
 		Vector3 GetVelocity() { return m_velocity; };
 	
-	// 発射方向と初期位置をセットする関数
-	void Shoot(DirectX::SimpleMath::Vector3 pos, DirectX::SimpleMath::Vector3 dir);
+	// 最初に発射方向と初期位置をする関数
+	void Shoot(DirectX::SimpleMath::Vector3 player, DirectX::SimpleMath::Vector3 dir);
 };
 

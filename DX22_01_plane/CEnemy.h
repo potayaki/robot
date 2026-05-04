@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "TestCube.h"	
 #include"TestModel.h"
 #include "Object.h"
@@ -7,10 +7,12 @@ class CEnemy :
 {
 
     private:
-        //�G�̑�
+        //敵の体
 		TestCube* m_body;
 
-		bool IsGrounded = false;//�����Ă���
+        int hp = 3;//体力
+
+		bool IsGrounded = false;//着いていた
         public:
 		CEnemy();
 		~CEnemy();
@@ -21,6 +23,7 @@ class CEnemy :
 		void Uninit()override;
 
 		void Onland();
+        void OnHit();//弾に当たったときの処理
 
 		void SetPosition(float x, float y, float z) {
 			DirectX::SimpleMath::Vector3 p = { x,y,z };

@@ -1,105 +1,118 @@
-#include "CPlayer.h"
+ï»¿#include "CPlayer.h"
 #include"Ground.h"
 #include"Game.h"
 #include"input.h"
+#include"CBullet.h"
 using namespace DirectX::SimpleMath;
 
 namespace {
-	const float Gravity = 0.008f;
-	const float speed= 0.1f;
-	const float JumpPower = 0.25f;
+    const float Gravity = 0.008f;
+    const float speed = 0.1f;
+    const float JumpPower = 0.25f;
 }
 
 CPlayer::CPlayer() {
-	m_body = nullptr;
-	IsGrounded = false;
-	m_velocity = { 0,0,0 };
+    m_body = nullptr;
+    IsGrounded = false;
+    m_velocity = { 0,0,0 };
 
 }
 
 CPlayer::~CPlayer() {
-	Uninit();
+    Uninit();
 }
 
 void CPlayer::Init() {
-	m_body = new TestCube;
-	m_body->Init();
-	m_body->SetScale(1.0f, 1.0f, 1.0f); // ƒoƒCƒN–{‘Ì
+    m_body = new TestCube;
+    m_body->Init();
+    m_body->SetScale(1.0f, 1.0f, 1.0f);
 
-	for (size_t i = 0; i < MaxBullet; i++) {
-		m_bullets[i] = new TestCube;
-		m_bullets[i]->Init();
-		m_bullets[i]->SetScale(0.2f, 0.2f, 0.2f); // ’e‚ÌƒTƒCƒY
-		m_bullets[i]->SetTexture("assets/texture/arrow.png"); // ’e‚ÌƒeƒNƒXƒ`ƒƒ
-	}
+
 
 }
 
 
 void CPlayer::Update() {
-	
-  	m_velocity.y -= Gravity;
-	m_Position += m_velocity;
-	std::vector<Ground*>grounds = Game::GetInstance()->GetObjects<Ground>();
 
-	if (!grounds.empty()) {//grounds‚Ì’†‚ª‹ó‚Á‚Û‚©‚»‚¤‚©‚P‚ÂˆÈãì‚ç‚ê‚½‚©
-		Ground *plane = grounds[0];
-		float planeY = plane->GetPosition().y + 10.0f;//°À•W‚Ìæ“¾ + ”÷’²®
+    m_velocity.y -= Gravity;
+    m_Position += m_velocity;
+    if (m_BulletTime > 0) {
+        m_BulletTime--;
+    }
 
-		if (m_Position.y<= planeY) {
-			m_Position.y = planeY;
-			Onland();
-		}
-		else {
-			//‹ó’†ó‘Ô
-			IsGrounded = false;
-		}
 
-	}
+    isGrounded();
+    Move();
 
-	if (Input::GetKeyTrigger(VK_SPACE) && IsGrounded) {
-		m_velocity.y = JumpPower;
-		
-		
-	}
 
-	Move();
-
-	
-	m_body->SetPositin(m_Position.x, m_Position.y, m_Position.z); // ‰¼’u‚«
+    m_body->SetPositin(m_Position.x, m_Position.y, m_Position.z);
 }
 
 void CPlayer::Draw(Camera* cam) {
-	if (m_body) {
-		m_body->Draw(cam);
-	}
+    if (m_body) {
+        m_body->Draw(cam);
+    }
 
 }
 
 void CPlayer::Onland() {
-	IsGrounded = true;
-	m_velocity.y = 0;
+    IsGrounded = true;
+    m_velocity.y = 0;
 }
 void CPlayer::Uninit() {
-	if (m_body) {
-		m_body->Uninit();
-		delete m_body;
-		m_body = nullptr;
-	}
+    if (m_body) {
+        m_body->Uninit();
+        delete m_body;
+        m_body = nullptr;
+    }
 }
 
 void CPlayer::Move() {
-	if (Input::GetKeyPress(VK_A)) {
-		m_Position.x -= speed;
-	}
-	if (Input::GetKeyPress(VK_D)) {
-		m_Position.x += speed;
-	}
-	if (Input::GetKeyPress(VK_W)) {
-		m_Position.z += speed;
-	}
-	if (Input::GetKeyPress(VK_S)) {
-		m_Position.z -= speed;
-	}
+    if (Input::GetKeyPress(VK_A)) {
+        m_Position.x -= speed;
+    }
+    if (Input::GetKeyPress(VK_D)) {
+        m_Position.x += speed;
+    }
+    if (Input::GetKeyPress(VK_W)) {
+        m_Position.z += speed;
+    }
+    if (Input::GetKeyPress(VK_S)) {
+        m_Position.z -= speed;
+    }
+
+    if (Input::GetKeyTrigger(VK_SPACE) && IsGrounded) {
+        m_velocity.y = JumpPower;
+    }
+
+
+    if (Input::GetKeyPress(VK_LBUTTON)) {
+        if (m_BulletTime <= 0) {
+
+            CBullet* bullet = Game::GetInstance()->AddObject<CBullet>();
+
+            Vector3 bulletPos = m_Position + Vector3(0, 0, 1); // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®å‰æ–¹ã«å¼¾ã‚’ç”Ÿæˆ
+            bullet->Shoot(bulletPos, Vector3(0, 0, 1)); // å¼¾ã‚’å‰æ–¹ã«ç™ºå°„
+            m_BulletTime = 60 * 0.5f; // å¼¾ã®ç™ºå°„å¾Œã®ã‚¯ãƒ¼ãƒ«ãƒ€ã‚¦ãƒ³æ™‚é–“ã‚’ãƒªã‚»ãƒƒãƒˆï¼ˆ0.5ç§’ï¼‰
+        }
+    }
+}
+
+void CPlayer::isGrounded() {
+    std::vector<Ground*>grounds = Game::GetInstance()->GetObjects<Ground>();
+    if (!grounds.empty()) {//groundsã®ä¸­ãŒç©ºã£ã½ã‹ãã†ã‹ï¼‘ã¤ä»¥ä¸Šä½œã‚‰ã‚ŒãŸã‹
+        Ground* plane = grounds[0];
+        float planeY = plane->GetPosition().y + 10.0f;//åºŠåº§æ¨™ã®å–å¾— + å¾®èª¿æ•´
+
+        if (m_Position.y <= planeY) {//åºŠã«ç€ã„ã¦ã„ã‚‹ã‹
+            m_Position.y = planeY;
+            Onland();
+        }
+        else {
+            //ç©ºä¸­çŠ¶æ…‹
+            IsGrounded = false;
+        }
+
+    }
 }
 

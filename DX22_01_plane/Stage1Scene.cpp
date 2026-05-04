@@ -10,6 +10,7 @@
 #include"Collision.h"
 #include"CEnemy.h"
 #include<cmath>
+#include"CBullet.h"
 using namespace DirectX::SimpleMath;
 
 // コンストラクタ
@@ -42,16 +43,24 @@ void Stage1Scene::Init() {
 	enemy->SetPositin(0.0f, -3.0f, 20.0f)->SetScale(1.0f, 1.0f, 1.0f);
 	m_MySceneObjects.push_back(enemy);
 
+    /*
+    CBullet* bullet = Game::GetInstance()->AddObject<CBullet>();
+    bullet->Init();
+    bullet->SetPositin(-100.0f, -300.0f, 0.0f)->SetScale(1.0f, 1.0f, 1.0f);
+    m_MySceneObjects.push_back(bullet);
+    */
 	
 }
 
 
 //更新
 void Stage1Scene::Update() {
+    /*Gmae.cppの方に書いてあるのでここのUpdateは空っぽでいいです
 	for (auto& a : m_MySceneObjects) {
 		a->Update();
 
 	}
+    */
 
 }
 
