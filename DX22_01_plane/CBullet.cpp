@@ -19,7 +19,7 @@ void CBullet::Init() {
         m_model->Init();
         m_model->Load("assets/model/bullet/Bullett.fbx","assets/model/bullet");//弾のモデルを読み込む
     m_life = 60*2; //弾の寿命（フレーム数、ここでは2秒間）を設定
-    float angleX = DirectX::XMConvertToRadians(90.0f); // 90度をラジアンに変換！
+    float angleX = DirectX::XMConvertToRadians(90.0f); // 90度をラジアンに変換
     m_model->SetScale(0.8f, 1.8f, 0.8f); // 弾のサイズ
     m_model->SetRotation(DirectX::SimpleMath::Vector3( angleX,0.0f,0.0f)); // 弾の回転
 

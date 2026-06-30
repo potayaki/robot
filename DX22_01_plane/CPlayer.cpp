@@ -87,14 +87,7 @@ void CPlayer::Move() {
 
 
     if (Input::GetKeyPress(VK_LBUTTON)) {
-        if (m_BulletTime <= 0) {
-
-            CBullet* bullet = Game::GetInstance()->AddObject<CBullet>();
-
-            Vector3 bulletPos = m_Position + Vector3(0, 0, 1); // プレイヤーの前方に弾を生成
-            bullet->Shoot(bulletPos, Vector3(0, 0, 1)); // 弾を前方に発射
-            m_BulletTime = 60 * 0.5f; // 弾の発射後のクールダウン時間をリセット（0.5秒）
-        }
+        StartBullet();
     }
 }
 
@@ -113,6 +106,17 @@ void CPlayer::isGrounded() {
             IsGrounded = false;
         }
 
+    }
+}
+
+void CPlayer::StartBullet() {
+    if (m_BulletTime <= 0) {
+
+        CBullet* bullet = Game::GetInstance()->AddObject<CBullet>();
+
+        Vector3 bulletPos = m_Position + Vector3(0, 0, 1); // プレイヤーの前方に弾を生成
+        bullet->Shoot(bulletPos, Vector3(0, 0, 1)); // 弾を前方に発射
+        m_BulletTime = 60 * 0.5f; // 弾の発射後のクールダウン時間をリセット（0.5秒）
     }
 }
 
