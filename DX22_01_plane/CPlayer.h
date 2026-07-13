@@ -2,6 +2,7 @@
 #include "Object.h"
 #include"TestCube.h"
 #include"GolfBall.h"
+#include"Bezier.h"
 class CPlayer : public Object
 {
 private:
@@ -12,6 +13,8 @@ private:
 
 	DirectX::SimpleMath::Vector3 m_velocity = { 0,0,0 };
 	bool IsGrounded = false;//地面についているか
+
+    std::vector<Bezier>Maxmissile;
 
 	
 public:
@@ -44,6 +47,7 @@ public:
 	// 当たり判定用（車体の位置を返す）
 	DirectX::SimpleMath::Vector3 GetPosition() { return m_Position; }
 
+    
 
 };
 
