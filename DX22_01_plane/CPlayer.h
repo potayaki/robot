@@ -8,8 +8,12 @@ class CPlayer : public Object
 private:
 	static const int MaxRocket = 5;//最大弾数
 	TestCube* m_body;//body
-	
-    int m_BulletTime = 0;//弾が発射されてからの時間（フレーム数、ここでは0.5秒間）
+
+    float  m_BulletTime = 60 * 0.5;//60フレームで０．５秒間隔で打つ用の保存
+    float m_currentBulletTime = 0.0f;//現在の秒数
+
+    float m_MissileTime = 60 * 2;//60フレームで０．５秒間隔で打つ用の保存
+    float m_currentMissileTime = 0.0f;//現在の秒数
 
 	DirectX::SimpleMath::Vector3 m_velocity = { 0,0,0 };
 	bool IsGrounded = false;//地面についているか
@@ -32,6 +36,8 @@ public:
     void isGrounded();
     //左クリック時にBulletを作り
     void StartBullet();
+
+    void StartMissile();
 
 	DirectX::SimpleMath::Vector3 GetVelocity() { return m_velocity; }
 	void SetVelocity(float y) { m_velocity.y = y; }

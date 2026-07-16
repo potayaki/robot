@@ -145,6 +145,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CBullet.cpp" />
     <ClCompile Include="CEnemy.cpp" />
+    <ClCompile Include="CMissile.cpp" />
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="CPlayer.cpp" />
     <ClCompile Include="Game.cpp" />
@@ -185,6 +186,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CBullet.h" />
     <ClInclude Include="CEnemy.h" />
+    <ClInclude Include="CMissile.h" />
     <ClInclude Include="Collision.h" />
     <ClInclude Include="CPlayer.h" />
     <ClInclude Include="Game.h" />

@@ -23,28 +23,36 @@ void Bezier::Create(Object& Player, Object& Enemy) {
 void Bezier::Update(float tick) {
     if (!mActive) return;
 
-    if (m_Time <= 1.0f) {
+    m_Time += tick * mSpeed;
+
+    if (m_Time >= 1.0f) {
 
         m_Time = 1.0f;
         mActive = false;
 
     }
 
-    m_Time += tick;
+   
 
 
 }
 
 DirectX::XMFLOAT3 Bezier::GetCulvePosition(float t) {
+    //POWは使わず乗算で軽くする
 
     // ベジェ曲線計算
     DirectX::XMFLOAT3 outpos;
 
-    // 課題範囲--------------------------------------------------------------------------
+    // 2次ベジェ曲線の計算 (制御点3つ)
+    float mt = 1.0f - t;
+    float mt2 = mt * mt; // (1-t)^2
+    float t2 = t * t;    // t^2
 
-    outpos.x = pow(1 - t, 3) * m_Positions[0].x + 3 * pow(1 - t, 2) * t * m_Positions[1].x + 3 * (1 - t) * pow(t, 2) * m_Positions[2].x + pow(t, 3) * m_Positions[3].x;
-    outpos.y = pow(1 - t, 3) * m_Positions[0].y + 3 * pow(1 - t, 2) * t * m_Positions[1].y + 3 * (1 - t) * pow(t, 2) * m_Positions[2].y + pow(t, 3) * m_Positions[3].y;
-    outpos.z = pow(1 - t, 3) * m_Positions[0].z + 3 * pow(1 - t, 2) * t * m_Positions[1].z + 3 * (1 - t) * pow(t, 2) * m_Positions[2].z + pow(t, 3) * m_Positions[3].z;
+    // P(t) = (1-t)^2*P0 + 2*(1-t)*t*P1 + t^2*P2
+    outpos.x = mt2 * m_Positions[0].x + 2.0f * mt * t * m_Positions[1].x + t2 * m_Positions[2].x;
+    outpos.y = mt2 * m_Positions[0].y + 2.0f * mt * t * m_Positions[1].y + t2 * m_Positions[2].y;
+    outpos.z = mt2 * m_Positions[0].z + 2.0f * mt * t * m_Positions[1].z + t2 * m_Positions[2].z;
+
 
     return outpos;
 }

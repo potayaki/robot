@@ -2,13 +2,15 @@
 #include"Ground.h"
 #include"Game.h"
 #include"input.h"
+#include"CEnemy.h"
 #include"CBullet.h"
+#include"CMissile.h"
 using namespace DirectX::SimpleMath;
 
 namespace {
     const float Gravity = 0.008f;
-    const float speed = 0.1f;
-    const float JumpPower = 0.25f;
+    const float speed = 1.0f;
+    const float JumpPower = 0.5f;
 }
 
 CPlayer::CPlayer() {
@@ -36,8 +38,11 @@ void CPlayer::Update() {
 
     m_velocity.y -= Gravity;
     m_Position += m_velocity;
-    if (m_BulletTime > 0) {
-        m_BulletTime--;
+    if (m_currentBulletTime > 0) {
+        m_currentBulletTime--;
+    }
+    if (m_currentMissileTime > 0) {
+        m_currentMissileTime--;
     }
 
 
@@ -93,6 +98,11 @@ void CPlayer::Move() {
     if (Input::GetKeyPress(VK_LBUTTON)) {
         StartBullet();
     }
+
+    if (Input::GetKeyPress(VK_RBUTTON)) {
+        StartMissile();
+    }
+
 }
 
 void CPlayer::isGrounded() {
@@ -114,13 +124,40 @@ void CPlayer::isGrounded() {
 }
 
 void CPlayer::StartBullet() {
-    if (m_BulletTime <= 0) {
+    if (m_currentBulletTime <= 0) {
 
+        //bulletの生成
         CBullet* bullet = Game::GetInstance()->AddObject<CBullet>();
 
         Vector3 bulletPos = m_Position + Vector3(0, 0, 1); // プレイヤーの前方に弾を生成
         bullet->Shoot(bulletPos, Vector3(0, 0, 1)); // 弾を前方に発射
-        m_BulletTime = 60 * 0.5f; // 弾の発射後のクールダウン時間をリセット（0.5秒）
+        m_currentBulletTime = m_BulletTime; // 弾の発射後のクールダウン時間をリセット（0.5秒）
     }
+}
+
+void CPlayer::StartMissile() {
+    if (m_currentMissileTime <= 0) {
+
+        //敵の取得
+        std::vector<CEnemy*> enemys = Game::GetInstance()->GetObjects<CEnemy>();
+
+
+        if (!enemys.empty()) {//敵が存在する場合
+            CEnemy* target = enemys[0]; //最初の敵をターゲットにする
+
+            //ミサイルの生成
+            CMissile* missile = Game::GetInstance()->AddObject<CMissile>();
+
+
+            missile->Shoot(*this, *target); //プレイヤーと敵の位置を渡してミサイルを発射
+
+            m_currentMissileTime = m_MissileTime; // ミサイルの発射後のクールダウン時間をリセット（2秒）
+
+        }
+    }
+
+
+
+
 }
 
