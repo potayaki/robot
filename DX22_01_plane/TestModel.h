@@ -27,5 +27,6 @@ public:
 	void Draw(Camera* cam)override;
 	void Uninit()override;
 
+	//モデルとテクスチャ
     void Load(std::string modelFile, std::string texFile);
 };

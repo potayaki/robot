@@ -25,9 +25,11 @@ CPlayer::~CPlayer() {
 }
 
 void CPlayer::Init() {
+    
     m_body = new TestCube;
     m_body->Init();
     m_body->SetScale(1.0f, 1.0f, 1.0f);
+    
 
 
 

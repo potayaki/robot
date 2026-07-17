@@ -7,7 +7,7 @@ void Bezier::Create(Object& Player, Object& Enemy) {
     auto EndPos = Enemy.GetPosition();
     auto ControlPos = DirectX::XMFLOAT3(
         (StartPos.x + EndPos.x) / 2.0f,
-        10.0f,
+        100.0f,
         (StartPos.z + EndPos.z) / 2.0f
     );
 
@@ -31,9 +31,6 @@ void Bezier::Update(float tick) {
         mActive = false;
 
     }
-
-   
-
 
 }
 

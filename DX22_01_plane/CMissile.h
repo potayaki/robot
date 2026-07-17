@@ -1,11 +1,11 @@
 ﻿#pragma once
 #include "Object.h"
-#include"TestCube.h"
+#include"TestModel.h"
 #include"Bezier.h"
 class CMissile : public Object
 {
 private:
-    TestCube* m_body;
+    TestModel* m_body;
     Bezier m_bezier;
 
 public:

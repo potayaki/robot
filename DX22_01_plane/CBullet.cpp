@@ -3,15 +3,11 @@
 #include"CEnemy.h"
 
 CBullet::CBullet() {
-	//TODO:次はここから
-	//test
-	//もう一回
-	//DeskTop側に送る
-    //文字化け
-    //ノートパソコンで文字化けTEST
+
 }
 
 CBullet::~CBullet() {
+   // Uninit();   
 }
 
 void CBullet::Init() {

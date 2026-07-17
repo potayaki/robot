@@ -1,8 +1,9 @@
 ﻿#include "CMissile.h"
 #include"Game.h"
+#include<cmath>
 CMissile::CMissile() {
+  
     m_body = nullptr;
-
 }
 
 CMissile::~CMissile() {
@@ -11,11 +12,13 @@ CMissile::~CMissile() {
 }
 
 void CMissile::Init() {
-    m_body = new TestCube;
+    m_body = new TestModel;
 
     m_body->Init();
 
-    m_body->SetScale(0.5f, 0.5f, 0.5f);
+    m_body->Load("assets/model/bullet/Bullett.fbx", "assets/model/bullet");
+
+    m_body->SetScale(2.5f, 2.0f, 2.5f);
 
 }
 
@@ -25,7 +28,7 @@ void CMissile::Update() {
         return;
     }
 
-    float tick = 1.0f / 60.0f; //フレームレートに基づく時間
+    float tick = 1.0f/ 60.0f;//60FPSで更新するための時間を計算
     m_bezier.Update(tick);
 
     //ミサイルの位置をベジエ曲線に沿って更新
@@ -33,6 +36,29 @@ void CMissile::Update() {
 
     m_body->SetPositin(m_Position.x, m_Position.y, m_Position.z);
 
+    //角度を計算してミサイルの向きを更新
+    //現在
+    float currentTime = m_bezier.GetTime();
+    DirectX::SimpleMath::Vector3 currentPos = m_bezier.GetCulvePosition(currentTime);
+
+    //少し先の未来
+    float futureTime = currentTime + 0.01f; // 未来の時間を少し進める
+    if (futureTime > 1.0f) {
+        futureTime = 1.0f; // 未来の時間が1.0を超えないようにする
+    }
+    DirectX::SimpleMath::Vector3 futurePos = m_bezier.GetCulvePosition(futureTime);
+
+    //現在の位置と未来の位置から方向ベクトルを計算
+    DirectX::SimpleMath::Vector3 direction;
+    direction = futurePos - currentPos;
+    direction.Normalize();
+
+    float Yaw = atan2f(direction.x, direction.z); // Y軸周りの回転角度
+
+    float XZLength = sqrtf(direction.x * direction.x + direction.z * direction.z);
+    float Pitch = atan2f(-direction.y, XZLength); // X軸周りの回転角度
+
+    m_body->SetRotation(DirectX::SimpleMath::Vector3(Pitch + DirectX::XM_PIDIV2, Yaw, 0.0f)); // ミサイルの回転を更新
 
 }
 
