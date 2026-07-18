@@ -34,11 +34,11 @@ void CBullet::Update() {
     m_life--; // 寿命を減らす
     m_model->SetPositin(m_Position.x, m_Position.y, m_Position.z); // モデルの位置を更新
 
-
+    // 敵との当たり判定
     std::vector<CEnemy*> enemies = Game::GetInstance()->GetObjects<CEnemy>();
 
     for (auto enemy : enemies) {
-        // DirectXの便利機能「Distance」で、弾と敵の距離を測る
+        // 「Distance」で、弾と敵の距離を測る
         float dist = DirectX::SimpleMath::Vector3::Distance(m_Position, enemy->GetPosition());
 
         // 当たり判定の広さ（弾の半径 + 敵の半径くらいにするのが目安）
@@ -47,7 +47,7 @@ void CBullet::Update() {
         // もし距離が hitRange より近ければ「ぶつかった！」と判定
         if (dist < hitRange) {
             // 敵に「当たったよ！」と伝える
-            enemy->OnHit();
+            enemy->OnHit(damage);
 
             // 弾自身も役目を終えて消える
             Game::GetInstance()->DeleteObject(this);

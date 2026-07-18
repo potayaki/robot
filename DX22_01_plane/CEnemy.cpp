@@ -64,7 +64,7 @@ void CEnemy::Onland() {
 		
 }
 
-void CEnemy::OnHit() {
-    hp--; // 体力を減らす
+void CEnemy::OnHit(int& damage) {
+    hp -= damage; // 体力を減らす
     std::cout << "Enemy hit! Remaining HP: " << hp << std::endl; // デバッグ用に体力を表示
 }

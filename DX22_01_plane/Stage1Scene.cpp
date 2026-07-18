@@ -23,23 +23,18 @@ Stage1Scene::~Stage1Scene() {
 	Uninit();
 }
 
-
-
 // 初期化
 void Stage1Scene::Init() {
 	
 	CPlayer* player = Game::GetInstance()->AddObject<CPlayer>();
-	player->Init();
 	player->SetPositin(0.0f,-3.0f,0.0f)->SetScale(1.0f, 1.0f, 1.0f);
 	m_MySceneObjects.push_back(player);
 
 	Ground* plane = Game::GetInstance()->AddObject<Ground>();
-	plane->Init();
 	plane->SetPositin(0.0f, -5.0f, 0.0f)->SetScale(5000.0f, 5000.0f, 5000.0f);
 	m_MySceneObjects.push_back(plane);
 	
 	CEnemy* enemy = Game::GetInstance()->AddObject<CEnemy>();
-	enemy->Init();
 	enemy->SetPositin(0.0f, -3.0f, 20.0f)->SetScale(1.0f, 1.0f, 1.0f);
 	m_MySceneObjects.push_back(enemy);
 

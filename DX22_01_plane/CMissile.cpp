@@ -1,6 +1,7 @@
 ﻿#include "CMissile.h"
 #include"Game.h"
 #include<cmath>
+#include"CEnemy.h"
 CMissile::CMissile() {
   
     m_body = nullptr;
@@ -59,6 +60,34 @@ void CMissile::Update() {
     float Pitch = atan2f(-direction.y, XZLength); // X軸周りの回転角度
 
     m_body->SetRotation(DirectX::SimpleMath::Vector3(Pitch + DirectX::XM_PIDIV2, Yaw, 0.0f)); // ミサイルの回転を更新
+
+    //TODO : 今は数が少ないからいいけど多くなったら重くなるから今後カメラの中だけとかでする
+    //敵を全部取得
+    std::vector<CEnemy*> enemies = Game::GetInstance()->GetObjects<CEnemy>();
+
+    for (auto &enemy:enemies) {
+
+                // 「Distance」で、ミサイルと敵の距離を測る
+        float dist = DirectX::SimpleMath::Vector3::Distance(m_Position, enemy->GetPosition());
+
+        // 当たり判定の広さ（ミサイルの半径 + 敵の半径くらいにするのが目安）
+        float hitRange = 20.0f;
+
+        // もし距離が hitRange より近ければ「ぶつかった！」と判定
+        if (dist < hitRange) {
+            // 敵に「当たったよ！」と伝える
+            enemy->OnHit(damage); // ダメージを与える
+
+            // ミサイル自身も役目を終えて消える
+            Game::GetInstance()->DeleteObject(this);
+
+            // これ以上他の敵と判定しないように、Updateを終了する
+            return;
+        }
+    
+
+    }
+
 
 }
 

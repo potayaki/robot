@@ -7,7 +7,7 @@ class CMissile : public Object
 private:
     TestModel* m_body;
     Bezier m_bezier;
-
+    int damage = 3; // ミサイルのダメージ量
 public:
     CMissile();
     ~CMissile();

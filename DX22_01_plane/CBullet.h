@@ -8,7 +8,7 @@ private:
 		TestModel* m_model;
 	Vector3 m_velocity;//弾の速度
 	int m_life;//寿命
-
+    int damage = 1; // 弾のダメージ量
     Vector3 a{0.0f, 0.0f, 0.0f}; // 弾の初期方向（例: 前方）
 
 public:
