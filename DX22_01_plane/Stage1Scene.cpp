@@ -13,6 +13,8 @@
 #include"CBullet.h"
 using namespace DirectX::SimpleMath;
 
+#define CrosshairSize 64.0f  // クロスヘアのサイズ
+
 // コンストラクタ
 Stage1Scene::Stage1Scene() {
 	Init();
@@ -38,21 +40,29 @@ void Stage1Scene::Init() {
 	enemy->SetPositin(0.0f, -3.0f, 20.0f)->SetScale(1.0f, 1.0f, 1.0f);
 	m_MySceneObjects.push_back(enemy);
 
-   m_Crosshair = Game::GetInstance()->AddObject<Texture2D>();
-   m_Crosshair->SetTexture("assets/texture/crosshair061.png");
-   m_Crosshair->SetScale(64.0f, 64.0f, 1.0f);
-   m_MySceneObjects.push_back(m_Crosshair);
-	
+   m_BulletCrosshair = Game::GetInstance()->AddObject<Texture2D>();
+   m_BulletCrosshair->SetTexture("assets/texture/crosshair061.png");
+   m_BulletCrosshair->SetScale(CrosshairSize, CrosshairSize, 1.0f);
+   m_MySceneObjects.push_back(m_BulletCrosshair);
+
+   m_MissileCrosshair = Game::GetInstance()->AddObject<Texture2D>();
+   m_MissileCrosshair->SetTexture("assets/texture/crosshair131.png");
+   m_MissileCrosshair->SetScale(CrosshairSize * 3, CrosshairSize * 3, 1.0f);
+   m_MySceneObjects.push_back(m_MissileCrosshair);
+
 }
 
 
 //更新
 void Stage1Scene::Update() {
-    if (m_Crosshair) {
+    if (m_BulletCrosshair) {
         auto mouse = Input::GetMousePosition();
-        m_Crosshair->SetPositin(mouse.x, mouse.y, 0.0f);
+        m_BulletCrosshair->SetPositin(mouse.x, mouse.y, 0.0f);
     }
-
+    if (m_MissileCrosshair) {
+        auto mouse = Input::GetMousePosition();
+        m_MissileCrosshair->SetPositin(mouse.x, mouse.y, 0.0f);
+    }
 }
 
 

@@ -8,7 +8,9 @@ class Stage1Scene : public Scene
 private:
 	std::vector<Object*> m_MySceneObjects; // このシーンのオブジェクト
 
-    Texture2D* m_Crosshair = nullptr; // クロスヘアのテクスチャ
+    Texture2D* m_BulletCrosshair = nullptr; // 弾のクロスヘアのテクスチャ
+
+    Texture2D* m_MissileCrosshair = nullptr; // ミサイルのクロスヘアのテクスチャ
 
 	void Init(); // 初期化
 	void Uninit(); // 終了処理
