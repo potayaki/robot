@@ -282,6 +282,13 @@ LRESULT CALLBACK Application::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
         }
         break;
 
+        case WM_SETCURSOR: //カーソルの形を変更するメッセージ
+        if (LOWORD(lParam) == HTCLIENT) {// ウィンドウのクライアント領域内であれば
+            SetCursor(nullptr);// カーソルを非表示にする
+            return TRUE;    // ウィンドウプロシージャで処理したことをOSに伝える
+        }
+        break;
+
     default:
         // 受け取ったメッセージに対してデフォルトの処理を実行
         return DefWindowProc(hWnd, uMsg, wParam, lParam);

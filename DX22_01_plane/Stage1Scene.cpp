@@ -38,14 +38,20 @@ void Stage1Scene::Init() {
 	enemy->SetPositin(0.0f, -3.0f, 20.0f)->SetScale(1.0f, 1.0f, 1.0f);
 	m_MySceneObjects.push_back(enemy);
 
-   
+   m_Crosshair = Game::GetInstance()->AddObject<Texture2D>();
+   m_Crosshair->SetTexture("assets/texture/crosshair061.png");
+   m_Crosshair->SetScale(64.0f, 64.0f, 1.0f);
+   m_MySceneObjects.push_back(m_Crosshair);
 	
 }
 
 
 //更新
 void Stage1Scene::Update() {
-  
+    if (m_Crosshair) {
+        auto mouse = Input::GetMousePosition();
+        m_Crosshair->SetPositin(mouse.x, mouse.y, 0.0f);
+    }
 
 }
 
