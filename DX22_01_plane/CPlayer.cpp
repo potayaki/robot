@@ -126,15 +126,52 @@ void CPlayer::isGrounded() {
 }
 
 void CPlayer::StartBullet() {
-    if (m_currentBulletTime <= 0) {
+    if (m_currentBulletTime > 0)return;
 
-        //bulletの生成
-        CBullet* bullet = Game::GetInstance()->AddObject<CBullet>();
+    Vector3 rayOrigin;
+    Vector3 Direction;
 
-        Vector3 bulletPos = m_Position + Vector3(0, 0, 1); // プレイヤーの前方に弾を生成
-        bullet->Shoot(bulletPos, Vector3(0, 0, 1)); // 弾を前方に発射
-        m_currentBulletTime = m_BulletTime; // 弾の発射後のクールダウン時間をリセット（0.5秒）
+    Camera* camera = Game::GetInstance()->GetCamera();
+
+    if (camera != nullptr) {
+        camera->GetMouseRay(rayOrigin, Direction);
     }
+
+    std::vector<Ground*>grounds = Game::GetInstance()->GetObjects<Ground>();
+
+    if (grounds.empty()) {
+        MessageBoxA(NULL, "groundがGetしていません", "確認", MB_OKCANCEL);
+        return;
+    }
+    //床の高さ
+    const float GroundY = grounds[0]->GetPosition().y;
+
+    if (fabs(Direction.y) < 0.001f) {//床と平行ならレイがでない
+        return;
+    }
+
+    const float t = (GroundY - rayOrigin.y) / Direction.y;
+
+    if (t <= 0.0f)return;//カメラ後方は無効
+
+
+    // マウスが指している床上の位置
+    const Vector3 hitPosition = rayOrigin + Direction * t;
+
+    // プレイヤー付近から弾を発射
+    const Vector3 bulletStart = m_Position + Vector3(0.0f, 5.0f, 0.0f);
+
+    Vector3 bulletDirection = hitPosition - bulletStart;
+    if (bulletDirection.LengthSquared() < 0.0001f) {
+        return;
+    }
+    bulletDirection.Normalize();
+
+    CBullet* bullet = Game::GetInstance()->AddObject<CBullet>();
+    bullet->Shoot(bulletStart, bulletDirection);
+
+    m_currentBulletTime = m_BulletTime;
+
 }
 
 void CPlayer::StartMissile() {

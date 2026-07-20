@@ -121,3 +121,46 @@ void Camera::SetTarget(DirectX::SimpleMath::Vector3 target) {
 	m_Target = target;
 }
 
+bool Camera::GetMouseRay(DirectX::SimpleMath::Vector3& rayOrigin, DirectX::SimpleMath::Vector3& rayDirection) const {
+    const auto mouse = Input::GetMousePosition();
+
+    const float halfWidth = Application::GetWidth() * 0.5f;
+    const float halfHeight = Application::GetHeight() * 0.5f;
+
+    //-1.0 ～ 1.0 に正規化
+    const float ndcX = mouse.x / halfWidth;
+        // Y軸はウィンドウ座標と3D空間で上下逆転するため、マイナスをつける
+        const float ndcY = mouse.y / halfHeight;
+
+    constexpr float fov = DirectX::XMConvertToRadians(45.0f);
+    const float aspect =
+        static_cast<float>(Application::GetWidth()) /
+        static_cast<float>(Application::GetHeight());
+
+    const float tanHalfFov = tanf(fov * 0.5f);
+
+    Vector3 forward = m_Target - m_Position;
+    if (forward.LengthSquared() < 0.0001f) {
+        return false;
+    }
+    forward.Normalize();
+
+    Vector3 up(0.0f, 1.0f, 0.0f);
+    Vector3 right = up.Cross(forward);
+    right.Normalize();
+
+    up = forward.Cross(right);
+    up.Normalize();
+
+    // 画面中央 (ndcX=0, ndcY=0) なら真正面 (forward) に飛ぶようになる
+    rayDirection =
+        forward +
+        right * (ndcX * aspect * tanHalfFov) +
+        up * (ndcY * tanHalfFov);
+
+    rayDirection.Normalize();
+    rayOrigin = m_Position;
+
+    return true;
+}
+

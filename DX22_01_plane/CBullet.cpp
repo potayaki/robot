@@ -78,8 +78,9 @@ void CBullet::Uninit() {
 }
 
 void CBullet::Shoot(DirectX::SimpleMath::Vector3 player, DirectX::SimpleMath::Vector3 dir) {
-    DirectX::SimpleMath::Vector3 offset(0.0f, 5.0f, 0.0f); // プレイヤーからのオフセット（弾の初期位置をプレイヤーの少し上に設定）
+    //DirectX::SimpleMath::Vector3 offset(0.0f, 5.0f, 0.0f); // プレイヤーからのオフセット（弾の初期位置をプレイヤーの少し上に設定）
+    DirectX::SimpleMath::Vector3 offset(0.0f, 0.0f, 0.0f); // プレイヤーからのオフセット（弾の初期位置をプレイヤーの少し上に設定）
         m_Position = player + offset; // 初期位置をセット
-    m_velocity = dir * 0.5f; // 発射方向に速度を設定（0.5fは速度の倍率）
+    m_velocity = dir * 0.5f; // 発射方向に速度を設定速度を掛け合わせる
 
 }

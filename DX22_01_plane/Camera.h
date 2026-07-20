@@ -1,9 +1,9 @@
-#pragma once
+ï»¿#pragma once
 
 #include	<SimpleMath.h>
 
 //-----------------------------------------------------------------------------
-//CameraƒNƒ‰ƒX
+//Cameraã‚¯ãƒ©ã‚¹
 //-----------------------------------------------------------------------------
 class Camera {
 private:
@@ -27,5 +27,7 @@ public:
 	void Uninit();
 	void SetPosition(DirectX::SimpleMath::Vector3 camera_pos) { m_Position = camera_pos; }
 	void SetTarget(DirectX::SimpleMath::Vector3 target);
+
+    bool GetMouseRay(DirectX::SimpleMath::Vector3& rayOrigin, DirectX::SimpleMath::Vector3& rayDirection)const;
 
 };
