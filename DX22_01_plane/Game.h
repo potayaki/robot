@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include <iostream>
+#include<memory>
+#include"Object.h"
 #include"TestCube.h"
 #include "TestPlane.h"
 #include"TestModel.h"

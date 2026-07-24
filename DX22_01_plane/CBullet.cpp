@@ -1,7 +1,7 @@
 ﻿#include "CBullet.h"
 #include"Game.h"
 #include"CEnemy.h"
-
+#include"Collision.h"
 CBullet::CBullet() {
 
 }
@@ -30,16 +30,23 @@ void CBullet::Update() {
         return;
     }
 
+    DirectX::SimpleMath::Vector3 OldPosition = m_Position;
+
     m_Position += m_velocity; // 位置を更新
     m_life--; // 寿命を減らす
     m_model->SetPositin(m_Position); // モデルの位置を更新
     m_model->SetRotation(m_Rotation);
+
+    Collision::Segment bulletsegment;
+    bulletsegment.start = OldPosition;
+    bulletsegment.end = m_Position;
+
     // 敵との当たり判定
     std::vector<CEnemy*> enemies = Game::GetInstance()->GetObjects<CEnemy>();
 
     for (auto enemy : enemies) {
         // 「Distance」で、弾と敵の距離を測る
-        float dist = DirectX::SimpleMath::Vector3::Distance(m_Position, enemy->GetPosition());
+        float dist = Collision::DistancePointToSegment(enemy->GetPosition(), bulletsegment);
 
         // 当たり判定の広さ（弾の半径 + 敵の半径くらいにするのが目安）
         float hitRange = 20.0f;
@@ -81,7 +88,7 @@ void CBullet::Shoot(DirectX::SimpleMath::Vector3 player, DirectX::SimpleMath::Ve
     //DirectX::SimpleMath::Vector3 offset(0.0f, 5.0f, 0.0f); // プレイヤーからのオフセット（弾の初期位置をプレイヤーの少し上に設定）
     DirectX::SimpleMath::Vector3 offset(0.0f, 0.0f, 0.0f); // プレイヤーからのオフセット（弾の初期位置をプレイヤーの少し上に設定）
         m_Position = player + offset; // 初期位置をセット
-    m_velocity = dir * 0.5f; // 発射方向に速度を設定速度を掛け合わせる
+    m_velocity = dir * Speed; // 発射方向に速度を設定速度を掛け合わせる
 
     float yaw = atan2f(dir.x, dir.z);
 

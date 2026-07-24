@@ -18,7 +18,7 @@ private:
 
 	float speed = 1.0f;
 
-	DirectX::SimpleMath::Vector3 offset = DirectX::SimpleMath::Vector3(0.0f, 30.0f, -100.0f);
+	DirectX::SimpleMath::Vector3 offset = DirectX::SimpleMath::Vector3(0.0f, 30.0f, -150.0f);
 
 public:
 	void Init();

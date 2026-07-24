@@ -2,6 +2,7 @@
 #include"Game.h"
 #include<cmath>
 #include"CEnemy.h"
+#include"Collision.h"
 CMissile::CMissile() {
   
     m_body = nullptr;
@@ -28,6 +29,8 @@ void CMissile::Update() {
         Game::GetInstance()->DeleteObject(this);
         return;
     }
+
+    DirectX::SimpleMath::Vector3 oldPosition = m_Position;
 
     float tick = 1.0f/ 60.0f;//60FPSで更新するための時間を計算
     m_bezier.Update(tick);

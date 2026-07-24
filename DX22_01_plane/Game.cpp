@@ -41,7 +41,7 @@ void Game::Update() {
     // カメラ更新
     m_instance->m_Camera.Update();
 
-
+    
 
     // テストオブジェクト更新
     for (auto& a : m_instance->m_objects) {
