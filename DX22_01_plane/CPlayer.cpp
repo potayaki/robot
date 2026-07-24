@@ -143,6 +143,7 @@ void CPlayer::StartBullet() {
         MessageBoxA(NULL, "groundがGetしていません", "確認", MB_OKCANCEL);
         return;
     }
+
     //床の高さ
     const float GroundY = grounds[0]->GetPosition().y;
 
@@ -154,18 +155,23 @@ void CPlayer::StartBullet() {
 
     if (t <= 0.0f)return;//カメラ後方は無効
 
-
     // マウスが指している床上の位置
     const Vector3 hitPosition = rayOrigin + Direction * t;
 
     // プレイヤー付近から弾を発射
     const Vector3 bulletStart = m_Position + Vector3(0.0f, 5.0f, 0.0f);
 
+    //方向ベクトル
     Vector3 bulletDirection = hitPosition - bulletStart;
     if (bulletDirection.LengthSquared() < 0.0001f) {
         return;
     }
     bulletDirection.Normalize();
+
+    Vector3 forward(0.0f, 0.0f, 1.0f);
+    if (bulletDirection.Dot(forward) <= 0.0f) {
+        return;
+    }
 
     CBullet* bullet = Game::GetInstance()->AddObject<CBullet>();
     bullet->Shoot(bulletStart, bulletDirection);

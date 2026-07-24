@@ -15,9 +15,9 @@ void CBullet::Init() {
         m_model->Init();
         m_model->Load("assets/model/bullet/Bullett.fbx","assets/model/bullet");//弾のモデルを読み込む
     m_life = 60*2; //弾の寿命（フレーム数、ここでは2秒間）を設定
-    float angleX = DirectX::XMConvertToRadians(90.0f); // 90度をラジアンに変換
     m_model->SetScale(0.8f, 1.8f, 0.8f); // 弾のサイズ
-    m_model->SetRotation(DirectX::SimpleMath::Vector3( angleX,0.0f,0.0f)); // 弾の回転
+    //float angleX = DirectX::XMConvertToRadians(90.0f); // 90度をラジアンに変換
+    //m_model->SetRotation(DirectX::SimpleMath::Vector3( angleX,0.0f,0.0f)); // 弾の回転
 
 }
 
@@ -32,8 +32,8 @@ void CBullet::Update() {
 
     m_Position += m_velocity; // 位置を更新
     m_life--; // 寿命を減らす
-    m_model->SetPositin(m_Position.x, m_Position.y, m_Position.z); // モデルの位置を更新
-
+    m_model->SetPositin(m_Position); // モデルの位置を更新
+    m_model->SetRotation(m_Rotation);
     // 敵との当たり判定
     std::vector<CEnemy*> enemies = Game::GetInstance()->GetObjects<CEnemy>();
 
@@ -82,5 +82,10 @@ void CBullet::Shoot(DirectX::SimpleMath::Vector3 player, DirectX::SimpleMath::Ve
     DirectX::SimpleMath::Vector3 offset(0.0f, 0.0f, 0.0f); // プレイヤーからのオフセット（弾の初期位置をプレイヤーの少し上に設定）
         m_Position = player + offset; // 初期位置をセット
     m_velocity = dir * 0.5f; // 発射方向に速度を設定速度を掛け合わせる
+
+    float yaw = atan2f(dir.x, dir.z);
+
+    SetRotation(Vector3(DirectX::XMConvertToRadians(90.0f), yaw, 0.0f));
+
 
 }

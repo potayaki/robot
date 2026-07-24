@@ -9,7 +9,7 @@ private:
 	static const int MaxRocket = 5;//最大弾数
 	TestCube* m_body;//body
 
-    float  m_BulletTime = 60 * 0.5;//60フレームで０．５秒間隔で打つ用の保存
+    float  m_BulletTime = 60 * 0.1;//60フレームで０．５秒間隔で打つ用の保存
     float m_currentBulletTime = 0.0f;//次打てるまでの秒数0なら撃てる
 
     float m_MissileTime = 60 * 2;//60フレームで０．５秒間隔で打つ用の保存
