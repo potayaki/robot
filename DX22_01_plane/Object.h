@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "Camera.h"
 #include "Shader.h"
-
+#include"Collision.h"
 class Object {
 protected:
 	// SRT情報（姿勢情報）
@@ -36,5 +36,11 @@ public:
 	}
 	void SetScale(DirectX::SimpleMath::Vector3 scl) { m_Scale = scl; }
 	Object* SetScale(float x, float y, float z) { m_Scale.x = x; m_Scale.y = y; m_Scale.z = z; return this; }
+
+    //デフォルトでは半径0（当たり判定なし）の球を返すようにしておく
+    virtual Collision::Sphere GetCollisionSphere() {
+        return { m_Position, 0.0f };
+    }
+
 };
 

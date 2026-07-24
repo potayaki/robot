@@ -4,7 +4,7 @@
 #include"CEnemy.h"
 #include"Collision.h"
 CMissile::CMissile() {
-  
+
     m_body = nullptr;
 }
 
@@ -32,13 +32,18 @@ void CMissile::Update() {
 
     DirectX::SimpleMath::Vector3 oldPosition = m_Position;
 
-    float tick = 1.0f/ 60.0f;//60FPSで更新するための時間を計算
+    float tick = 1.0f / 60.0f;//60FPSで更新するための時間を計算
     m_bezier.Update(tick);
 
     //ミサイルの位置をベジエ曲線に沿って更新
     m_Position = m_bezier.GetCulvePosition(m_bezier.GetTime());
 
     m_body->SetPositin(m_Position.x, m_Position.y, m_Position.z);
+
+    Collision::Segment MissileSegment;
+
+    MissileSegment.start = oldPosition;
+    MissileSegment.end = m_Position;
 
     //角度を計算してミサイルの向きを更新
     //現在
@@ -68,26 +73,33 @@ void CMissile::Update() {
     //敵を全部取得
     std::vector<CEnemy*> enemies = Game::GetInstance()->GetObjects<CEnemy>();
 
-    for (auto &enemy:enemies) {
+    for (auto& enemy : enemies) {
 
-                // 「Distance」で、ミサイルと敵の距離を測る
-        float dist = DirectX::SimpleMath::Vector3::Distance(m_Position, enemy->GetPosition());
+        DirectX::SimpleMath::Vector3 diff = enemy->GetPosition() - m_Position;
+        float distance = diff.LengthSquared(); // 敵との距離を計算（距離の二乗を使用）
 
-        // 当たり判定の広さ（ミサイルの半径 + 敵の半径くらいにするのが目安）
-        float hitRange = 20.0f;
+        float CheckRange = 100.0f; // 当たり判定の範囲（例: 100.0f）
 
-        // もし距離が hitRange より近ければ「ぶつかった！」と判定
-        if (dist < hitRange) {
-            // 敵に「当たったよ！」と伝える
-            enemy->OnHit(damage); // ダメージを与える
+        if (distance < (CheckRange * CheckRange)) {//ブロードキャスト
 
-            // ミサイル自身も役目を終えて消える
-            Game::GetInstance()->DeleteObject(this);
+            // 「Distance」で、ミサイルと敵の距離を測る
+            float dist = Collision::DistancePointToSegment(enemy->GetPosition(), MissileSegment);
 
-            // これ以上他の敵と判定しないように、Updateを終了する
-            return;
+            // TODO: モデルの大きさに応じて hitRange を調整する
+            float hitRange = 20.0f;
+
+            // もし距離が hitRange より近ければ「ぶつかった！」と判定
+            if (dist < hitRange) {
+                // 敵に「当たったよ！」と伝える
+                enemy->OnHit(damage); // ダメージを与える
+
+                // ミサイル自身も役目を終えて消える
+                Game::GetInstance()->DeleteObject(this);
+
+                // これ以上他の敵と判定しないように、Updateを終了する
+                return;
+            }
         }
-    
 
     }
 
@@ -110,6 +122,6 @@ void CMissile::Uninit() {
 
 void CMissile::Shoot(Object& shooter, Object& target) {
 
-    m_bezier.Create(shooter,target); //ベジエ曲線を作成
+    m_bezier.Create(shooter, target); //ベジエ曲線を作成
 
 }

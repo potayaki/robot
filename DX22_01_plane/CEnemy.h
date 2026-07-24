@@ -30,5 +30,9 @@ class CEnemy :
 			m_Position = p;
 		}
 
+       Collision::Sphere GetCollisionSphere() override {
+            return { m_Position, 10.0f }; // 敵の当たり判定の半径を10に設定
+       }
+
 };
 
