@@ -28,9 +28,14 @@ private:
 	TestModel m_model;
 	
 	std::vector<std::unique_ptr<Object>> m_objects; // オブジェクトのリスト
-
     std::vector<std::unique_ptr<Object> >m_addObjects;    // 追加待ちリスト
+
+    std::vector<std::unique_ptr<Object>> m_UIs; // オブジェクトのリスト
+    std::vector<std::unique_ptr<Object> >m_addUIs;    // 追加待ちリスト
+
     std::vector<Object*> m_removeObjects; // 削除待ちリスト
+
+
 
 public:
 	Game(); // コンストラクタ
@@ -56,6 +61,13 @@ public:
 		pt->Init();//初期化
 		return pt;
 	}
+
+    template<typename T>T* AddUI() {
+        T* pt = new T;
+        m_instance->m_addUIs.emplace_back(pt);
+        pt->Init();//初期化
+        return pt;
+    }
 
 	//オブジェクトを追加する
 template<typename T>std::vector<T*>GetObjects() {

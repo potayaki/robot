@@ -48,6 +48,10 @@ void Game::Update() {
         a->Update();
     }
 
+    for (auto& a : m_instance->m_UIs) {
+        a->Update();
+    }
+
     //削除待ちオブジェクトの削除
     for (auto& removeObj : m_instance->m_removeObjects) {
         // 1. 名簿(m_objects)の中に、消したい奴が「まだ生き残っているか」探す
@@ -56,10 +60,22 @@ void Game::Update() {
                 return obj.get() == removeObj;
             });
 
-        // 2. もし名簿にまだ残っていたら（二重削除じゃなければ）正式に消す！
+        // 2. もし名簿にまだ残っていたら（二重削除じゃなければ）正式に消す
         if (it != m_instance->m_objects.end()) {
             removeObj->Uninit(); // 画像などのメモリをお掃除
             m_instance->m_objects.erase(it); // 名簿から削除
+        }
+        else {
+            // m_objects に無かったら m_uiObjects から探して消す↓
+            auto ui_it = std::find_if(m_instance->m_UIs.begin(), m_instance->m_UIs.end(),
+                [removeObj](const std::unique_ptr<Object>& obj) {
+                    return obj.get() == removeObj;
+                });
+
+            if (ui_it != m_instance->m_UIs.end()) {
+                removeObj->Uninit();
+                m_instance->m_UIs.erase(ui_it);
+            }
         }
 
     }
@@ -70,6 +86,12 @@ void Game::Update() {
         m_instance->m_objects.emplace_back(std::move(addObj));
     }
     m_instance->m_addObjects.clear();
+
+    for (auto& addObj : m_instance->m_addUIs) {
+        m_instance->m_UIs.emplace_back(std::move(addObj));
+    }
+    m_instance->m_addUIs.clear();
+
 }
 
 // 描画
@@ -84,6 +106,18 @@ void Game::Draw() {
     if (m_instance->m_scene) {
         m_instance->m_scene->Draw(&m_instance->m_Camera);
     }
+
+    Renderer::SetDepthEnable(false);
+
+    for (auto &a:m_instance->m_UIs) {
+
+        a->Draw(&m_instance->m_Camera);
+
+    }
+
+    Renderer::SetDepthEnable(true);
+
+
     // 描画後処理
     Renderer::DrawEnd();
 }
@@ -99,6 +133,10 @@ void Game::Uninit() {
     for (auto& a : m_instance->m_objects) {
         a->Uninit();
     }
+    for (auto& a : m_instance->m_UIs) {
+        a->Uninit();
+    }
+    
     Input::Release();
     // 描画終了処理
     Renderer::Uninit();
@@ -155,4 +193,10 @@ void Game::DeleteAllObject() {
     }
     m_instance->m_objects.clear();
     m_instance->m_objects.shrink_to_fit();
+    for (auto& o : m_instance->m_UIs) {
+        o->Uninit();
+    }
+    m_instance->m_UIs.clear();
+    m_instance->m_UIs.shrink_to_fit();
+
 }

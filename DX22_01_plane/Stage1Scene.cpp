@@ -40,14 +40,14 @@ void Stage1Scene::Init() {
 	enemy->SetPositin(0.0f, -3.0f, 20.0f)->SetScale(1.0f, 1.0f, 1.0f);
 	m_MySceneObjects.push_back(enemy);
 
-   m_BulletCrosshair = Game::GetInstance()->AddObject<Texture2D>();
+   m_BulletCrosshair = Game::GetInstance()->AddUI<Texture2D>();
    m_BulletCrosshair->SetTexture("assets/texture/crosshair061.png");
-   m_BulletCrosshair->SetScale(CrosshairSize, CrosshairSize, 1.0f);
+   m_BulletCrosshair->SetScale(CrosshairSize, CrosshairSize, 10000.0f);
    m_MySceneObjects.push_back(m_BulletCrosshair);
 
-   m_MissileCrosshair = Game::GetInstance()->AddObject<Texture2D>();
+   m_MissileCrosshair = Game::GetInstance()->AddUI<Texture2D>();
    m_MissileCrosshair->SetTexture("assets/texture/crosshair1310.png");
-   m_MissileCrosshair->SetScale(CrosshairSize * 4, CrosshairSize * 4, 1.0f);
+   m_MissileCrosshair->SetScale(CrosshairSize * 4, CrosshairSize * 4, 10000.0f);
    m_MySceneObjects.push_back(m_MissileCrosshair);
 
 }
