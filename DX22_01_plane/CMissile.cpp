@@ -80,7 +80,7 @@ void CMissile::Update() {
 
         float CheckRange = 100.0f; // 当たり判定の範囲（例: 100.0f）
 
-        if (distance < (CheckRange * CheckRange)) {//ブロードキャスト
+        if (distance < (CheckRange * CheckRange)) {//CheckRangeの範囲内に敵がいる場合のみ当たり判定を行う
 
             // 「Distance」で、ミサイルと敵の距離を測る
             float dist = Collision::DistancePointToSegment(enemy->GetPosition(), MissileSegment);
