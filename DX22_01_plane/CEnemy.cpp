@@ -39,7 +39,8 @@ void CEnemy::Update() {
 	m_body->SetPositin(m_Position.x, m_Position.y, m_Position.z); // 仮置き
 
     if (hp <= 0) {//一番下！
-        Game::GetInstance()->DeleteObject(this); // 体力が0以下になったらオブジェクトを削除
+      
+        Destroy(); // 体力が0以下になったらオブジェクトを破棄
         return;
     }
 }

@@ -73,7 +73,7 @@ void Stage1Scene::Update() {
 void Stage1Scene::Uninit() {
 	// このシーンのオブジェクトを削除する
 	for (auto& o : m_MySceneObjects) {
-		Game::GetInstance()->DeleteObject(o);
+        o->Destroy();
 	}
 
 }

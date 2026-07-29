@@ -26,7 +26,7 @@ void CBullet::Update() {
 
     if (m_life <= 0) {
         // 寿命が尽きたらオブジェクトを削除するなどの処理を行う
-        Game::GetInstance()->DeleteObject(this);
+        Destroy(); // 寿命が尽きたらオブジェクトを破棄
         return;
     }
 
@@ -66,7 +66,7 @@ void CBullet::Update() {
                     enemy->OnHit(damage);
 
                     // 弾自身も役目を終えて消える
-                    Game::GetInstance()->DeleteObject(this);
+                    Destroy(); // 弾を破棄する
                     return; // これ以上他の敵と判定しないように、Updateを終了する
 
                 }

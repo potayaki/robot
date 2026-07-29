@@ -12,6 +12,7 @@ protected:
 	// 描画の為の情報（見た目に関わる部分）
 	Shader m_Shader; // シェーダー
 
+    bool m_Dead = false; //オブジェクトが死んでいるかどうかのフラグ
 public:
 	virtual ~Object();//仮想デストラクタ
 
@@ -41,6 +42,9 @@ public:
     virtual Collision::Sphere GetCollisionSphere() {
         return { m_Position, 0.0f };
     }
+
+    void Destroy() { m_Dead = true; } //オブジェクトを破棄する
+    bool IsDead() const { return m_Dead; } //オブジェクトが死んでいるかどうかを返す
 
 };
 

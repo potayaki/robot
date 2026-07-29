@@ -35,7 +35,7 @@ private:
     std::vector<std::unique_ptr<Object>> m_UIs; // オブジェクトのリスト
     std::vector<std::unique_ptr<Object> >m_addUIs;    // 追加待ちリスト
 
-    std::vector<Object*> m_removeObjects; // 削除待ちリスト
+    
 
 
 
@@ -53,7 +53,7 @@ public:
 	Camera* GetCamera() { return &m_Camera; }
 
 	void ChangeScene(SceneName sName);//シーンの変更
-	void DeleteObject(Object* pt);//オブジェクトを削除
+
 	void DeleteAllObject();//オブジェクトをすべて削除
 
 	//オブジェクトを追加する(テンプレート関数

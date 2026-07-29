@@ -26,7 +26,7 @@ void CMissile::Init() {
 
 void CMissile::Update() {
     if (!m_bezier.IsActive()) {//ベジエ曲線がアクティブでない場合、ミサイルは更新されない
-        Game::GetInstance()->DeleteObject(this);
+        Destroy(); // ミサイルを破棄
         return;
     }
 
@@ -94,7 +94,7 @@ void CMissile::Update() {
                 enemy->OnHit(damage); // ダメージを与える
 
                 // ミサイル自身も役目を終えて消える
-                Game::GetInstance()->DeleteObject(this);
+                Destroy(); // ミサイルを破棄する
 
                 // これ以上他の敵と判定しないように、Updateを終了する
                 return;

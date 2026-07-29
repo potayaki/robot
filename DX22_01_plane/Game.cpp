@@ -52,34 +52,22 @@ void Game::Update() {
         a->Update();
     }
 
-    //削除待ちオブジェクトの削除
-    for (auto& removeObj : m_instance->m_removeObjects) {
-        // 1. 名簿(m_objects)の中に、消したい奴が「まだ生き残っているか」探す
-        auto it = std::find_if(m_instance->m_objects.begin(), m_instance->m_objects.end(),
-            [removeObj](const std::unique_ptr<Object>& obj) {
-                return obj.get() == removeObj;
-            });
-
-        // 2. もし名簿にまだ残っていたら（二重削除じゃなければ）正式に消す
-        if (it != m_instance->m_objects.end()) {
-            removeObj->Uninit(); // 画像などのメモリをお掃除
-            m_instance->m_objects.erase(it); // 名簿から削除
+    // 削除フラグ（IsDead）が立っているオブジェクトを一括削除
+    std::erase_if(m_instance->m_objects, [](const std::unique_ptr<Object>& obj) {
+        if (obj->IsDead()) {
+            obj->Uninit();
+            return true;
         }
-        else {
-            // m_objects に無かったら m_uiObjects から探して消す↓
-            auto ui_it = std::find_if(m_instance->m_UIs.begin(), m_instance->m_UIs.end(),
-                [removeObj](const std::unique_ptr<Object>& obj) {
-                    return obj.get() == removeObj;
-                });
+        return false;
+    });
 
-            if (ui_it != m_instance->m_UIs.end()) {
-                removeObj->Uninit();
-                m_instance->m_UIs.erase(ui_it);
-            }
+    std::erase_if(m_instance->m_UIs, [](const std::unique_ptr<Object>& obj) {
+        if (obj->IsDead()) {
+            obj->Uninit();
+            return true;
         }
-
-    }
-    m_instance->m_removeObjects.clear();
+        return false;
+    });
 
     //追加待ちオブジェクトの追加
     for (auto& addObj : m_instance->m_addObjects) {
@@ -179,12 +167,7 @@ void Game::ChangeScene(SceneName sName) {
     }
 }
 
-void Game::DeleteObject(Object* pt) {
-    if (pt == NULL) {
-        return;
-    }
-    m_instance->m_removeObjects.push_back(pt);
-}
+
 
 void Game::DeleteAllObject() {
 

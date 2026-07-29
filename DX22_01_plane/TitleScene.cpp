@@ -1,22 +1,22 @@
-
+ï»¿
 #include "TitleScene.h"
 #include "Game.h"
 #include "Input.h"
 #include"Texture2D.h"
 
-// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 TitleScene::TitleScene()
 {
 	Init();
 }
 
-// ƒfƒXƒgƒ‰ƒNƒ^
+// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 TitleScene::~TitleScene()
 {
 	Uninit();
 }
 
-// ‰Šú‰»
+// åˆæœŸåŒ–
 void TitleScene::Init()
 {
 	Texture2D* pt = Game::GetInstance()->AddObject<Texture2D>();
@@ -27,10 +27,10 @@ void TitleScene::Init()
 	m_MySceneObjects.emplace_back(pt);
 }
 
-// XV
+// æ›´æ–°
 void TitleScene::Update()
 {
-	// ƒGƒ“ƒ^[ƒL[‚ð‰Ÿ‚µ‚ÄƒXƒe[ƒW1‚Ö
+	// ã‚¨ãƒ³ã‚¿ãƒ¼ã‚­ãƒ¼ã‚’æŠ¼ã—ã¦ã‚¹ãƒ†ãƒ¼ã‚¸1ã¸
 	if (Input::GetKeyTrigger(VK_RETURN))
 	{
 		Game::GetInstance()->ChangeScene(STAGE1);
@@ -38,12 +38,12 @@ void TitleScene::Update()
 
 }
 
-// I—¹ˆ—
+// çµ‚äº†å‡¦ç†
 void TitleScene::Uninit()
 {
-	// ‚±‚ÌƒV[ƒ“‚ÌƒIƒuƒWƒFƒNƒg‚ðíœ‚·‚é
+	// ã“ã®ã‚·ãƒ¼ãƒ³ã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’å‰Šé™¤ã™ã‚‹
 	for (auto& o : m_MySceneObjects) {
-		Game::GetInstance()->DeleteObject(o);
+		o->Destroy();
 	}
 	m_MySceneObjects.clear();
 }
