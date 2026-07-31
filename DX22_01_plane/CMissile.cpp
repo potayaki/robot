@@ -47,7 +47,6 @@ void CMissile::Update() {
     MissileSegment.end = m_Position;
 
     //角度を計算してミサイルの向きを更新
-    //現在
     float currentTime = m_bezier.GetTime();
     DirectX::SimpleMath::Vector3 currentPos = m_bezier.GetCulvePosition(currentTime);
 
@@ -79,9 +78,9 @@ void CMissile::Update() {
         DirectX::SimpleMath::Vector3 diff = enemy->GetPosition() - m_Position;
         float distance = diff.LengthSquared(); // 敵との距離を計算（距離の二乗を使用）
 
-        float CheckRange = 100.0f; // 当たり判定の範囲（例: 100.0f）
+        float CheckRange = 100.0f; // 当たり判定の範囲
 
-        if (distance < (CheckRange * CheckRange)) {//CheckRangeの範囲内に敵がいる場合のみ当たり判定を行う
+        if (distance < (CheckRange * CheckRange)) {//CheckRange内当たり判定
 
             // 「Distance」で、ミサイルと敵の距離を測る
             float dist = Collision::DistancePointToSegment(enemy->GetPosition(), MissileSegment);

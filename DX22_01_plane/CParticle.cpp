@@ -1,12 +1,14 @@
 ﻿#include "CParticle.h"
 #include "Game.h"
 
-// static変数の実体を定義（必ず関数の外に書く）
+// static変数の実体を定義
 TestCube* CParticle::m_body = nullptr;
 int CParticle::m_instanceCount = 0;
 
 CParticle::CParticle() {
-    m_life = 60.0f;
+    if (m_type == Test) {
+        m_life = 60.0f;
+    }
 }
 
 CParticle::~CParticle() {
@@ -24,13 +26,18 @@ void CParticle::Init() {
 }
 
 void CParticle::Update() {
-    // 速度の分だけ移動
-    m_Position += m_velocity;
-    m_velocity.y -= 0.02f; // 重力
 
-    // クルクル回転させる
-    m_Rotation.x += 0.1f;
-    m_Rotation.y += 0.1f;
+    if (m_type == Test) {
+        // 速度の分だけ移動
+        m_Position += m_velocity;
+        m_velocity.y -= 0.02f; // 重力
+
+        // クルクル回転させる
+        m_Rotation.x += 0.1f;
+        m_Rotation.y += 0.1f;
+
+    }
+
 
     // 寿命を減らして、0になったら自分を消す
     m_life -= 1.0f;
@@ -49,5 +56,5 @@ void CParticle::Draw(Camera* cam) {
 }
 
 void CParticle::Uninit() {
-   
+
 }
