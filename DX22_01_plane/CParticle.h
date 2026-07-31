@@ -4,7 +4,8 @@
 class CParticle :  public Object
 {
 private:
-    TestCube* m_body;
+    static TestCube* m_body;
+    static int m_instanceCount;
     DirectX::SimpleMath::Vector3 m_velocity; // 飛んでいく方向とスピード
     float m_life;                            // 寿命（何フレームで消えるか）
 

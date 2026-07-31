@@ -105,7 +105,7 @@ void CMissile::Update() {
                     float vz = (rand() % 100 / 50.0f) - 1.0f;
 
                     // 上方向にする
-                    vy += 1.0f;
+                    vy += 1.5f;
 
                     p->SetVelocity(DirectX::SimpleMath::Vector3(vx, vy, vz));
 
