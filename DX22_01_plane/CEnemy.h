@@ -10,7 +10,7 @@ class CEnemy :
         //敵の体
 		TestCube* m_body;
 
-        int hp = 3;//体力
+        int hp = 9999;//体力
 
 		bool IsGrounded = false;//着いていた
         public:

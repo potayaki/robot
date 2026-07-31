@@ -3,6 +3,7 @@
 #include<cmath>
 #include"CEnemy.h"
 #include"Collision.h"
+#include"CParticle.h"
 CMissile::CMissile() {
 
     m_body = nullptr;
@@ -88,13 +89,32 @@ void CMissile::Update() {
             // TODO: モデルの大きさに応じて hitRange を調整する
             float hitRange = 20.0f;
 
-            // もし距離が hitRange より近ければ「ぶつかった！」と判定
+            //当たったかどうかの判定
             if (dist < hitRange) {
-                // 敵に「当たったよ！」と伝える
-                enemy->OnHit(damage); // ダメージを与える
+
+                enemy->OnHit(damage);
+
+                // パーティクルを生成
+                for (size_t i = 0; i < 20; i++) {// 20個のパーティクルを生成
+                    CParticle* p = Game::GetInstance()->AddObject<CParticle>();
+                    p->SetPositin(m_Position.x, m_Position.y, m_Position.z);
+
+                    // 飛ぶ方向をランダムにする (-1.0f ~ 1.0f の範囲)
+                    float vx = (rand() % 100 / 50.0f) - 1.0f;
+                    float vy = (rand() % 100 / 50.0f) - 1.0f;
+                    float vz = (rand() % 100 / 50.0f) - 1.0f;
+
+                    // 上方向にする
+                    vy += 1.0f;
+
+                    p->SetVelocity(DirectX::SimpleMath::Vector3(vx, vy, vz));
+
+                    // 寿命もバラバラにする（30〜60フレーム）
+                    p->SetLife(30.0f + (rand() % 30));
+                }
 
                 // ミサイル自身も役目を終えて消える
-                Destroy(); // ミサイルを破棄する
+                Destroy(); 
 
                 // これ以上他の敵と判定しないように、Updateを終了する
                 return;
