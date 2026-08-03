@@ -36,7 +36,7 @@ void CEnemy::Update() {
     
     
 
-	m_body->SetPositin(m_Position.x, m_Position.y, m_Position.z); // 仮置き
+	m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z); // 仮置き
 
     if (hp <= 0) {//一番下！
       

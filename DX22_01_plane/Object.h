@@ -27,12 +27,12 @@ public:
 
 
 	void  SetRotation(DirectX::SimpleMath::Vector3 rot) { m_Rotation = rot; }
-	Object* SetPositin(float x, float y, float z) {
+	Object* SetPosition(float x, float y, float z) {
 		DirectX::SimpleMath::Vector3 p = { x,y,z };
 		m_Position = p;
 		return this;
 	}
-	void SetPositin(DirectX::SimpleMath::Vector3 pos) {
+	void SetPosition(DirectX::SimpleMath::Vector3 pos) {
 		m_Position = pos;
 	}
 	void SetScale(DirectX::SimpleMath::Vector3 scl) { m_Scale = scl; }

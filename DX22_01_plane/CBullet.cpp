@@ -34,7 +34,7 @@ void CBullet::Update() {
 
     m_Position += m_velocity; // 位置を更新
     m_life--; // 寿命を減らす
-    m_model->SetPositin(m_Position); // モデルの位置を更新
+    m_model->SetPosition(m_Position); // モデルの位置を更新
     m_model->SetRotation(m_Rotation);
 
     Collision::Segment bulletsegment;

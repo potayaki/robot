@@ -30,4 +30,6 @@ public:
 
     bool GetMouseRay(DirectX::SimpleMath::Vector3& rayOrigin, DirectX::SimpleMath::Vector3& rayDirection)const;
 
+    DirectX::SimpleMath::Matrix GetViewMatrix() const { return m_ViewMatrix; }
+
 };

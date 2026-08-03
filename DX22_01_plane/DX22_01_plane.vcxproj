@@ -142,6 +142,7 @@
     <ClCompile Include="Arrow.cpp" />
     <ClCompile Include="AssimpPerse.cpp" />
     <ClCompile Include="Bezier.cpp" />
+    <ClCompile Include="billboard.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CBullet.cpp" />
     <ClCompile Include="CEnemy.cpp" />
@@ -183,6 +184,7 @@
     <ClInclude Include="Arrow.h" />
     <ClInclude Include="AssimpPerse.h" />
     <ClInclude Include="Bezier.h" />
+    <ClInclude Include="billboard.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CBullet.h" />
     <ClInclude Include="CEnemy.h" />

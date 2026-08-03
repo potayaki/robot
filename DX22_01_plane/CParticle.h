@@ -29,5 +29,8 @@ public:
     void SetLife(float life) { m_life = life; }
 
     void SetType(ParticleType type) { m_type = type; }
+
+    static void Preload();
+
 };
 

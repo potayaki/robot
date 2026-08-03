@@ -11,6 +11,8 @@
 #include"CEnemy.h"
 #include<cmath>
 #include"CBullet.h"
+#include"billboard.h"
+#include"CParticle.h"
 using namespace DirectX::SimpleMath;
 
 #define CrosshairSize 64.0f  // クロスヘアのサイズ
@@ -29,15 +31,16 @@ Stage1Scene::~Stage1Scene() {
 void Stage1Scene::Init() {
 	
 	CPlayer* player = Game::GetInstance()->AddObject<CPlayer>();
-	player->SetPositin(0.0f,-3.0f,0.0f)->SetScale(1.0f, 1.0f, 1.0f);
+	player->SetPosition(0.0f,-3.0f,0.0f)->SetScale(1.0f, 1.0f, 1.0f);
 	m_MySceneObjects.push_back(player);
 
 	Ground* plane = Game::GetInstance()->AddObject<Ground>();
-	plane->SetPositin(0.0f, -5.0f, 0.0f)->SetScale(5000.0f, 5000.0f, 5000.0f);
+	plane->SetPosition(0.0f, -5.0f, 0.0f)->SetScale(5000.0f, 5000.0f, 5000.0f);
 	m_MySceneObjects.push_back(plane);
 	
 	CEnemy* enemy = Game::GetInstance()->AddObject<CEnemy>();
-	enemy->SetPositin(0.0f, -3.0f, 20.0f)->SetScale(1.0f, 1.0f, 1.0f);
+    enemy->SetPosition(0.0f, -3.0f, 20.0f);
+    enemy->SetScale(1.0f, 1.0f, 1.0f);
 	m_MySceneObjects.push_back(enemy);
 
    m_BulletCrosshair = Game::GetInstance()->AddUI<Texture2D>();
@@ -50,6 +53,10 @@ void Stage1Scene::Init() {
    m_MissileCrosshair->SetScale(CrosshairSize * 4, CrosshairSize * 4, 10000.0f);
    m_MySceneObjects.push_back(m_MissileCrosshair);
 
+   billboard::LoadTextures("assets/texture/PNG/Smoke/Smoke_Frame_", ".png", 10); // 10枚の画像を読み込む
+
+   CParticle::Preload(); // パーティクル用のモデルを事前に読み込む
+
 }
 
 
@@ -57,11 +64,11 @@ void Stage1Scene::Init() {
 void Stage1Scene::Update() {
     if (m_BulletCrosshair) {
         auto mouse = Input::GetMousePosition();
-        m_BulletCrosshair->SetPositin(mouse.x, mouse.y, 0.0f);
+        m_BulletCrosshair->SetPosition(mouse.x, mouse.y, 0.0f);
     }
     if (m_MissileCrosshair) {
         auto mouse = Input::GetMousePosition();
-        m_MissileCrosshair->SetPositin(mouse.x, mouse.y, 0.0f);
+        m_MissileCrosshair->SetPosition(mouse.x, mouse.y, 0.0f);
     }
 }
 

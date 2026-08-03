@@ -52,7 +52,7 @@ void CPlayer::Update() {
     Move();
 
 
-    m_body->SetPositin(m_Position.x, m_Position.y, m_Position.z);
+    m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z);
 }
 
 void CPlayer::Draw(Camera* cam) {

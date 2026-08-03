@@ -17,11 +17,7 @@ CParticle::~CParticle() {
 
 void CParticle::Init() {
     // 「一番最初の1個目」が作られた時だけ、モデルを読み込む
-    if (m_instanceCount == 0) {
-        m_body = new TestCube;
-        m_body->Init();
-        m_body->SetScale(0.5f, 0.5f, 0.5f);
-    }
+    Preload();
     m_instanceCount++; // 生成されたらカウントを増やす
 }
 
@@ -49,7 +45,7 @@ void CParticle::Update() {
 void CParticle::Draw(Camera* cam) {
     if (m_body) {
         // 共有モデルを「このパーティクルの位置と角度」に移動させてから描く
-        m_body->SetPositin(m_Position.x, m_Position.y, m_Position.z);
+        m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z);
         m_body->SetRotation(m_Rotation);
         m_body->Draw(cam);
     }
@@ -57,4 +53,12 @@ void CParticle::Draw(Camera* cam) {
 
 void CParticle::Uninit() {
 
+}
+
+void CParticle::Preload() {
+    if (m_body == nullptr) {
+        m_body = new TestCube;
+        m_body->Init();
+        m_body->SetScale(0.5f, 0.5f, 0.5f);
+    }
 }

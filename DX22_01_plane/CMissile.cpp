@@ -4,6 +4,8 @@
 #include"CEnemy.h"
 #include"Collision.h"
 #include"CParticle.h"
+
+#include"billboard.h"
 CMissile::CMissile() {
 
     m_body = nullptr;
@@ -39,7 +41,7 @@ void CMissile::Update() {
     //ミサイルの位置をベジエ曲線に沿って更新
     m_Position = m_bezier.GetCulvePosition(m_bezier.GetTime());
 
-    m_body->SetPositin(m_Position.x, m_Position.y, m_Position.z);
+    m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z);
 
     Collision::Segment MissileSegment;
 
@@ -93,10 +95,12 @@ void CMissile::Update() {
 
                 enemy->OnHit(damage);
 
+                
+
                 // パーティクルを生成
                 for (size_t i = 0; i < 20; i++) {// 20個のパーティクルを生成
                     CParticle* p = Game::GetInstance()->AddObject<CParticle>();
-                    p->SetPositin(m_Position.x, m_Position.y, m_Position.z);
+                    p->SetPosition(m_Position.x, m_Position.y, m_Position.z);
 
                     // 飛ぶ方向をランダムにする (-1.0f ~ 1.0f の範囲)
                     float vx = (rand() % 100 / 50.0f) - 1.0f;
@@ -111,6 +115,18 @@ void CMissile::Update() {
                     // 寿命もバラバラにする（30〜60フレーム）
                     p->SetLife(30.0f + (rand() % 30));
                 }
+                
+                
+                //billboardのエフェクトを生成
+               
+
+                billboard* b = Game::GetInstance()->AddObject<billboard>();
+                b->SetPosition(m_Position.x, m_Position.y, m_Position.z);
+                b->SetScale(200.0f, 200.0f, 200.0f);
+                b->SetAnim(0.07f, false); // アニメーション速度とループ設定
+                
+
+
 
                 // ミサイル自身も役目を終えて消える
                 Destroy(); 
