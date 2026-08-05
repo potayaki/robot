@@ -105,6 +105,11 @@ void CPlayer::Move() {
         StartMissile();
     }
 
+    //Debug用のHP削減
+    if (Input::GetKeyPress(VK_1)) {
+        hp -= 1;
+    }
+
 }
 
 void CPlayer::isGrounded() {

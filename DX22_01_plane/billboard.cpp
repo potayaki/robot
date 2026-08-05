@@ -26,13 +26,24 @@ void billboard::LoadTextures(const std::string& baseName, const std::string& ext
         Texture* tex = new Texture();
         char filename[256];
 
-        // 例: "assets/texture/exp_" + 1 + ".png" 
+        // TODO :  "assets/texture/exp_" + 1 + ".png" 
         //  "exp_01.png" のよう"%s%d%s" の部分を "%s%02d%s" に変更
         sprintf_s(filename, "%s%02d%s", baseName.c_str(), i, ext.c_str());
 
         tex->Load(filename);
         m_sharedTextures.push_back(tex);
     }
+}
+
+void billboard::ReleaseTextures() {
+    for (Texture* tex : m_sharedTextures) {
+        if (tex != nullptr) {
+            // tex->Uninit(); // もしTextureクラスにUninitがあれば呼ぶ
+            delete tex;
+        }
+    }
+    // 配列自体を空っぽにする
+    m_sharedTextures.clear();
 }
 
 void billboard::Init() {
@@ -149,5 +160,6 @@ void billboard::Draw(Camera* cam) {
 
 void billboard::Uninit() {
     m_instanceCount--;
-    // ※今回はゲーム終了時までテクスチャは消さない（使い回す）設定にします
+    // ゲーム終了時までテクスチャは消さない（使い回す）設定にします
+    
 }

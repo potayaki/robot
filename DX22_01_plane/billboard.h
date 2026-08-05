@@ -42,5 +42,7 @@ public:
     // 最初の一回だけ画像をまとめて読み込む静的関数
     static void LoadTextures(const std::string& baseName, const std::string& ext, int count);
 
+    static void ReleaseTextures(); // 静的に読み込んだ画像を解放する関数
+
 };
 

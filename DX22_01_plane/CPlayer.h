@@ -17,8 +17,8 @@ private:
 
 	DirectX::SimpleMath::Vector3 m_velocity = { 0,0,0 };
 	bool IsGrounded = false;//地面についているか
-
-
+    
+    int hp = 100;
 	
 public:
 	CPlayer();

@@ -1,7 +1,7 @@
 ﻿#include "Game.h"
 #include "Renderer.h"
 #include"input.h"
-
+#include"billboard.h"
 
 Game* Game::m_instance;//ゲームインスタンス
 
@@ -118,6 +118,9 @@ void Game::Uninit() {
     // テストオブジェクト終了処理
     m_instance->m_Plane.Uninit();
     m_instance->m_model.Uninit();
+
+    billboard::ReleaseTextures();//ビルボードのテクスチャ解放
+
     for (auto& a : m_instance->m_objects) {
         a->Uninit();
     }

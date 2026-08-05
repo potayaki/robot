@@ -47,7 +47,7 @@ void CBullet::Update() {
     for (auto enemy : enemies) {
 
         DirectX::SimpleMath::Vector3 diff = enemy->GetPosition() - m_Position;
-        float distance = diff.Length();// 敵との距離を計算
+        float distance = diff.LengthSquared();// 敵との距離を計算
 
         float CheckRange = 100.0f; // 当たり判定の範囲（例: 100.0f）
 

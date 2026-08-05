@@ -13,6 +13,7 @@
 #include"CBullet.h"
 #include"billboard.h"
 #include"CParticle.h"
+#include"CPlayerUI.h"
 using namespace DirectX::SimpleMath;
 
 #define CrosshairSize 64.0f  // クロスヘアのサイズ
@@ -56,6 +57,10 @@ void Stage1Scene::Init() {
    billboard::LoadTextures("assets/texture/PNG/Smoke/Smoke_Frame_", ".png", 10); // 10枚の画像を読み込む
 
    CParticle::Preload(); // パーティクル用のモデルを事前に読み込む
+
+   CPlayerUI* CycleUI = Game::GetInstance()->AddUI<CPlayerUI>();
+   CycleUI->SetPosition(-300.0f, -200.0f, 0.0f);
+   CycleUI->SetScale(200.0f, 200.0f, 1.0f);
 
 }
 
