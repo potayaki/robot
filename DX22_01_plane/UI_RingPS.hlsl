@@ -8,7 +8,7 @@ cbuffer UIBUFFER : register(b6)
     float2 dummy;
 };
 
-// ★ここをプロジェクトの common.hlsl (PS_IN) と完全に一致させました！
+
 struct PS_IN
 {
     float4 pos : SV_POSITION;
