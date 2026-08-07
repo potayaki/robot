@@ -3,6 +3,13 @@
 #include"input.h"
 #include"billboard.h"
 
+#include"imgui.h"
+#include"imgui_impl_dx11.h"
+#include"imgui_impl_win32.h"
+#include"Application.h"//GetWindow()を使うために必要
+
+#include"CPlayer.h"
+#include"CPlayerUI.h"
 Game* Game::m_instance;//ゲームインスタンス
 
 // コンストラクタ
@@ -24,6 +31,16 @@ void Game::Init() {
     Renderer::Init();
     Input::Create();
 
+    //Imgui初期化
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::StyleColorsDark(); // ダークモードに設定
+
+    // Win32とDX11用の初期化（既存の機能からWindowとDeviceをもらう）
+    ImGui_ImplWin32_Init(Application::GetWindow());
+    ImGui_ImplDX11_Init(Renderer::GetDevice(), Renderer::GetDeviceContext());
+
     // カメラ初期化
     m_instance->m_Camera.Init();
     //最初のシーンを読み込む
@@ -41,7 +58,42 @@ void Game::Update() {
     // カメラ更新
     m_instance->m_Camera.Update();
 
+    // ImGuiフレーム開始
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    // ImGuiの描画処理
+    ImGui::Begin("Debug Window");
+    ImGui::Text("FPS: %.1f", 1.0f / ImGui::GetIO().DeltaTime);
+
+    //TODO : ここにImguiの描画処理を追加する
+
+    std::vector<CPlayer*> GUIPlayer = GetInstance()->GetObjects<CPlayer>();
+    if (!GUIPlayer.empty() && GUIPlayer[0] != nullptr) {
+        // 現在の座標を取得
+        DirectX::SimpleMath::Vector3 pos = GUIPlayer[0]->GetPosition();
+
+        // テキストの場合
+        // ImGui::Text("Player Position: (%.2f, %.2f, %.2f)", pos.x, pos.y, pos.z);
+
+       // ImGuiのDragFloat3を使って座標を変更できるようにする
+        float posArray[3] = { pos.x, pos.y, pos.z };
+        if (ImGui::DragFloat3("Player Pos", posArray, 0.5f)) {
+            // UI上で数値が変更されたら、プレイヤーの座標にセットし直す
+            GUIPlayer[0]->SetPosition(posArray[0], posArray[1], posArray[2]);
+        }
+    }
+    else {
+        // プレイヤーがいない時の安全な表示
+        ImGui::Text("Player is dead or not spawned.");
+    }
+
     
+
+    
+
+    ImGui::End();
 
     // テストオブジェクト更新
     for (auto& a : m_instance->m_objects) {
@@ -105,6 +157,8 @@ void Game::Draw() {
 
     Renderer::SetDepthEnable(true);
 
+    ImGui::Render();//DrawEndの前に呼ぶ
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
     // 描画後処理
     Renderer::DrawEnd();
@@ -127,6 +181,11 @@ void Game::Uninit() {
     for (auto& a : m_instance->m_UIs) {
         a->Uninit();
     }
+
+    // ImGui終了処理
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
     
     Input::Release();
     // 描画終了処理

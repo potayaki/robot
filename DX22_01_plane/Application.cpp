@@ -2,10 +2,12 @@
 #include <thread>
 #include "Application.h"
 #include "Game.h"
-
+#include"imgui_impl_win32.h"
 
 const auto ClassName = TEXT("2022 framework ひな型");     //ウィンドウクラス名
 const auto WindowName = TEXT("2023 framework ひな型");    //ウィンドウ名
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 HINSTANCE  Application::m_hInst;   // インスタンスハンドル
 HWND       Application::m_hWnd;    // ウィンドウハンドル
@@ -105,6 +107,11 @@ bool Application::InitApp()
     {
         return false;
     }
+
+    SetWindowLongPtr(m_hWnd, GWL_STYLE, WS_POPUP | WS_MINIMIZEBOX);
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+    SetWindowPos(m_hWnd, HWND_TOP, 0, 0, screenWidth, screenHeight, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 
     // ウィンドウを表示
     ShowWindow(m_hWnd, SW_SHOWNORMAL);
@@ -210,8 +217,12 @@ void Application::MainLoop()
 //-----------------------------------------------------------------------------
 LRESULT CALLBACK Application::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    static bool isFullscreen = false;
+    static bool isFullscreen = true;
     static bool isMessageBoxShowed = false;
+
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
+        return true;
+
     switch (uMsg)
     {
     case WM_DESTROY:// ウィンドウ破棄のメッセージ
