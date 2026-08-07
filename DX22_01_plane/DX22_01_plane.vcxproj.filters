@@ -310,7 +310,7 @@
     <FxCompile Include="shader\litTexturePS.hlsl">
       <Filter>リソース ファイル</Filter>
     </FxCompile>
-    <FxCompile Include="UI_RingPS.hlsl">
+    <FxCompile Include="shader\UI_RingPS.hlsl">
       <Filter>リソース ファイル</Filter>
     </FxCompile>
   </ItemGroup>
