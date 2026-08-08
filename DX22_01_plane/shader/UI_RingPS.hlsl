@@ -1,11 +1,11 @@
 Texture2D g_Texture : register(t0);
 SamplerState g_SamplerState : register(s0);
 
+// ★ C++から「1個分のゲージの割合と色」を受け取るように変更
 cbuffer UIBUFFER : register(b6)
 {
-    float hpRate;
-    float missileRate;
-    float2 dummy;
+    float rate; // ゲージの残り割合 (0.0 ～ 1.0)
+    float3 ringColor; // ゲージの色 (R, G, B)
 };
 
 struct PS_IN
@@ -17,56 +17,27 @@ struct PS_IN
 
 float4 main(PS_IN In) : SV_TARGET
 {
-    float2 center = float2(0.5f, 0.5f);
-    float2 offset = In.tex - center;
-    float dist = length(offset);
+    float4 texColor = g_Texture.Sample(g_SamplerState, In.tex);
     
-    // ==========================================
-    // ★ ここで大きさと境界線を微調整できます！
-    // ==========================================
-    float borderDist = 0.4f; // 赤と青を分ける境界線の距離
-    float innerScale = 1.0f; // 青い円（内側）の縮小率（1.0でそのまま、1.2などで小さくなる）
-    // ==========================================
-
-    // サンプリング用（画像を読み込む用）のUV座標
-    float2 sampleUV = In.tex;
-    
-    // もし境界線より内側だったら、画像を縮小して読み込む
-    if (dist < borderDist)
-    {
-        sampleUV = center + (offset * innerScale);
-    }
-
-    // 縮小済みのUV座標で画像の色を取得
-    float4 texColor = g_Texture.Sample(g_SamplerState, sampleUV);
-    
-    // 背景の黒い部分は透明にして捨てる
+    // 背景の黒い部分を透明にする
     if (texColor.r < 0.05f)
         return float4(0, 0, 0, 0);
 
-    // 角度の計算は実際の描画位置（In.tex）で行う
+    // 画像の中心からの角度を計算
+    float2 center = float2(0.5f, 0.5f);
+    float2 offset = In.tex - center;
     float angle = atan2(offset.x, -offset.y);
+
     if (angle < 0.0f)
         angle += 6.2831853f;
     float angleRate = angle / 6.2831853f;
 
-    float4 outColor = float4(1.0f, 1.0f, 1.0f, texColor.r);
+    // ★ C++から送られた色(ringColor)に、画像の明るさ(texColor.r)を掛ける
+    float4 outColor = float4(ringColor * texColor.r, texColor.r);
     
-    // 色の塗り分けとゲージの削り処理
-    if (dist > borderDist)
-    {
-        // 外側（HP：赤）
-        if (angleRate > hpRate)
-            outColor.a = 0.0f;
-        outColor.rgb = float3(1.0f, 0.05f, 0.1f) * texColor.r;
-    }
-    else
-    {
-        // 内側（ミサイル：青）
-        if (angleRate > missileRate)
-            outColor.a = 0.0f;
-        outColor.rgb = float3(0.0f, 0.6f, 1.0f) * texColor.r;
-    }
+    // ゲージの割合を超えている部分は透明にして削る
+    if (angleRate > rate)
+        outColor.a = 0.0f;
 
     return outColor * In.col;
 }

@@ -4,9 +4,8 @@
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 struct UIBuffer {
-    float hpRate; // HPの割合（0.0f～1.0f）
-    float missileRate; // ミサイルの割合（0.0f～1.0f）
-    float dummy[2]; // パディング用（16バイト境界に合わせるため）
+    float Rate;
+    DirectX::SimpleMath::Vector3 Color;
 };
 
 class CPlayerUI : public Object
@@ -16,7 +15,10 @@ private:
     std::vector<unsigned int> m_Indices;
     VertexBuffer<VERTEX_3D> m_VertexBuffer;
     IndexBuffer m_IndexBuffer;
-    Texture m_Texture;
+
+    Texture m_TextureHP;
+    Texture m_TextureMissile;
+
     Shader m_Shader;
 
     ID3D11Buffer* m_pUIBuffer = nullptr; // GPUに値を送るためのバッファ

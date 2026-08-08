@@ -39,7 +39,8 @@ void CPlayerUI::Init() {
     m_Shader.Create("shader/unlitTextureVS.hlsl", "shader/UI_RingPS.hlsl");
 
     // 画像を読み込む
-    m_Texture.Load("assets/texture/ring_ui.png");
+    m_TextureHP.Load("assets/texture/ring_ui2.png");
+    m_TextureMissile.Load("assets/texture/ring_ui1.png");
 
     // GPUにデータを送るための定数バッファを作成
     Renderer::CreateConstantBuffer(sizeof(UIBuffer), &m_pUIBuffer);
@@ -55,38 +56,57 @@ void CPlayerUI::Update() {
 }
 
 void CPlayerUI::Draw(Camera* cam) {
-    // 2D描画モードに切り替え
     Renderer::SetDepthEnable(false);
     cam->SetCamera(1);
 
-    // 行列の計算
-    DirectX::SimpleMath::Matrix s = DirectX::SimpleMath::Matrix::CreateScale(m_Scale);
-    DirectX::SimpleMath::Matrix t = DirectX::SimpleMath::Matrix::CreateTranslation(m_Position);
-    DirectX::SimpleMath::Matrix worldMtx = s * t; // 2Dなので回転は省略
-    Renderer::SetWorldMatrix(&worldMtx);
-
     ID3D11DeviceContext* dc = Renderer::GetDeviceContext();
 
-    // ★送るデータをセットして、GPU（シェーダー）の6番スロットに送信！
-    UIBuffer uibuf;
-    uibuf.hpRate = m_hpRate;
-    uibuf.missileRate = m_missileRate;
-    dc->UpdateSubresource(m_pUIBuffer, 0, NULL, &uibuf, 0, 0);
-    dc->PSSetConstantBuffers(6, 1, &m_pUIBuffer);
-
-    // 描画セット
+    // 共通の描画セット
     m_Shader.SetGPU();
     m_VertexBuffer.SetGPU();
     m_IndexBuffer.SetGPU();
-    m_Texture.SetGPU();
-
     Renderer::SetUV(0, 0, 1, 1);
-
-    // UIなので半透明合成(BS_ALPHABLEND)にする
     Renderer::SetBlendState(1);
-
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+    // 共通の平行移動（位置）
+    DirectX::SimpleMath::Matrix t = DirectX::SimpleMath::Matrix::CreateTranslation(m_Position);
+
+
+    // -----------------------------------------------------
+    // ① HPゲージ（外側：赤）の描画
+    // -----------------------------------------------------
+    DirectX::SimpleMath::Matrix s1 = DirectX::SimpleMath::Matrix::CreateScale(m_Scale);
+    DirectX::SimpleMath::Matrix worldMtx1 = s1 * t;
+    Renderer::SetWorldMatrix(&worldMtx1);
+
+    UIBuffer uibufHP;
+    uibufHP.Rate = m_hpRate;
+    uibufHP.Color = DirectX::SimpleMath::Vector3(1.0f, 0.05f, 0.1f); // 赤色
+    dc->UpdateSubresource(m_pUIBuffer, 0, NULL, &uibufHP, 0, 0);
+    dc->PSSetConstantBuffers(6, 1, &m_pUIBuffer);
+
+    m_TextureHP.SetGPU();
     dc->DrawIndexed((UINT)m_Indices.size(), 0, 0);
+
+
+    // -----------------------------------------------------
+    // ② ミサイルゲージ（内側：青）の描画
+    // -----------------------------------------------------
+    // ★ 0.75倍に縮小して内側にスッポリ収める（数値はお好みで調整！）
+    DirectX::SimpleMath::Matrix s2 = DirectX::SimpleMath::Matrix::CreateScale(m_Scale.x * 1.0f, m_Scale.y * 1.0f, 1.0f);
+    DirectX::SimpleMath::Matrix worldMtx2 = s2 * t;
+    Renderer::SetWorldMatrix(&worldMtx2);
+
+    UIBuffer uibufMissile;
+    uibufMissile.Rate = m_missileRate;
+    uibufMissile.Color = DirectX::SimpleMath::Vector3(0.0f, 0.6f, 1.0f); // 青色
+    dc->UpdateSubresource(m_pUIBuffer, 0, NULL, &uibufMissile, 0, 0);
+    // (※さっきセットしたので PSSetConstantBuffers は省略可能ですが念のため)
+
+    m_TextureMissile.SetGPU();
+    dc->DrawIndexed((UINT)m_Indices.size(), 0, 0);
+
 
     Renderer::SetDepthEnable(true);
 }
