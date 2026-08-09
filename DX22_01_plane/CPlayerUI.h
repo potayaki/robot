@@ -5,7 +5,7 @@
 #include "IndexBuffer.h"
 struct UIBuffer {
     float Rate;
-    DirectX::SimpleMath::Vector3 Color;
+    DirectX::SimpleMath::Vector3 Color;//こっち
 };
 
 class CPlayerUI : public Object

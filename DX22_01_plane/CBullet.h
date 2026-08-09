@@ -7,7 +7,7 @@ class CBullet :	public Object
 private:
 		TestModel* m_model;
 	Vector3 m_velocity;//弾の方向
-    float Speed = 5.0f;
+    float Speed = 25.0f;
 	int m_life;//寿命
     int damage = 1; // 弾のダメージ量
     Vector3 a{0.0f, 0.0f, 0.0f}; // 弾の初期方向（例: 前方）

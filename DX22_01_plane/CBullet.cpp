@@ -2,6 +2,7 @@
 #include"Game.h"
 #include"CEnemy.h"
 #include"Collision.h"
+#include"CParticle.h"
 CBullet::CBullet() {
 
 }
@@ -15,9 +16,8 @@ void CBullet::Init() {
     m_model->Init();
     m_model->Load("assets/model/bullet/Bullett.fbx", "assets/model/bullet");//弾のモデルを読み込む
     m_life = 60*2; //弾の寿命（フレーム数、ここでは2秒間）を設定
-    m_model->SetScale(0.8f, 1.8f, 0.8f); // 弾のサイズ
-    //float angleX = DirectX::XMConvertToRadians(90.0f); // 90度をラジアンに変換
-    //m_model->SetRotation(DirectX::SimpleMath::Vector3( angleX,0.0f,0.0f)); // 弾の回転
+   // m_model->SetScale(0.8f, 1.8f, 0.8f); // 弾のサイズ
+    m_model->SetScale(0.8f, 4.0f, 0.8f); // 弾のサイズ
 
 }
 
@@ -36,6 +36,15 @@ void CBullet::Update() {
     m_life--; // 寿命を減らす
     m_model->SetPosition(m_Position); // モデルの位置を更新
     m_model->SetRotation(m_Rotation);
+
+    
+    CParticle* trail = Game::GetInstance()->AddObject<CParticle>();
+    trail->SetType(Spark); // パーティクルの種類を設定
+    trail->SetPosition(OldPosition);
+    trail->SetVelocity(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f)); // 動かないパーティクルにする
+    trail->SetLife(30); // どれくらいのフレームで消えるか
+    trail->SetScale(DirectX::SimpleMath::Vector3(2.5f, 2.5f, 2.5f)); // パーティクルのサイズ
+    trail->SetColor(DirectX::SimpleMath::Color(1.0f, 0.0f, 0.0f, 1.0f)); // パーティクルの色（オレンジ色）
 
     Collision::Segment bulletsegment;
     bulletsegment.start = OldPosition;

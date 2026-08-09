@@ -90,10 +90,9 @@ void CPlayerUI::Draw(Camera* cam) {
     dc->DrawIndexed((UINT)m_Indices.size(), 0, 0);
 
 
-    // -----------------------------------------------------
+   
     // ② ミサイルゲージ（内側：青）の描画
-    // -----------------------------------------------------
-    // ★ 0.75倍に縮小して内側にスッポリ収める（数値はお好みで調整！）
+    // ★ 1倍
     DirectX::SimpleMath::Matrix s2 = DirectX::SimpleMath::Matrix::CreateScale(m_Scale.x * 1.0f, m_Scale.y * 1.0f, 1.0f);
     DirectX::SimpleMath::Matrix worldMtx2 = s2 * t;
     Renderer::SetWorldMatrix(&worldMtx2);
