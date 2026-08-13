@@ -5,6 +5,7 @@
 #include"CEnemy.h"
 #include"CBullet.h"
 #include"CMissile.h"
+#include"CBulletManager.h"
 using namespace DirectX::SimpleMath;
 
 namespace {
@@ -131,6 +132,7 @@ void CPlayer::isGrounded() {
 }
 
 void CPlayer::StartBullet() {
+    /*
     if (m_currentBulletTime > 0)return;
 
     Vector3 rayOrigin;
@@ -182,8 +184,64 @@ void CPlayer::StartBullet() {
     bullet->Shoot(bulletStart, bulletDirection);
 
     m_currentBulletTime = m_BulletTime;
+    */
+    if (m_currentBulletTime > 0) return;
 
+    Vector3 rayOrigin;
+    Vector3 Direction;
+
+    Camera* camera = Game::GetInstance()->GetCamera();
+    if (camera != nullptr) {
+        camera->GetMouseRay(rayOrigin, Direction);
+    }
+
+    std::vector<Ground*> grounds = Game::GetInstance()->GetObjects<Ground>();
+    if (grounds.empty()) {
+        return;
+    }
+
+    const float GroundY = grounds[0]->GetPosition().y;
+    Vector3 targetPosition;
+
+    // レイが下を向いていて、かつ床との交点があるかを計算
+    float t = -1.0f;
+    if (fabs(Direction.y) > 0.001f) {
+        t = (GroundY - rayOrigin.y) / Direction.y;
+    }
+
+    if (t > 0.0f) {
+        // カーソルが床に触れている場合（今まで通りの処理）
+        targetPosition = rayOrigin + Direction * t;
+    }
+    else {
+        // カーソルが空を向いている場合
+        // レイの方向へ十分に遠い距離（例えば1000.0f）をターゲットにする
+        float maxDistance = 1000.0f;
+        targetPosition = rayOrigin + Direction * maxDistance;
+    }
+
+    // プレイヤー付近から弾を発射
+    const Vector3 bulletStart = m_Position + Vector3(0.0f, 5.0f, 0.0f);
+
+    // 弾の飛ぶ方向ベクトルを計算
+    Vector3 bulletDirection = targetPosition - bulletStart;
+    if (bulletDirection.LengthSquared() < 0.0001f) {
+        return;
+    }
+    bulletDirection.Normalize();
+
+    // 弾を生成して発射
+    //CBullet* bullet = Game::GetInstance()->AddObject<CBullet>();
+    //bullet->Shoot(bulletStart, bulletDirection);
+
+    std::vector<CBulletManager*> bulletManagers = Game::GetInstance()->GetObjects<CBulletManager>();
+    if (!bulletManagers.empty()) {
+        bulletManagers[0]->ShootBullet(bulletStart, bulletDirection);
+    }
+
+    m_currentBulletTime = m_BulletTime;
 }
+
 
 void CPlayer::StartMissile() {
     if (m_currentMissileTime <= 0) {

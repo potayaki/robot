@@ -14,6 +14,7 @@
 #include"billboard.h"
 #include"CParticle.h"
 #include"CPlayerUI.h"
+#include"CBulletManager.h"
 using namespace DirectX::SimpleMath;
 
 #define CrosshairSize 64.0f  // クロスヘアのサイズ
@@ -62,6 +63,8 @@ void Stage1Scene::Init() {
    CycleUI->SetPosition(-555.0f, -260.0f, 0.0f);
    CycleUI->SetScale(200.0f, 200.0f, 1.0f);
 
+   CBulletManager* bulletManager = Game::GetInstance()->AddObject<CBulletManager>();
+   m_MySceneObjects.push_back(bulletManager);   
 }
 
 

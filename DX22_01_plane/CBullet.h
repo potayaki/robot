@@ -12,6 +12,8 @@ private:
     int damage = 1; // 弾のダメージ量
     Vector3 a{0.0f, 0.0f, 0.0f}; // 弾の初期方向（例: 前方）
 
+    bool isActive = true; // 弾がアクティブかどうかのフラグ
+
 public:
 	CBullet();
 		~CBullet();
@@ -22,6 +24,10 @@ public:
 		void Update()override;
 		void Draw(Camera* cam) override;
 		void Uninit()override;
+
+        bool GetActive() { return isActive; }
+
+        void SetActive(bool active) { isActive = active; }  
 
 		void SetVelocity(Vector3 velocity) { m_velocity = velocity; }
 		Vector3 GetVelocity() { return m_velocity; };
