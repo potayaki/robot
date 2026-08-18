@@ -260,11 +260,15 @@ void CPlayer::StartMissile() {
         if (!enemys.empty()) {//敵が存在する場合
             CEnemy* target = enemys[0]; //最初の敵をターゲットにする
 
-            //ミサイルの生成
-            CMissile* missile = Game::GetInstance()->AddObject<CMissile>();
+            std::vector<MissileManager*> mManagers = Game::GetInstance()->GetObjects<MissileManager>();
+            if (!mManagers.empty()) {
+                CMissile* missile = mManagers[0]->Spawn();
+                if (missile != nullptr) {
+                    missile->Shoot(*this, *target);//プレイヤーとターゲットの敵を渡す
+                }
+            }
 
-
-            missile->Shoot(*this, *target); //プレイヤーと敵の位置を渡してミサイルを発射
+          
 
             m_currentMissileTime = m_MissileTime; // ミサイルの発射後のクールダウン時間をリセット（2秒）
 

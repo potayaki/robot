@@ -145,7 +145,6 @@
     <ClCompile Include="billboard.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CBullet.cpp" />
-    <ClCompile Include="CBulletManager.cpp" />
     <ClCompile Include="CEnemy.cpp" />
     <ClCompile Include="CMissile.cpp" />
     <ClCompile Include="Collision.cpp" />
@@ -165,7 +164,6 @@
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Object.cpp" />
-    <ClCompile Include="ParticleManager.cpp" />
     <ClCompile Include="Pole.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="ResultScene.cpp" />
@@ -197,7 +195,6 @@
     <ClInclude Include="billboard.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CBullet.h" />
-    <ClInclude Include="CBulletManager.h" />
     <ClInclude Include="CEnemy.h" />
     <ClInclude Include="CMissile.h" />
     <ClInclude Include="Collision.h" />
@@ -219,7 +216,6 @@
     <ClInclude Include="input.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Object.h" />
-    <ClInclude Include="ParticleManager.h" />
     <ClInclude Include="Pole.h" />
     <ClInclude Include="PoolManager.h" />
     <ClInclude Include="Renderer.h" />

@@ -34,7 +34,7 @@ void CMissile::Init() {
 
 void CMissile::Update() {
     if (!m_bezier.IsActive()) {//ベジエ曲線がアクティブでない場合、ミサイルは更新されない
-        Destroy(); // ミサイルを破棄
+        SetActive(false); // ミサイルを破棄
         return;
     }
 
@@ -137,7 +137,7 @@ void CMissile::Update() {
 
 
                     // ミサイル自身も役目を終えて消える
-                    Destroy();
+                    SetActive(false);
 
                     // これ以上他の敵と判定しないように、Updateを終了する
                     return;
