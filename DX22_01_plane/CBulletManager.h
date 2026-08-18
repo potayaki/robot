@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿//今は使わないPoolManagerを使う
+#pragma once
 #include "Object.h"
 #include "CBullet.h"
 class CBulletManager : public Object

@@ -6,6 +6,11 @@
 #include"CParticle.h"
 
 #include"billboard.h"
+
+#include"PoolManager.h"
+
+using ParticleManager = PoolManager<CParticle, 500>;
+
 CMissile::CMissile() {
 
     m_body = nullptr;
@@ -95,68 +100,71 @@ void CMissile::Update() {
 
                 enemy->OnHit(damage);
 
-                
+                std::vector<ParticleManager*> pManagers = Game::GetInstance()->GetObjects<ParticleManager>();
+                if (!pManagers.empty()) {
 
-                // パーティクルを生成
-                for (size_t i = 0; i < 20; i++) {// 20個のパーティクルを生成
-                    CParticle* p = Game::GetInstance()->AddObject<CParticle>();
-                    p->SetPosition(m_Position.x, m_Position.y, m_Position.z);
+                    // パーティクルを生成
+                    for (size_t i = 0; i < 20; i++) {// 20個のパーティクルを生成
+                        CParticle* p = pManagers[0]->Spawn();
+                        if (p != nullptr) {
+                            p->SetPosition(m_Position.x, m_Position.y, m_Position.z);
 
-                    // 飛ぶ方向をランダムにする (-1.0f ~ 1.0f の範囲)
-                    float vx = (rand() % 100 / 50.0f) - 1.0f;
-                    float vy = (rand() % 100 / 50.0f) - 1.0f;
-                    float vz = (rand() % 100 / 50.0f) - 1.0f;
+                            // 飛ぶ方向をランダムにする (-1.0f ~ 1.0f の範囲)
+                            float vx = (rand() % 100 / 50.0f) - 1.0f;
+                            float vy = (rand() % 100 / 50.0f) - 1.0f;
+                            float vz = (rand() % 100 / 50.0f) - 1.0f;
 
-                    // 上方向にする
-                    vy += 1.5f;
+                            // 上方向にする
+                            vy += 1.5f;
 
-                    p->SetVelocity(DirectX::SimpleMath::Vector3(vx, vy, vz));
+                            p->SetVelocity(DirectX::SimpleMath::Vector3(vx, vy, vz));
 
-                    // 寿命もバラバラにする（30〜60フレーム）
-                    p->SetLife(30.0f + (rand() % 30));
+                            // 寿命もバラバラにする（30〜60フレーム）
+                            p->SetLife(30.0f + (rand() % 30));
+                        }
+                    }
+
+
+                    //billboardのエフェクトを生成
+
+
+                    billboard* b = Game::GetInstance()->AddObject<billboard>();
+                    b->SetPosition(m_Position.x, m_Position.y, m_Position.z);
+                    b->SetScale(200.0f, 200.0f, 200.0f);
+                    b->SetAnim(0.07f, false); // アニメーション速度とループ設定
+
+
+
+
+                    // ミサイル自身も役目を終えて消える
+                    Destroy();
+
+                    // これ以上他の敵と判定しないように、Updateを終了する
+                    return;
                 }
-                
-                
-                //billboardのエフェクトを生成
-               
-
-                billboard* b = Game::GetInstance()->AddObject<billboard>();
-                b->SetPosition(m_Position.x, m_Position.y, m_Position.z);
-                b->SetScale(200.0f, 200.0f, 200.0f);
-                b->SetAnim(0.07f, false); // アニメーション速度とループ設定
-                
-
-
-
-                // ミサイル自身も役目を終えて消える
-                Destroy(); 
-
-                // これ以上他の敵と判定しないように、Updateを終了する
-                return;
             }
+
         }
 
-    }
 
-
-}
-
-void CMissile::Draw(Camera* cam) {
-    if (m_body) {
-        m_body->Draw(cam);
     }
 }
-
-void CMissile::Uninit() {
-    if (m_body) {
-        m_body->Uninit();
-        delete m_body;
-        m_body = nullptr;
+    void CMissile::Draw(Camera * cam) {
+        if (m_body) {
+            m_body->Draw(cam);
+        }
     }
-}
 
-void CMissile::Shoot(Object& shooter, Object& target) {
+    void CMissile::Uninit() {
+        if (m_body) {
+            m_body->Uninit();
+            delete m_body;
+            m_body = nullptr;
+        }
+    }
 
-    m_bezier.Create(shooter, target); //ベジエ曲線を作成
+    void CMissile::Shoot(Object & shooter, Object & target) {
 
-}
+        m_bezier.Create(shooter, target); //ベジエ曲線を作成
+
+    }

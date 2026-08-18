@@ -5,7 +5,11 @@
 #include"CEnemy.h"
 #include"CBullet.h"
 #include"CMissile.h"
-#include"CBulletManager.h"
+#include"PoolManager.h"
+
+using BulletManager = PoolManager<CBullet, 100>;
+using MissileManager = PoolManager<CMissile, 20>;
+
 using namespace DirectX::SimpleMath;
 
 namespace {
@@ -234,9 +238,12 @@ void CPlayer::StartBullet() {
     //CBullet* bullet = Game::GetInstance()->AddObject<CBullet>();
     //bullet->Shoot(bulletStart, bulletDirection);
 
-    std::vector<CBulletManager*> bulletManagers = Game::GetInstance()->GetObjects<CBulletManager>();
+    std::vector<BulletManager*> bulletManagers = Game::GetInstance()->GetObjects<BulletManager>();
     if (!bulletManagers.empty()) {
-        bulletManagers[0]->ShootBullet(bulletStart, bulletDirection);
+        CBullet* bullet = bulletManagers[0]->Spawn();
+        if (bullet != nullptr) {
+            bullet->Shoot(bulletStart, bulletDirection);
+        }
     }
 
     m_currentBulletTime = m_BulletTime;

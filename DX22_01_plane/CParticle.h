@@ -32,6 +32,8 @@ private:
 
     DirectX::SimpleMath::Color m_color; // パーティクルの色
 
+    bool m_isActive; // パーティクルがアクティブかどうか
+
 public:
     CParticle();
     ~CParticle();
@@ -48,6 +50,10 @@ public:
     void SetType(ParticleType type) { m_type = type; }
 
     void SetColor(DirectX::SimpleMath::Color color) { m_color = color; }
+
+    bool GetActive() const { return m_isActive; }
+
+    void SetActive(bool isActive) { m_isActive = isActive; }
 
     static void Preload();
 

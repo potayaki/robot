@@ -54,7 +54,7 @@ void CParticle::Update() {
     // 寿命を減らして、0になったら自分を消す
     m_life -= 1.0f;
     if (m_life <= 0.0f) {
-        Destroy();
+        SetActive(false);
     }
 }
 

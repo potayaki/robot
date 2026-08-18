@@ -1,4 +1,6 @@
-﻿#include "CBulletManager.h"
+﻿//今はもう使わないPoolManagerを使う
+
+#include "CBulletManager.h"
 
 CBulletManager::CBulletManager() {
 }

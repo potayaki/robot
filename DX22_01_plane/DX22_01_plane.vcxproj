@@ -165,6 +165,7 @@
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Object.cpp" />
+    <ClCompile Include="ParticleManager.cpp" />
     <ClCompile Include="Pole.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="ResultScene.cpp" />
@@ -218,7 +219,9 @@
     <ClInclude Include="input.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Object.h" />
+    <ClInclude Include="ParticleManager.h" />
     <ClInclude Include="Pole.h" />
+    <ClInclude Include="PoolManager.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="ResultScene.h" />
     <ClInclude Include="Scene.h" />

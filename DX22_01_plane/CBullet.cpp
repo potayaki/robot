@@ -4,6 +4,10 @@
 #include"Collision.h"
 #include"CParticle.h"
 #include"Ground.h"
+#include"PoolManager.h"
+
+using ParticleManager = PoolManager<CParticle, 500>;
+
 CBullet::CBullet() {
 
 }
@@ -47,7 +51,7 @@ void CBullet::Update() {
            return;
        }
    }
-    
+    /*
     CParticle* trail = Game::GetInstance()->AddObject<CParticle>();
     trail->SetType(Spark); // パーティクルの種類を設定
     trail->SetPosition(OldPosition);
@@ -55,6 +59,20 @@ void CBullet::Update() {
     trail->SetLife(20); // どれくらいのフレームで消えるか
     trail->SetScale(DirectX::SimpleMath::Vector3(2.5f, 2.5f, 2.5f)); // パーティクルのサイズ
     trail->SetColor(DirectX::SimpleMath::Color(1.0f, 0.0f, 0.0f, 1.0f)); // パーティクルの色（オレンジ色）
+    */
+
+   std::vector<ParticleManager*> pManagers = Game::GetInstance()->GetObjects<ParticleManager>();
+   if (!pManagers.empty()) {
+       CParticle* trail = pManagers[0]->Spawn();
+       if (trail != nullptr) { // 取得できた時だけ設定
+           trail->SetType(Spark);
+           trail->SetPosition(OldPosition);
+           trail->SetVelocity(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f));
+           trail->SetLife(20);
+           trail->SetScale(DirectX::SimpleMath::Vector3(2.5f, 2.5f, 2.5f));
+           trail->SetColor(DirectX::SimpleMath::Color(1.0f, 0.0f, 0.0f, 1.0f));
+       }
+   }
 
     Collision::Segment bulletsegment;
     bulletsegment.start = OldPosition;
