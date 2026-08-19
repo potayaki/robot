@@ -51,7 +51,7 @@ void Application::Run()
 bool Application::InitApp()
 {
 
-    ImGui_ImplWin32_EnableDpiAwareness();
+   
 
     // インスタンスハンドルを取得
     auto hInst = GetModuleHandle(nullptr);

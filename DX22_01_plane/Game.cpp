@@ -41,6 +41,10 @@ void Game::Init() {
     ImGui_ImplWin32_Init(Application::GetWindow());
     ImGui_ImplDX11_Init(Renderer::GetDevice(), Renderer::GetDeviceContext());
 
+    RECT clientRect{};
+    GetClientRect(Application::GetWindow(), &clientRect);
+    Renderer::ResizeWindow(clientRect.right - clientRect.left, clientRect.bottom - clientRect.top);
+
     // カメラ初期化
     m_instance->m_Camera.Init();
     //最初のシーンを読み込む
@@ -57,6 +61,11 @@ void Game::Update() {
     m_instance->m_scene->Update();
     // カメラ更新
     m_instance->m_Camera.Update();
+
+    RECT rect;
+    GetClientRect(Application::GetWindow(), &rect);
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
 
     // ImGuiフレーム開始
     ImGui_ImplDX11_NewFrame();
