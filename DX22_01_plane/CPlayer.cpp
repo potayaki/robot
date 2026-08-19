@@ -30,11 +30,11 @@ CPlayer::~CPlayer() {
 }
 
 void CPlayer::Init() {
-    
+
     m_body = new TestCube;
     m_body->Init();
     m_body->SetScale(1.0f, 1.0f, 1.0f);
-    
+
 
 
 
@@ -252,23 +252,36 @@ void CPlayer::StartBullet() {
 
 void CPlayer::StartMissile() {
     if (m_currentMissileTime <= 0) {
-
         //敵の取得
         std::vector<CEnemy*> enemys = Game::GetInstance()->GetObjects<CEnemy>();
 
 
+
         if (!enemys.empty()) {//敵が存在する場合
             CEnemy* target = enemys[0]; //最初の敵をターゲットにする
-
             std::vector<MissileManager*> mManagers = Game::GetInstance()->GetObjects<MissileManager>();
+
+
             if (!mManagers.empty()) {
-                CMissile* missile = mManagers[0]->Spawn();
-                if (missile != nullptr) {
-                    missile->Shoot(*this, *target);//プレイヤーとターゲットの敵を渡す
+
+                std::vector<float>angles;
+                switch (curRocket) {
+                    case 1:angles = { 0.0f }; break;
+                    case 2:angles = { 90.0f, -90.0f }; break;
+                    case 3:angles = { 90.0f, -90.0f, 0.0f }; break;
+                    case 4:angles = { 90.0f, -90.0f, 45.0f,-45.0f }; break;
                 }
+                for (auto& a : angles) {
+                    CMissile* missile = mManagers[0]->Spawn();
+                    if (missile != nullptr) {
+                        missile->Shoot(*this, *target, a);//プレイヤーとターゲットの敵を渡す
+                    }
+                }
+
+
             }
 
-          
+
 
             m_currentMissileTime = m_MissileTime; // ミサイルの発射後のクールダウン時間をリセット（2秒）
 

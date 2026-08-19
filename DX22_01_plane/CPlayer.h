@@ -6,7 +6,8 @@
 class CPlayer : public Object
 {
 private:
-	static const int MaxRocket = 5;//最大弾数
+     int curRocket = 1;//現在のミサイルの最大数
+     const int maxRocket = 4;//最大ミサイル数
 	TestCube* m_body;//body
 
     float  m_BulletTime = 60 * 0.1;//60フレームで０．５秒間隔で打つ用の保存
@@ -52,7 +53,19 @@ public:
 	// 当たり判定用（車体の位置を返す）
 	DirectX::SimpleMath::Vector3 GetPosition() { return m_Position; }
 
-    
+    //debug用
+    int getCurRocket() { return curRocket; }
+    void SetCurRocket(int num) {
+
+        //debug用にミサイルの最大数を設定する
+        if (num < 1) {
+            num = 1;
+        }
+        if (num > maxRocket) {
+            num = maxRocket;
+        }
+        curRocket = num;
+    }
 
 };
 

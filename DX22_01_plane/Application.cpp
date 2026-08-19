@@ -50,6 +50,9 @@ void Application::Run()
 //-----------------------------------------------------------------------------
 bool Application::InitApp()
 {
+
+    ImGui_ImplWin32_EnableDpiAwareness();
+
     // インスタンスハンドルを取得
     auto hInst = GetModuleHandle(nullptr);
     if (hInst == nullptr)
@@ -295,6 +298,11 @@ LRESULT CALLBACK Application::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
         case WM_SETCURSOR: //カーソルの形を変更するメッセージ
         if (LOWORD(lParam) == HTCLIENT) {// ウィンドウのクライアント領域内であれば
+
+            if (ImGui::GetIO().WantCaptureMouse) {
+                return DefWindowProc(hWnd, uMsg, wParam, lParam);
+            }
+
             SetCursor(nullptr);// カーソルを非表示にする
             return TRUE;    // ウィンドウプロシージャで処理したことをOSに伝える
         }

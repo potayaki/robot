@@ -25,6 +25,9 @@ public:
     void SetActive(bool active) { isActive = active; }
 
    //誰から誰に
-    void Shoot(Object& shooter, Object& target);
+    void Shoot(Object& shooter, Object& target,float angleOffsetDebug);
+
+
+
 };
 

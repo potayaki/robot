@@ -83,6 +83,14 @@ void Game::Update() {
             // UI上で数値が変更されたら、プレイヤーの座標にセットし直す
             GUIPlayer[0]->SetPosition(posArray[0], posArray[1], posArray[2]);
         }
+
+        int currentRocket = GUIPlayer[0]->getCurRocket();
+        //1から4までの範囲でスライダーを作成
+        if (ImGui::SliderInt("Current Rocket", &currentRocket, 1, 4)) {
+            // UI上で数値が変更されたら、プレイヤーのミサイル数にセットし直す
+            GUIPlayer[0]->SetCurRocket(currentRocket);
+        }
+
     }
     else {
         // プレイヤーがいない時の安全な表示

@@ -8,7 +8,7 @@ class Bezier
 public:
     Bezier() = default;
 
-    void Create(Object& Player, Object& Enemy);
+    void Create(Object& Player, Object& Enemy,float angleOffsetDebug);
 
     void Update(float tick);
 

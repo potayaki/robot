@@ -1,18 +1,32 @@
 ﻿#include "Bezier.h"
 
-void Bezier::Create(Object& Player, Object& Enemy) {
+void Bezier::Create(Object& Player, Object& Enemy,float angleOffsetDebug) {
     m_Positions.clear();
 
     auto StartPos = Player.GetPosition();
     auto EndPos = Enemy.GetPosition();
-    auto ControlPos = DirectX::XMFLOAT3(
-        (StartPos.x + EndPos.x) / 2.0f,
-        100.0f,
-        (StartPos.z + EndPos.z) / 2.0f
-    );
+
+    DirectX::SimpleMath::Vector3 dir = EndPos - StartPos;
+    dir.y = 0.0f; // 水平方向のみにする
+    float dist = dir.Length();
+    if (dist > 0.0001f) {// 長さが十分にある場合のみ正規化
+        dir.Normalize();
+    }
+    else {
+        dir = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 1.0f); // デフォルトの方向
+    }
+
+    //指定された角度からY軸周りの回転を計算
+    float rad = DirectX::XMConvertToRadians(angleOffsetDebug);
+    DirectX::SimpleMath::Matrix rot = DirectX::SimpleMath::Matrix::CreateRotationY(rad);
+    DirectX::SimpleMath::Vector3 offsetDir = DirectX::SimpleMath::Vector3::TransformNormal(dir, rot);
+
+    //制御点の設定
+    DirectX::SimpleMath::Vector3 controlPoint = StartPos + offsetDir * (dist * 0.5f);
+    controlPoint.y += 100.0f; // 高さを上げる
 
     m_Positions.push_back(StartPos);
-    m_Positions.push_back(ControlPos);
+    m_Positions.push_back(controlPoint);
     m_Positions.push_back(EndPos);
 
     m_Time = 0.0f;

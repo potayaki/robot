@@ -163,8 +163,8 @@ void CMissile::Update() {
         }
     }
 
-    void CMissile::Shoot(Object & shooter, Object & target) {
+    void CMissile::Shoot(Object & shooter, Object & target,float angleOffsetDebug) {
 
-        m_bezier.Create(shooter, target); //ベジエ曲線を作成
+        m_bezier.Create(shooter, target,angleOffsetDebug); //ベジエ曲線を作成
 
     }
