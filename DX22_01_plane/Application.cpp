@@ -194,7 +194,7 @@ void Application::MainLoop()
            QueryPerformanceCounter(&liWork);// 現在時間を取得
            nowCount = liWork.QuadPart;
            // 1/60秒が経過したか？
-           if (nowCount >= oldCount + frequency / 60) {
+           if (nowCount >= oldCount + frequency /60) {
 
                // ゲーム更新
                Game::Update();

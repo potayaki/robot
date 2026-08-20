@@ -10,6 +10,12 @@
 
 #include"CPlayer.h"
 #include"CPlayerUI.h"
+#include"PoolManager.h"
+#include"CParticle.h"
+#include"CEnemy.h"
+#include"CEnemy.h"
+using ParticleManager = PoolManager<CParticle, 500>;
+
 Game* Game::m_instance;//ゲームインスタンス
 
 // コンストラクタ
@@ -35,8 +41,8 @@ void Game::Init() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.FontGlobalScale = 1.5f; // フォントのスケールを倍に設定
     ImGui::StyleColorsDark(); // ダークモードに設定
-
     // Win32とDX11用の初期化（既存の機能からWindowとDeviceをもらう）
     ImGui_ImplWin32_Init(Application::GetWindow());
     ImGui_ImplDX11_Init(Renderer::GetDevice(), Renderer::GetDeviceContext());
@@ -55,12 +61,24 @@ void Game::Init() {
 
 // 更新
 void Game::Update() {
+
+    static int slowMoLevel = 1;
+    static int frameCount = 0;
+    frameCount++;
+
+    // 現在のフレームでゲーム内時間を進めるかどうか
+    bool doUpdate = (slowMoLevel == 1) || (frameCount % slowMoLevel == 0);
+
     //シーン更新
     Input::Update();
     //シーン更新
-    m_instance->m_scene->Update();
-    // カメラ更新
-    m_instance->m_Camera.Update();
+
+    if (doUpdate) {
+        //シーン更新
+        m_instance->m_scene->Update();
+        // カメラ更新
+        m_instance->m_Camera.Update();
+    }
 
     RECT rect;
     GetClientRect(Application::GetWindow(), &rect);
@@ -72,9 +90,8 @@ void Game::Update() {
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    // ImGuiの描画処理
-    ImGui::Begin("Debug Window");
-    ImGui::Text("FPS: %.1f", 1.0f / ImGui::GetIO().DeltaTime);
+    //Imguiのウィンドウを作成
+    ImGui::Begin("Player Debug");
 
     //TODO : ここにImguiの描画処理を追加する
     std::vector<CPlayer*> GUIPlayer = GetInstance()->GetObjects<CPlayer>();
@@ -85,13 +102,18 @@ void Game::Update() {
         // テキストの場合
         // ImGui::Text("Player Position: (%.2f, %.2f, %.2f)", pos.x, pos.y, pos.z);
 
+        //--------------------------------------------------------------------------------
        // ImGuiのDragFloat3を使って座標を変更できるようにする
+        //--------------------------------------------------------------------------------
         float posArray[3] = { pos.x, pos.y, pos.z };
         if (ImGui::DragFloat3("Player Pos", posArray, 0.5f)) {
             // UI上で数値が変更されたら、プレイヤーの座標にセットし直す
             GUIPlayer[0]->SetPosition(posArray[0], posArray[1], posArray[2]);
         }
 
+        //-------------------------------------------------------------------------------------------
+        //  ミサイルの最大数を変更するスライダー
+        //-------------------------------------------------------------------------------------------
         int currentRocket = GUIPlayer[0]->getCurRocket();
         //1から4までの範囲でスライダーを作成
         if (ImGui::SliderInt("Current Rocket", &currentRocket, 1, 4)) {
@@ -99,9 +121,51 @@ void Game::Update() {
             GUIPlayer[0]->SetCurRocket(currentRocket);
         }
 
+        ImGui::Separator(); // 区切り線を追加
+
+        //-------------------------------------------------------------------------------------------
+        //  敵をスポーンさせるボタン
+        //-------------------------------------------------------------------------------------------
+        if (ImGui::Button("madadekiteinai Spawn Enemy")) {
+            int offsetX = 150;
+            int offsetZ = 50;
+            float randomX = (rand() % 40) - offsetX; // -20 ～ 20
+            float randomZ = (rand() % 40) - offsetZ; // 10 ～ 50
+            CEnemy* enemy = GetInstance()->AddObject<CEnemy>();
+            enemy->SetPosition(randomX, -3.0f, randomZ);
+            enemy->SetScale(1.0f, 1.0f, 1.0f);
+        }
+        //-------------------------------------------------------------------------------------------
+        //  スローモーションスライダー
+        //-------------------------------------------------------------------------------------------
+        ImGui::SliderInt("Slow Motion (1=Norm, 5=Slow)", &slowMoLevel, 1, 5);
+
+        Camera* cam = m_instance->GetCamera();
+        DirectX::SimpleMath::Vector3 camOffset = cam->Getoffset();
+        float offsetArr[3] = { camOffset.x, camOffset.y, camOffset.z };
+        if (ImGui::DragFloat3("Camera Offset", offsetArr, 0.5f)) {
+            cam->Setoffset(DirectX::SimpleMath::Vector3(offsetArr[0], offsetArr[1], offsetArr[2]));
+        }
+
+        ImGui::End();
+
+        //-------------------------------------------------------------------------------------------
+
+        // デバッグ情報の表示
+        ImGui::Begin("Game Debug");
+        ImGui::Text("FPS: %.1f", 1.0f / ImGui::GetIO().DeltaTime);
+
         ImGui::Text("Player HP: %d / %d", GUIPlayer[0]->GetHp(), GUIPlayer[0]->GetMaxHp());
 
         ImGui::Text("Missile Cooldown: %.2f / %.2f", GUIPlayer[0]->GetCurrentMissileTime(), GUIPlayer[0]->GetMissileTime());
+
+        std::vector<ParticleManager*> pMgrs = GetInstance()->GetObjects<ParticleManager>();
+        if (!pMgrs.empty()) {
+            int active = pMgrs[0]->GetActiveCount();
+            // 500は最大数。プログレスバーで視覚的に表示！
+            ImGui::Text("Particles:");
+            ImGui::ProgressBar((float)active / 500.0f, ImVec2(0.0f, 0.0f));
+        }
 
     }
     else {
@@ -109,19 +173,17 @@ void Game::Update() {
         ImGui::Text("Player is dead or not spawned.");
     }
 
-    
-
-    
-
     ImGui::End();
 
-    // テストオブジェクト更新
-    for (auto& a : m_instance->m_objects) {
-        a->Update();
-    }
+    if (doUpdate) {
+        // テストオブジェクト更新
+        for (auto& a : m_instance->m_objects) {
+            a->Update();
+        }
 
-    for (auto& a : m_instance->m_UIs) {
-        a->Update();
+        for (auto& a : m_instance->m_UIs) {
+            a->Update();
+        }
     }
 
     // 削除フラグ（IsDead）が立っているオブジェクトを一括削除
@@ -169,7 +231,7 @@ void Game::Draw() {
 
     Renderer::SetDepthEnable(false);
 
-    for (auto &a:m_instance->m_UIs) {
+    for (auto& a : m_instance->m_UIs) {
 
         a->Draw(&m_instance->m_Camera);
 
@@ -206,7 +268,7 @@ void Game::Uninit() {
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
-    
+
     Input::Release();
     // 描画終了処理
     Renderer::Uninit();

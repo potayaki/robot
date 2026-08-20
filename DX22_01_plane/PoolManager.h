@@ -52,4 +52,16 @@ public:
         }
         return nullptr; // 全て使用中の場合は nullptr
     }
+
+    //Debug
+    int GetActiveCount() const {
+        int count = 0;
+        for (const auto& obj : m_pool) {
+            if (obj->GetActive()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
 };      
