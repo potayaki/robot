@@ -77,7 +77,6 @@ void Game::Update() {
     ImGui::Text("FPS: %.1f", 1.0f / ImGui::GetIO().DeltaTime);
 
     //TODO : ここにImguiの描画処理を追加する
-
     std::vector<CPlayer*> GUIPlayer = GetInstance()->GetObjects<CPlayer>();
     if (!GUIPlayer.empty() && GUIPlayer[0] != nullptr) {
         // 現在の座標を取得
@@ -99,6 +98,10 @@ void Game::Update() {
             // UI上で数値が変更されたら、プレイヤーのミサイル数にセットし直す
             GUIPlayer[0]->SetCurRocket(currentRocket);
         }
+
+        ImGui::Text("Player HP: %d / %d", GUIPlayer[0]->GetHp(), GUIPlayer[0]->GetMaxHp());
+
+        ImGui::Text("Missile Cooldown: %.2f / %.2f", GUIPlayer[0]->GetCurrentMissileTime(), GUIPlayer[0]->GetMissileTime());
 
     }
     else {

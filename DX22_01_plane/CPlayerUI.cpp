@@ -2,6 +2,9 @@
 #include "Renderer.h"
 #include "Application.h"
 
+#include"Game.h"
+#include"CPlayer.h"
+
 CPlayerUI::CPlayerUI() {
     m_hpRate = 1.0f;       // 最初は満タン
     m_missileRate = 1.0f;  // 最初は満タン
@@ -48,11 +51,37 @@ void CPlayerUI::Init() {
 
 void CPlayerUI::Update() {
     //TODO : Debug用にHPとミサイルの割合を減らしていく
+    /*
     m_hpRate -= 0.005f;
     if (m_hpRate < 0.0f) m_hpRate = 1.0f;
 
     m_missileRate -= 0.01f;
     if (m_missileRate < 0.0f) m_missileRate = 1.0f;
+    */
+    std::vector<CPlayer*> players = Game::GetInstance()->GetObjects<CPlayer>();
+    if (!players.empty() && players[0] != nullptr) {
+
+        CPlayer* player = players[0];
+
+        // ① HPの割合を計算 (現在のHP ÷ 最大HP)
+        m_hpRate = (float)player->GetHp() / (float)player->GetMaxHp();
+
+        // ② ミサイルの割合を計算
+        // m_currentMissileTime は「撃てるまでの残り時間(120→0)」なので、
+        // 0の時にゲージ満タン(1.0)になるように逆算する
+        float maxTime = player->GetMissileTime();
+        float curTime = player->GetCurrentMissileTime();
+        if (maxTime > 0.0f) {
+            m_missileRate = 1.0f - (curTime / maxTime);
+        }
+
+        // 値が 0.0 ～ 1.0 の範囲外に行かないようにクランプ（安全対策）
+        if (m_hpRate < 0.0f) m_hpRate = 0.0f;
+        if (m_hpRate > 1.0f) m_hpRate = 1.0f;
+        if (m_missileRate < 0.0f) m_missileRate = 0.0f;
+        if (m_missileRate > 1.0f) m_missileRate = 1.0f;
+    }
+
 }
 
 void CPlayerUI::Draw(Camera* cam) {

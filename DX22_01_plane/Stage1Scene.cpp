@@ -67,7 +67,7 @@ void Stage1Scene::Init() {
    CParticle::Preload(); // パーティクル用のモデルを事前に読み込む
 
    CPlayerUI* CycleUI = Game::GetInstance()->AddUI<CPlayerUI>();
-   CycleUI->SetPosition(-555.0f, -260.0f, 0.0f);
+   CycleUI->SetPosition(-530.0f, -260.0f, 0.0f);
    CycleUI->SetScale(200.0f, 200.0f, 1.0f);
 
    /*

@@ -51,7 +51,13 @@ public:
 	DirectX::SimpleMath::Vector3 GetScale() const{ return m_Scale; }
 	
 	// 当たり判定用（車体の位置を返す）
-	DirectX::SimpleMath::Vector3 GetPosition() { return m_Position; }
+	//DirectX::SimpleMath::Vector3 GetPosition() { return m_Position; }
+
+    int GetHp() { return hp; }
+    int GetMaxHp() { return 100; }
+
+    float GetMissileTime() { return m_MissileTime; }
+    float GetCurrentMissileTime() { return m_currentMissileTime; }
 
     //debug用
     int getCurRocket() { return curRocket; }
