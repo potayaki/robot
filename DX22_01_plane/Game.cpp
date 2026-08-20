@@ -99,6 +99,10 @@ void Game::Update() {
         // 現在の座標を取得
         DirectX::SimpleMath::Vector3 pos = GUIPlayer[0]->GetPosition();
 
+
+
+        ImGui::Separator(); // 区切り線を追加
+
         // テキストの場合
         // ImGui::Text("Player Position: (%.2f, %.2f, %.2f)", pos.x, pos.y, pos.z);
 
@@ -121,11 +125,29 @@ void Game::Update() {
             GUIPlayer[0]->SetCurRocket(currentRocket);
         }
 
-        ImGui::Separator(); // 区切り線を追加
+        ImGui::End();
 
         //-------------------------------------------------------------------------------------------
-        //  敵をスポーンさせるボタン
+
+        // デバッグ情報の表示
+        ImGui::Begin("Game Debug");
+        ImGui::Text("FPS: %.1f", 1.0f / ImGui::GetIO().DeltaTime);
+
+        ImGui::Text("Player HP: %d / %d", GUIPlayer[0]->GetHp(), GUIPlayer[0]->GetMaxHp());
+
+        ImGui::Text("Missile Cooldown: %.2f / %.2f", GUIPlayer[0]->GetCurrentMissileTime(), GUIPlayer[0]->GetMissileTime());
+
+        std::vector<ParticleManager*> pMgrs = GetInstance()->GetObjects<ParticleManager>();
+        if (!pMgrs.empty()) {
+            int active = pMgrs[0]->GetActiveCount();
+            // 500は最大数。プログレスバーで視覚的に表示！
+            ImGui::Text("Particles:");
+            ImGui::ProgressBar((float)active / 500.0f, ImVec2(0.0f, 0.0f));
+        }
+
         //-------------------------------------------------------------------------------------------
+//  敵をスポーンさせるボタン
+//-------------------------------------------------------------------------------------------
         if (ImGui::Button("madadekiteinai Spawn Enemy")) {
             int offsetX = 150;
             int offsetZ = 50;
@@ -145,26 +167,6 @@ void Game::Update() {
         float offsetArr[3] = { camOffset.x, camOffset.y, camOffset.z };
         if (ImGui::DragFloat3("Camera Offset", offsetArr, 0.5f)) {
             cam->Setoffset(DirectX::SimpleMath::Vector3(offsetArr[0], offsetArr[1], offsetArr[2]));
-        }
-
-        ImGui::End();
-
-        //-------------------------------------------------------------------------------------------
-
-        // デバッグ情報の表示
-        ImGui::Begin("Game Debug");
-        ImGui::Text("FPS: %.1f", 1.0f / ImGui::GetIO().DeltaTime);
-
-        ImGui::Text("Player HP: %d / %d", GUIPlayer[0]->GetHp(), GUIPlayer[0]->GetMaxHp());
-
-        ImGui::Text("Missile Cooldown: %.2f / %.2f", GUIPlayer[0]->GetCurrentMissileTime(), GUIPlayer[0]->GetMissileTime());
-
-        std::vector<ParticleManager*> pMgrs = GetInstance()->GetObjects<ParticleManager>();
-        if (!pMgrs.empty()) {
-            int active = pMgrs[0]->GetActiveCount();
-            // 500は最大数。プログレスバーで視覚的に表示！
-            ImGui::Text("Particles:");
-            ImGui::ProgressBar((float)active / 500.0f, ImVec2(0.0f, 0.0f));
         }
 
     }
