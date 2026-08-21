@@ -21,9 +21,6 @@ using namespace DirectX::SimpleMath;
 #define CrosshairSize 64.0f  // クロスヘアのサイズ
 
 
-using BulletManager = PoolManager<CBullet, 100>;
-using MissileManager = PoolManager<CMissile, 20>;
-using ParticleManager = PoolManager<CParticle, 500>;
 
 
 // コンストラクタ

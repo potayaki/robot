@@ -9,6 +9,7 @@ private:
     std::vector<T*> m_pool; // プールのリスト
 
 public:
+    static const int MAXSIZE = Max_Size; // プールの最大サイズを定数として公開
     PoolManager() {}
     ~PoolManager() { Uninit(); } // ← 修正: チルダは全角から半角へ
 

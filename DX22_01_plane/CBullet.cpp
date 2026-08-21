@@ -6,7 +6,7 @@
 #include"Ground.h"
 #include"PoolManager.h"
 
-using ParticleManager = PoolManager<CParticle, 500>;
+
 
 CBullet::CBullet() {
 
@@ -71,6 +71,9 @@ void CBullet::Update() {
            trail->SetLife(20);
            trail->SetScale(DirectX::SimpleMath::Vector3(2.5f, 2.5f, 2.5f));
            trail->SetColor(DirectX::SimpleMath::Color(1.0f, 0.0f, 0.0f, 1.0f));
+       }
+       else {
+
        }
    }
 

@@ -14,7 +14,6 @@
 #include"CParticle.h"
 #include"CEnemy.h"
 #include"CEnemy.h"
-using ParticleManager = PoolManager<CParticle, 500>;
 
 Game* Game::m_instance;//ゲームインスタンス
 
@@ -119,8 +118,8 @@ void Game::Update() {
         //  ミサイルの最大数を変更するスライダー
         //-------------------------------------------------------------------------------------------
         int currentRocket = GUIPlayer[0]->getCurRocket();
-        //1から10までの範囲でスライダーを作成※MaxRocketは4なので、4以上に設定しても4に制限される
-        if (ImGui::SliderInt("Current Rocket", &currentRocket, 1, 10)) {
+        //1から20までの範囲でスライダーを作成※MaxRocketは20なので、20以上に設定しても20に制限される
+        if (ImGui::SliderInt("Current Rocket", &currentRocket, 1, 20)) {
             // UI上で数値が変更されたら、プレイヤーのミサイル数にセットし直す
             GUIPlayer[0]->SetCurRocket(currentRocket);
         }
@@ -142,7 +141,8 @@ void Game::Update() {
             int active = pMgrs[0]->GetActiveCount();
             // 500は最大数。プログレスバーで視覚的に表示！
             ImGui::Text("Particles:");
-            ImGui::ProgressBar((float)active / 500.0f, ImVec2(0.0f, 0.0f));
+            float MAX = ParticleManager::MAXSIZE;
+            ImGui::ProgressBar((float)active / MAX, ImVec2(0.0f, 0.0f));
         }
 
         //---------------------------------------------------------------------------------------

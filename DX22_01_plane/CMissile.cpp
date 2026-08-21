@@ -9,7 +9,6 @@
 
 #include"PoolManager.h"
 
-using ParticleManager = PoolManager<CParticle, 500>;
 
 CMissile::CMissile() {
 

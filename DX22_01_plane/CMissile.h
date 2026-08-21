@@ -2,6 +2,8 @@
 #include "Object.h"
 #include"TestModel.h"
 #include"Bezier.h"
+
+#include"PoolManager.h"
 class CMissile : public Object
 {
 private:
@@ -31,3 +33,4 @@ public:
 
 };
 
+using MissileManager = PoolManager<CMissile, 20>; // 20個のミサイルを管理するプールマネージャ

@@ -7,6 +7,7 @@
 #include"IndexBuffer.h"
 #include"Material.h"
 
+#include"PoolManager.h"
 enum ParticleType
 {
     Test,
@@ -58,4 +59,5 @@ public:
     static void Preload();
 
 };
+using ParticleManager = PoolManager<CParticle, 1000>; // 1000個のパーティクルを管理するプールマネージャ
 

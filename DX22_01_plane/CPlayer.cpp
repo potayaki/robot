@@ -7,8 +7,6 @@
 #include"CMissile.h"
 #include"PoolManager.h"
 
-using BulletManager = PoolManager<CBullet, 100>;
-using MissileManager = PoolManager<CMissile, 20>;
 
 using namespace DirectX::SimpleMath;
 
@@ -266,6 +264,7 @@ void CPlayer::StartMissile() {
 
                 std::vector<float>angles;
                 switch (curRocket) {
+                    //最大２０個まで
                     case 1:angles = { 0.0f }; break;
                     case 2:angles = { 90.0f, -90.0f }; break;
                     case 3:angles = { 90.0f, -90.0f, 0.0f }; break;
@@ -276,6 +275,16 @@ void CPlayer::StartMissile() {
                     case 8:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f }; break;
                     case 9:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 0.0f }; break;
                     case 10:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f }; break;
+                    case 11:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 0.0f }; break;
+                    case 12:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f }; break;
+                    case 13:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 0.0f }; break;
+                    case 14:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f }; break;
+                    case 15:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.0f }; break;
+                    case 16:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f }; break;
+                    case 17:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f, 0.0f }; break;
+                    case 18:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f, 0.46875f,-0.46875f }; break;
+                    case 19:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f, 0.46875f,-0.46875f, 0.0f }; break;
+                    case 20:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f, 0.46875f,-0.46875f, 0.234375f,-0.234375f }; break;
                 }
                 for (auto& a : angles) {
                     CMissile* missile = mManagers[0]->Spawn();
