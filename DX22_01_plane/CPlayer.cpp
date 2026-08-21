@@ -270,6 +270,12 @@ void CPlayer::StartMissile() {
                     case 2:angles = { 90.0f, -90.0f }; break;
                     case 3:angles = { 90.0f, -90.0f, 0.0f }; break;
                     case 4:angles = { 90.0f, -90.0f, 45.0f,-45.0f }; break;
+                    case 5:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 0.0f }; break;
+                    case 6:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f }; break;
+                    case 7:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 0.0f }; break;
+                    case 8:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f }; break;
+                    case 9:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 0.0f }; break;
+                    case 10:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f }; break;
                 }
                 for (auto& a : angles) {
                     CMissile* missile = mManagers[0]->Spawn();

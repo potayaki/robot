@@ -7,7 +7,7 @@ class CPlayer : public Object
 {
 private:
      int curRocket = 1;//現在のミサイルの最大数
-     const int maxRocket = 4;//最大ミサイル数
+     const int maxRocket = 10;//最大ミサイル数
 	TestCube* m_body;//body
 
     float  m_BulletTime = 60 * 0.1;//60フレームで０．５秒間隔で打つ用の保存
