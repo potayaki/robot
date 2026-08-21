@@ -1,22 +1,25 @@
-﻿#include "Game.h"
+﻿#include"Application.h"//GetWindow()を使うために必要
+#include "Game.h"
 #include "Renderer.h"
 #include"input.h"
 #include"billboard.h"
 
+#ifdef _DEBUG
 #include"imgui.h"
 #include"imgui_impl_dx11.h"
 #include"imgui_impl_win32.h"
-#include"Application.h"//GetWindow()を使うために必要
+
+
 
 #include"CPlayer.h"
 #include"CPlayerUI.h"
 #include"PoolManager.h"
 #include"CParticle.h"
 #include"CEnemy.h"
-#include"CEnemy.h"
-
+#include"CBullet.h"
+#include"CMissile.h"
+#endif
 Game* Game::m_instance;//ゲームインスタンス
-
 // コンストラクタ
 Game::Game() {
     m_scene = nullptr;
@@ -36,6 +39,9 @@ void Game::Init() {
     Renderer::Init();
     Input::Create();
 
+#ifdef _DEBUG
+
+
     //Imgui初期化
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -45,6 +51,7 @@ void Game::Init() {
     // Win32とDX11用の初期化（既存の機能からWindowとDeviceをもらう）
     ImGui_ImplWin32_Init(Application::GetWindow());
     ImGui_ImplDX11_Init(Renderer::GetDevice(), Renderer::GetDeviceContext());
+#endif // _DEBUG
 
     RECT clientRect{};
     GetClientRect(Application::GetWindow(), &clientRect);
@@ -78,6 +85,60 @@ void Game::Update() {
         // カメラ更新
         m_instance->m_Camera.Update();
     }
+    if (doUpdate) {
+        // テストオブジェクト更新
+        for (auto& a : m_instance->m_objects) {
+            a->Update();
+        }
+
+        for (auto& a : m_instance->m_UIs) {
+            a->Update();
+        }
+    }
+
+    // 削除フラグ（IsDead）が立っているオブジェクトを一括削除
+    std::erase_if(m_instance->m_objects, [](const std::unique_ptr<Object>& obj) {
+        if (obj->IsDead()) {
+            obj->Uninit();
+            return true;
+        }
+        return false;
+    });
+
+    std::erase_if(m_instance->m_UIs, [](const std::unique_ptr<Object>& obj) {
+        if (obj->IsDead()) {
+            obj->Uninit();
+            return true;
+        }
+        return false;
+    });
+
+    //追加待ちオブジェクトの追加
+    for (auto& addObj : m_instance->m_addObjects) {
+        m_instance->m_objects.emplace_back(std::move(addObj));
+    }
+    m_instance->m_addObjects.clear();
+
+    for (auto& addObj : m_instance->m_addUIs) {
+        m_instance->m_UIs.emplace_back(std::move(addObj));
+    }
+    m_instance->m_addUIs.clear();
+
+#ifdef _DEBUG
+    //TODO : ここにImguiの描画処理を追加する
+    std::vector<CPlayer*> GUIPlayer = GetInstance()->GetObjects<CPlayer>();
+
+    if (Input::GetKeyPress(VK_1)) {
+        // 現在のHPから1引いた値をセットする
+        GUIPlayer[0]->SetHP(100);
+    }
+
+    //Debug用のキー設定
+    if (Input::GetKeyPress(VK_2)) {
+        // 現在のHPから1引いた値をセットする
+        GUIPlayer[0]->SetHP(GUIPlayer[0]->GetHp() - 1);
+    }
+
 
     RECT rect;
     GetClientRect(Application::GetWindow(), &rect);
@@ -92,8 +153,6 @@ void Game::Update() {
     //Imguiのウィンドウを作成
     ImGui::Begin("Player Debug");
 
-    //TODO : ここにImguiの描画処理を追加する
-    std::vector<CPlayer*> GUIPlayer = GetInstance()->GetObjects<CPlayer>();
     if (!GUIPlayer.empty() && GUIPlayer[0] != nullptr) {
         // 現在の座標を取得
         DirectX::SimpleMath::Vector3 pos = GUIPlayer[0]->GetPosition();
@@ -136,6 +195,10 @@ void Game::Update() {
 
         ImGui::Text("Missile Cooldown: %.2f / %.2f", GUIPlayer[0]->GetCurrentMissileTime(), GUIPlayer[0]->GetMissileTime());
 
+    
+        //-------------------------------------------------------------------------------------------
+        //Particleのオブジェクトプール表示
+        //-------------------------------------------------------------------------------------------
         std::vector<ParticleManager*> pMgrs = GetInstance()->GetObjects<ParticleManager>();
         if (!pMgrs.empty()) {
             int active = pMgrs[0]->GetActiveCount();
@@ -143,6 +206,29 @@ void Game::Update() {
             ImGui::Text("Particles:");
             float MAX = ParticleManager::MAXSIZE;
             ImGui::ProgressBar((float)active / MAX, ImVec2(0.0f, 0.0f));
+        }
+
+        
+        std::vector<BulletManager*> bMgrs = GetInstance()->GetObjects<BulletManager>();
+        if (!bMgrs.empty()) {
+            int active = bMgrs[0]->GetActiveCount();
+            ImGui::Text("Bullets:");
+            float maxCount = (float)BulletManager::MAXSIZE;
+            // わかりやすいように色を変えることもできます（例：黄色）
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.8f, 0.8f, 0.0f, 1.0f));
+            ImGui::ProgressBar((float)active / maxCount, ImVec2(0.0f, 0.0f));
+            ImGui::PopStyleColor();
+        }
+
+        std::vector<MissileManager*> mMgrs = GetInstance()->GetObjects<MissileManager>();
+        if (!mMgrs.empty()) {
+            int active = mMgrs[0]->GetActiveCount();
+            ImGui::Text("Missiles:");
+            float maxCount = (float)MissileManager::MAXSIZE;
+            // ミサイルは赤色にしてみる
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+            ImGui::ProgressBar((float)active / maxCount, ImVec2(0.0f, 0.0f));
+            ImGui::PopStyleColor();
         }
 
         //---------------------------------------------------------------------------------------
@@ -177,45 +263,8 @@ void Game::Update() {
 
     ImGui::End();
 
-    if (doUpdate) {
-        // テストオブジェクト更新
-        for (auto& a : m_instance->m_objects) {
-            a->Update();
-        }
-
-        for (auto& a : m_instance->m_UIs) {
-            a->Update();
-        }
-    }
-
-    // 削除フラグ（IsDead）が立っているオブジェクトを一括削除
-    std::erase_if(m_instance->m_objects, [](const std::unique_ptr<Object>& obj) {
-        if (obj->IsDead()) {
-            obj->Uninit();
-            return true;
-        }
-        return false;
-    });
-
-    std::erase_if(m_instance->m_UIs, [](const std::unique_ptr<Object>& obj) {
-        if (obj->IsDead()) {
-            obj->Uninit();
-            return true;
-        }
-        return false;
-    });
-
-    //追加待ちオブジェクトの追加
-    for (auto& addObj : m_instance->m_addObjects) {
-        m_instance->m_objects.emplace_back(std::move(addObj));
-    }
-    m_instance->m_addObjects.clear();
-
-    for (auto& addObj : m_instance->m_addUIs) {
-        m_instance->m_UIs.emplace_back(std::move(addObj));
-    }
-    m_instance->m_addUIs.clear();
-
+#endif // _DEBUG
+   
 }
 
 // 描画
@@ -240,9 +289,12 @@ void Game::Draw() {
     }
 
     Renderer::SetDepthEnable(true);
+#ifdef _DEBUG
+
 
     ImGui::Render();//DrawEndの前に呼ぶ
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+#endif // _DEBUG
 
     // 描画後処理
     Renderer::DrawEnd();
@@ -265,11 +317,14 @@ void Game::Uninit() {
     for (auto& a : m_instance->m_UIs) {
         a->Uninit();
     }
+#ifdef _DEBUG
+
 
     // ImGui終了処理
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
+#endif // _DEBUG
 
     Input::Release();
     // 描画終了処理

@@ -2,12 +2,17 @@
 #include <thread>
 #include "Application.h"
 #include "Game.h"
-#include"imgui_impl_win32.h"
+#ifdef _DEBUG
 
+
+#include"imgui_impl_win32.h"
+#include"imgui.h"
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+#endif // _DEBUG
 const auto ClassName = TEXT("2022 framework ひな型");     //ウィンドウクラス名
 const auto WindowName = TEXT("2023 framework ひな型");    //ウィンドウ名
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 HINSTANCE  Application::m_hInst;   // インスタンスハンドル
 HWND       Application::m_hWnd;    // ウィンドウハンドル
@@ -51,7 +56,7 @@ void Application::Run()
 bool Application::InitApp()
 {
 
-   
+    SetProcessDPIAware();
 
     // インスタンスハンドルを取得
     auto hInst = GetModuleHandle(nullptr);
@@ -222,9 +227,12 @@ LRESULT CALLBACK Application::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 {
     static bool isFullscreen = true;
     static bool isMessageBoxShowed = false;
+#ifdef _DEBUG
+
 
     if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
         return true;
+#endif // _DEBUG
 
     switch (uMsg)
     {
@@ -299,9 +307,13 @@ LRESULT CALLBACK Application::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
         case WM_SETCURSOR: //カーソルの形を変更するメッセージ
         if (LOWORD(lParam) == HTCLIENT) {// ウィンドウのクライアント領域内であれば
 
+#ifdef _DEBUG
+
+
             if (ImGui::GetIO().WantCaptureMouse) {
                 return DefWindowProc(hWnd, uMsg, wParam, lParam);
             }
+#endif // _DEBUG
 
             SetCursor(nullptr);// カーソルを非表示にする
             return TRUE;    // ウィンドウプロシージャで処理したことをOSに伝える

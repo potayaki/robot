@@ -36,5 +36,5 @@ public:
 	// 最初に発射方向と初期位置をする関数
 	void Shoot(DirectX::SimpleMath::Vector3 player, DirectX::SimpleMath::Vector3 dir);
 };
-using BulletManager = PoolManager<CBullet, 200>; // 100個の弾を管理するプールマネージャ
+using BulletManager = PoolManager<CBullet, 30>; // 30個の弾を管理するプールマネージャ
 

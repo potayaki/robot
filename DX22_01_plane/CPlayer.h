@@ -59,10 +59,12 @@ public:
     float GetMissileTime() { return m_MissileTime; }
     float GetCurrentMissileTime() { return m_currentMissileTime; }
 
+
+
     //debug用
     int getCurRocket() { return curRocket; }
     void SetCurRocket(int num) {
-
+            
         //debug用にミサイルの最大数を設定する
         if (num < 1) {
             num = 1;
@@ -71,6 +73,10 @@ public:
             num = maxRocket;
         }
         curRocket = num;
+    }
+
+    void SetHP(int num) {
+        hp = num;
     }
 
 };

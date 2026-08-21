@@ -33,4 +33,4 @@ public:
 
 };
 
-using MissileManager = PoolManager<CMissile, 20>; // 20個のミサイルを管理するプールマネージャ
+using MissileManager = PoolManager<CMissile, 25>; // 20個のミサイルを管理するプールマネージャ
