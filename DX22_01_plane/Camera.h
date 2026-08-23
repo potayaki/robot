@@ -18,6 +18,8 @@ private:
 
 	float speed = 1.0f;
 
+    int m_Width;
+
 	DirectX::SimpleMath::Vector3 offset = DirectX::SimpleMath::Vector3(0.0f, 30.0f, -150.0f);
 
 public:

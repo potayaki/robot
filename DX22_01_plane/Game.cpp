@@ -62,7 +62,7 @@ void Game::Init() {
     //最初のシーンを読み込む
     m_instance->m_scene = new Stage1Scene;//TODO:最初のシーンをタイトルシーンにする
 
-
+    
 }
 
 // 更新

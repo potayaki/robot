@@ -14,6 +14,8 @@ void Camera::Init() {
 	m_Target = Vector3(0.0f, 0.0f, 0.0f);
 	m_CameraDirection = 3.14f;
 
+    m_Width = Application::GetWidth();
+
 }
 
 
@@ -23,7 +25,9 @@ void Camera::Init() {
 void Camera::Update() {
 	//Debug用のカメラ操作
 
-	
+#ifdef _DEBUG
+
+
 	if (Input::GetKeyPress(VK_K)) {
 		m_CameraDirection += 0.02f;
 	}
@@ -31,6 +35,7 @@ void Camera::Update() {
 		m_CameraDirection -= 0.02f;
 	}
 
+    /*
 	if (Input::GetKeyPress(VK_LEFT)) {
 		m_Target.x -= speed;
 	}
@@ -43,6 +48,31 @@ void Camera::Update() {
 	if (Input::GetKeyPress(VK_DOWN)) {
 		m_Target.z -= speed;
 	}
+    */
+#endif // _DEBUG
+
+    //現在のウィンドウの幅取得
+    //TODO : 毎回ウィンドウの幅取ってるからInitのm_Widthを使う
+    RECT clientRect;
+    GetClientRect(Application::GetWindow(), &clientRect);
+    int Width = clientRect.right - clientRect.left;
+
+    //マウスの現在地を取得
+    POINT MousePos;
+    GetCursorPos(&MousePos);
+    ScreenToClient(Application::GetWindow(), &MousePos);
+
+    //TODO : 画面端のどのくらいの幅で回転するか
+    const int edgeWidth = 30;
+    const float RotationSpeed = 0.02f;
+
+    //右端
+    if (MousePos.x >= Width - edgeWidth) {
+        m_CameraDirection += RotationSpeed;
+    }
+    else if (MousePos.x <= edgeWidth) {
+        m_CameraDirection -= RotationSpeed;
+    }
 
 	Vector3 pos = m_Target;
 	pos.y += 20;
