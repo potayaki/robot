@@ -56,6 +56,7 @@ void CPlayer::Update() {
 
 
     m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z);
+    m_body->SetRotation(m_Rotation);
 }
 
 void CPlayer::Draw(Camera* cam) {
@@ -82,17 +83,33 @@ void CPlayer::Uninit() {
 }
 
 void CPlayer::Move() {
-    if (Input::GetKeyPress(VK_A)) {
-        m_Position.x -= speed;
-    }
-    if (Input::GetKeyPress(VK_D)) {
-        m_Position.x += speed;
-    }
-    if (Input::GetKeyPress(VK_W)) {
-        m_Position.z += speed;
-    }
-    if (Input::GetKeyPress(VK_S)) {
-        m_Position.z -= speed;
+
+    Camera* cam = Game::GetInstance()->GetCamera();
+    float angle = cam->GetCameraDirection();
+
+    float fwdX = -sinf(angle);
+    float fwdZ = -cosf(angle);
+    float rightX = -cosf(angle);
+    float rightZ = sinf(angle);
+
+    float moveX = 0.0f;
+    float moveZ = 0.0f;
+
+    if (Input::GetKeyPress(VK_W)) { moveX += fwdX; moveZ += fwdZ; }
+    if (Input::GetKeyPress(VK_S)) { moveX -= fwdX; moveZ -= fwdZ; }
+    if (Input::GetKeyPress(VK_D)) { moveX += rightX; moveZ += rightZ; }
+    if (Input::GetKeyPress(VK_A)) { moveX -= rightX; moveZ -= rightZ; }
+
+    DirectX::SimpleMath::Vector3 movedir(moveX, 0.0f, moveZ);
+
+    if (movedir.LengthSquared() > 0.0f) {
+        movedir.Normalize();
+
+        m_Position.x += movedir.x * speed;
+        m_Position.z += movedir.z * speed;
+
+        m_Rotation.y = atan2f(movedir.x, movedir.z);
+
     }
 
     if (Input::GetKeyTrigger(VK_SPACE) && IsGrounded) {

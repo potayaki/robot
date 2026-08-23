@@ -38,4 +38,12 @@ public:
     DirectX::SimpleMath::Vector3 Getoffset() const { return offset; }
     void Setoffset(DirectX::SimpleMath::Vector3 off) { offset = off; }
 
+
+
+
+    float GetCameraDirection()const {
+        return m_CameraDirection;
+    }
+
+
 };

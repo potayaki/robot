@@ -63,7 +63,7 @@ void Camera::Update() {
     ScreenToClient(Application::GetWindow(), &MousePos);
 
     //TODO : 画面端のどのくらいの幅で回転するか
-    const int edgeWidth = 30;
+    const int edgeWidth = 100;
     const float RotationSpeed = 0.02f;
 
     //右端
@@ -90,11 +90,16 @@ void Camera::Update() {
 			Vector3	playerpos = player[0]->GetPosition();
 			m_Position = playerpos + offset;
 			SetTarget(playerpos);
-		}
-		
+
+            float radius = sqrt(offset.x * offset.x + offset.z * offset.z); //初期値なら150
+            Vector3 rotatedOffset;
+            rotatedOffset.x = sin(m_CameraDirection) * radius;
+            rotatedOffset.y = offset.y;
+            rotatedOffset.z = cos(m_CameraDirection) * radius;
+
+            m_Position = playerpos + rotatedOffset;
+		}	
 	}
-
-
 }
 
 //=======================================
