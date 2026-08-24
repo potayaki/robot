@@ -13,6 +13,7 @@ protected:
 	Shader m_Shader; // シェーダー
 
     bool m_Dead = false; //オブジェクトが死んでいるかどうかのフラグ
+    bool m_Active = true;
 public:
 	virtual ~Object();//仮想デストラクタ
 
@@ -45,6 +46,14 @@ public:
 
     void Destroy() { m_Dead = true; } //オブジェクトを破棄する
     bool IsDead() const { return m_Dead; } //オブジェクトが死んでいるかどうかを返す
+
+    void SetActive(bool active) {
+        m_Active = active;
+    }
+
+    bool GetActive() const {
+        return m_Active;
+    }
 
 };
 

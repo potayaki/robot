@@ -109,7 +109,7 @@ void billboard::Update() {
 
                 m_currentFrame = m_maxFrames - 1; // 最後の画像で止める
 
-                Destroy(); // 再生終了で自分を消す
+                SetActive(false);
             }
         }
     }

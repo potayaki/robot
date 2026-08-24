@@ -2,7 +2,7 @@
 #include "Object.h"
 #include"TestModel.h"
 #include"Bezier.h"
-
+#include"billboard.h"
 #include"PoolManager.h"
 class CMissile : public Object
 {
@@ -34,3 +34,4 @@ public:
 };
 
 using MissileManager = PoolManager<CMissile, 25>; // 20個のミサイルを管理するプールマネージャ
+using ExplosinManager = PoolManager<billboard, 16>;

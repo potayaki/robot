@@ -78,7 +78,7 @@ void Stage1Scene::Init() {
    m_MySceneObjects.push_back(Game::GetInstance()->AddObject<BulletManager>());
    m_MySceneObjects.push_back(Game::GetInstance()->AddObject<MissileManager>());
    m_MySceneObjects.push_back(Game::GetInstance()->AddObject<ParticleManager>());
-
+   m_MySceneObjects.push_back(Game::GetInstance()->AddObject<ExplosinManager>());
 }
 
 

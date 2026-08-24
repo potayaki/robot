@@ -127,10 +127,16 @@ void CMissile::Update() {
                     //billboardのエフェクトを生成
 
 
-                    billboard* b = Game::GetInstance()->AddObject<billboard>();
-                    b->SetPosition(m_Position.x, m_Position.y, m_Position.z);
-                    b->SetScale(200.0f, 200.0f, 200.0f);
-                    b->SetAnim(0.07f, false); // アニメーション速度とループ設定
+                    std::vector<ExplosinManager*>managers = Game::GetInstance()->GetObjects<ExplosinManager>();
+                    if (!managers.empty()) {
+                        billboard* b = managers[0]->Spawn();
+                        if (b) {
+
+                            b->SetPosition(m_Position.x, m_Position.y, m_Position.z);
+                            b->SetScale(200.0f, 200.0f, 200.0f);
+                            b->SetAnim(0.07f, false); // アニメーション速度とループ設定
+                        }
+                    }
 
 
 
@@ -148,22 +154,22 @@ void CMissile::Update() {
 
     }
 }
-    void CMissile::Draw(Camera * cam) {
-        if (m_body) {
-            m_body->Draw(cam);
-        }
+void CMissile::Draw(Camera* cam) {
+    if (m_body) {
+        m_body->Draw(cam);
     }
+}
 
-    void CMissile::Uninit() {
-        if (m_body) {
-            m_body->Uninit();
-            delete m_body;
-            m_body = nullptr;
-        }
+void CMissile::Uninit() {
+    if (m_body) {
+        m_body->Uninit();
+        delete m_body;
+        m_body = nullptr;
     }
+}
 
-    void CMissile::Shoot(Object & shooter, Object & target,float angleOffsetDebug) {
+void CMissile::Shoot(Object& shooter, Object& target, float angleOffsetDebug) {
 
-        m_bezier.Create(shooter, target,angleOffsetDebug); //ベジエ曲線を作成
+    m_bezier.Create(shooter, target, angleOffsetDebug); //ベジエ曲線を作成
 
-    }
+}
