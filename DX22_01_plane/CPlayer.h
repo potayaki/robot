@@ -79,5 +79,9 @@ public:
         hp = num;
     }
 
+    Collision::Sphere GetCollisionSphere()override {
+        return { m_Position,10.0f };//半径10
+    }
+
 };
 

@@ -311,12 +311,14 @@ void Game::Uninit() {
 
     billboard::ReleaseTextures();//ビルボードのテクスチャ解放
 
+    /*
     for (auto& a : m_instance->m_objects) {
         a->Uninit();
     }
     for (auto& a : m_instance->m_UIs) {
         a->Uninit();
     }
+    */
 #ifdef _DEBUG
 
 

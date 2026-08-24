@@ -133,7 +133,7 @@ void CPlayer::isGrounded() {
     std::vector<Ground*>grounds = Game::GetInstance()->GetObjects<Ground>();
     if (!grounds.empty()) {//groundsの中が空っぽかそうか１つ以上作られたか
         Ground* plane = grounds[0];
-        float planeY = plane->GetPosition().y + 10.0f;//床座標の取得 + 微調整
+        float planeY = plane->GetPosition().y + GetCollisionSphere().radius;//床座標の取得 +半径
 
         if (m_Position.y <= planeY) {//床に着いているか
             m_Position.y = planeY;

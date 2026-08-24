@@ -21,7 +21,7 @@ void CEnemy::Update() {
 
 	if (!grounds.empty()) {//groundsの中が空っぽかそうか１つ以上作られたか
 		Ground* plane = grounds[0];
-		float planeY = plane->GetPosition().y+10.0f ;//床座標の取得 + 微調整
+		float planeY = plane->GetPosition().y+GetCollisionSphere().radius;//床座標の取得 +　自身の半径
 
 		if (m_Position.y <= planeY) {
 			m_Position.y = planeY;

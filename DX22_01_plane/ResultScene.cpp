@@ -1,36 +1,36 @@
-#include "ResultScene.h"
+ï»¿#include "ResultScene.h"
 #include "Game.h"
 #include "Input.h"
 #include"Texture2D.h"
 #include"TitleScene.h"
-// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 ResultScene::ResultScene()
 {
 	Init();
 
 }
 
-// ƒfƒXƒgƒ‰ƒNƒ^
+// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 ResultScene::~ResultScene()
 {
 	Uninit();
 }
 
 
-// ‰Šú‰»
+// åˆæœŸåŒ–
 void ResultScene::Init()
 {
 //Renderer::SetClearColor(0.2f, 0.2f, 0.2f);
 
 }
 
-// XV
+// æ›´æ–°
 void ResultScene::Update()
 {
 	/*
 	Scene::Update();
 
-	// ƒGƒ“ƒ^[ƒL[‚ğ‰Ÿ‚µ‚Äƒ^ƒCƒgƒ‹‚Ö
+	// ã‚¨ãƒ³ã‚¿ãƒ¼ã‚­ãƒ¼ã‚’æŠ¼ã—ã¦ã‚¿ã‚¤ãƒˆãƒ«ã¸
 	if (Input::GetKeyTrigger(VK_SPACE))
 	{
 		//Game::GetInstance()->ChangeScene<TitleScene>();
@@ -40,38 +40,44 @@ void ResultScene::Update()
 
 }
 
-// I—¹ˆ—
+// çµ‚äº†å‡¦ç†
 void ResultScene::Uninit()
 {
 	
 }
 
 void ResultScene::Setscore(int c) {
+    if (m_MySceneObjects.size() <= 1) {
+        return;
+    }
 	Texture2D* stringObj = dynamic_cast<Texture2D*>(m_MySceneObjects[1]);
+    if (stringObj == nullptr) {
+        return;
+    }
 	switch (c) {
 		case -4:
-		stringObj->SetUV(1, 2, 1, 13);//-4ƒRƒ“ƒhƒ‹
+		stringObj->SetUV(1, 2, 1, 13);//-4ã‚³ãƒ³ãƒ‰ãƒ«
 		break;
 		case -3:
-		stringObj->SetUV(1, 3, 1, 13);//-3ƒAƒ‹ƒoƒgƒƒX
+		stringObj->SetUV(1, 3, 1, 13);//-3ã‚¢ãƒ«ãƒãƒˆãƒ­ã‚¹
 		break;
 		case -2:
-		stringObj->SetUV(1, 4, 1, 13);//-2ƒC[ƒOƒ‹
+		stringObj->SetUV(1, 4, 1, 13);//-2ã‚¤ãƒ¼ã‚°ãƒ«
 		break;
 		case -1:
-		stringObj->SetUV(1, 5, 1, 13);//-1ƒo[ƒfƒB
+		stringObj->SetUV(1, 5, 1, 13);//-1ãƒãƒ¼ãƒ‡ã‚£
 		break;
 		case 0:
 		stringObj->SetUV(1, 6, 1, 13);//Par
 		break;
 		case 1:
-		stringObj->SetUV(1, 7, 1, 13);//+1ƒ{ƒM[
+		stringObj->SetUV(1, 7, 1, 13);//+1ãƒœã‚®ãƒ¼
 		break;
 		case 2:
-		stringObj->SetUV(1, 8, 1, 13);//+2ƒ_ƒuƒ‹ƒ{ƒM[
+		stringObj->SetUV(1, 8, 1, 13);//+2ãƒ€ãƒ–ãƒ«ãƒœã‚®ãƒ¼
 		break;
 		case 3:
-		stringObj->SetUV(1, 9, 1, 13);//+3ƒgƒŠƒvƒ‹ƒ{ƒM[
+		stringObj->SetUV(1, 9, 1, 13);//+3ãƒˆãƒªãƒ—ãƒ«ãƒœã‚®ãƒ¼
 		break;
 		case 4:
 		stringObj->SetUV(1, 10, 1, 13);//+4
