@@ -6,7 +6,12 @@
 #include"CBullet.h"
 #include"CMissile.h"
 #include"PoolManager.h"
+#include<algorithm>
 
+struct TargetInfo {
+    CEnemy* enemy;
+    float dotScore;//1.0に近いほど真ん中naiseki
+};
 
 using namespace DirectX::SimpleMath;
 
@@ -125,7 +130,7 @@ void CPlayer::Move() {
         StartMissile();
     }
 
-   
+
 
 }
 
@@ -266,58 +271,87 @@ void CPlayer::StartMissile() {
     if (m_currentMissileTime <= 0) {
         //敵の取得
         std::vector<CEnemy*> enemys = Game::GetInstance()->GetObjects<CEnemy>();
+        std::vector<MissileManager*> mManagers = Game::GetInstance()->GetObjects<MissileManager>();
 
 
 
-        if (!enemys.empty()) {//敵が存在する場合
-            CEnemy* target = enemys[0]; //最初の敵をターゲットにする
-            std::vector<MissileManager*> mManagers = Game::GetInstance()->GetObjects<MissileManager>();
+        if (enemys.empty() || mManagers.empty()) {
+            return;
+        }
+       
+        Camera* camera = Game::GetInstance()->GetCamera();
+        Vector3 rayOrigin, rayDirection;
+        if (camera != nullptr) {
+            camera->GetMouseRay(rayOrigin, rayDirection);
+        }
+        std::vector<TargetInfo>Targets;
+
+        for (auto& enemy : enemys) {
+            //カメラから敵へのベクトル
+            Vector3 toEnemy = enemy->GetPosition() - rayOrigin;
+            toEnemy.Normalize();
+
+            //マウスの方向と敵方向の角度の内積計算
+            float dot = rayDirection.Dot(toEnemy);
+
+            if (dot > 0.99f) {//TODO : 判定以上の場合ロックオン対象になる
+                Targets.push_back({ enemy,dot });
+            }
+        }
+
+        if (Targets.empty()) {
+            //誰もいなかった場合
+            //Targets.push_back({ enemys[0],1.0f });
+        }
+        else {
+            //真ん中に近い順番に並べる
+            std::sort(Targets.begin(), Targets.end(), [](const TargetInfo& a, const TargetInfo& b) {
+                return a.dotScore > b.dotScore;
+        });
+
+            std::vector<float>angles;
+            switch (curRocket) {
+                //最大２０個まで
+                case 1:angles = { 0.0f }; break;
+                case 2:angles = { 90.0f, -90.0f }; break;
+                case 3:angles = { 90.0f, -90.0f, 0.0f }; break;
+                case 4:angles = { 90.0f, -90.0f, 45.0f,-45.0f }; break;
+                case 5:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 0.0f }; break;
+                case 6:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f }; break;
+                case 7:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 0.0f }; break;
+                case 8:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f }; break;
+                case 9:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 0.0f }; break;
+                case 10:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f }; break;
+                case 11:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 0.0f }; break;
+                case 12:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f }; break;
+                case 13:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 0.0f }; break;
+                case 14:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f }; break;
+                case 15:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.0f }; break;
+                case 16:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f }; break;
+                case 17:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f, 0.0f }; break;
+                case 18:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f, 0.46875f,-0.46875f }; break;
+                case 19:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f, 0.46875f,-0.46875f, 0.0f }; break;
+                case 20:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f, 0.46875f,-0.46875f, 0.234375f,-0.234375f }; break;
+            }
 
 
-            if (!mManagers.empty()) {
-
-                std::vector<float>angles;
-                switch (curRocket) {
-                    //最大２０個まで
-                    case 1:angles = { 0.0f }; break;
-                    case 2:angles = { 90.0f, -90.0f }; break;
-                    case 3:angles = { 90.0f, -90.0f, 0.0f }; break;
-                    case 4:angles = { 90.0f, -90.0f, 45.0f,-45.0f }; break;
-                    case 5:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 0.0f }; break;
-                    case 6:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f }; break;
-                    case 7:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 0.0f }; break;
-                    case 8:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f }; break;
-                    case 9:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 0.0f }; break;
-                    case 10:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f }; break;
-                    case 11:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 0.0f }; break;
-                    case 12:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f }; break;
-                    case 13:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 0.0f }; break;
-                    case 14:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f }; break;
-                    case 15:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.0f }; break;
-                    case 16:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f }; break;
-                    case 17:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f, 0.0f }; break;
-                    case 18:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f, 0.46875f,-0.46875f }; break;
-                    case 19:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f, 0.46875f,-0.46875f, 0.0f }; break;
-                    case 20:angles = { 90.0f, -90.0f, 45.0f,-45.0f, 30.0f,-30.0f, 15.0f,-15.0f, 7.5f,-7.5f, 3.75f,-3.75f, 1.875f,-1.875f, 0.9375f,-0.9375f, 0.46875f,-0.46875f, 0.234375f,-0.234375f }; break;
+            for (size_t i = 0; i < angles.size(); i++) {
+                CMissile* missile = mManagers[0]->Spawn();
+                if (missile != nullptr) {
+                    // i をターゲットの数で割った余り（%）を使うことで、A→B→C→A→B... と順番に配る！
+                    CEnemy* target = Targets[i % Targets.size()].enemy;
+                    missile->Shoot(*this, *target, angles[i]);
                 }
-                for (auto& a : angles) {
-                    CMissile* missile = mManagers[0]->Spawn();
-                    if (missile != nullptr) {
-                        missile->Shoot(*this, *target, a);//プレイヤーとターゲットの敵を渡す
-                    }
-                }
-
-
             }
 
 
 
             m_currentMissileTime = m_MissileTime; // ミサイルの発射後のクールダウン時間をリセット（2秒）
 
+
         }
+
     }
-
-
 
 
 }

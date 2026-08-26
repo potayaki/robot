@@ -37,17 +37,25 @@ Stage1Scene::~Stage1Scene() {
 void Stage1Scene::Init() {
 	
 	CPlayer* player = Game::GetInstance()->AddObject<CPlayer>();
-	player->SetPosition(0.0f,-3.0f,0.0f)->SetScale(1.0f, 1.0f, 1.0f);
+	player->SetPosition(0.0f,-3.0f,-500.0f)->SetScale(1.0f, 1.0f, 1.0f);
 	m_MySceneObjects.push_back(player);
 
 	Ground* plane = Game::GetInstance()->AddObject<Ground>();
 	plane->SetPosition(0.0f, -5.0f, 0.0f)->SetScale(5000.0f, 5000.0f, 5000.0f);
 	m_MySceneObjects.push_back(plane);
-	
-	CEnemy* enemy = Game::GetInstance()->AddObject<CEnemy>();
-    enemy->SetPosition(0.0f, -3.0f, 20.0f);
-    enemy->SetScale(1.0f, 1.0f, 1.0f);
-	m_MySceneObjects.push_back(enemy);
+
+
+        // 修正後
+        for (int i = 0; i < 10; i++) {
+            CEnemy* enemy = Game::GetInstance()->AddObject<CEnemy>();
+            enemy->SetPosition(60.0f*i, -3.0f, 0.0f);
+            enemy->SetScale(1.0f, 1.0f, 1.0f);
+            m_MySceneObjects.push_back(enemy);
+        }
+    
+
+
+    
 
    m_BulletCrosshair = Game::GetInstance()->AddUI<Texture2D>();
    m_BulletCrosshair->SetTexture("assets/texture/crosshair061.png");

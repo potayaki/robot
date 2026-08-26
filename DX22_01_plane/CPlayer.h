@@ -3,6 +3,9 @@
 #include"TestCube.h"
 #include"GolfBall.h"
 #include"Bezier.h"
+
+
+
 class CPlayer : public Object
 {
 private:
