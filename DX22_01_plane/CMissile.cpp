@@ -92,7 +92,7 @@ void CMissile::Update() {
             float dist = Collision::DistancePointToSegment(enemy->GetPosition(), MissileSegment);
 
             // TODO: モデルの大きさに応じて hitRange を調整する
-            float hitRange = 20.0f;
+            float hitRange = m_colRadius;
 
             //当たったかどうかの判定
             if (dist < hitRange) {

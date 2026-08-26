@@ -9,7 +9,7 @@
 #include"TitleScene.h"
 #include"Stage1Scene.h"
 #include"ResultScene.h"
-
+#include"TestCube.h"
 enum SceneName {
 	TITLE,
 	STAGE1,
@@ -35,7 +35,10 @@ private:
     std::vector<std::unique_ptr<Object>> m_UIs; // オブジェクトのリスト
     std::vector<std::unique_ptr<Object> >m_addUIs;    // 追加待ちリスト
 
-    
+#ifdef _DEBUG
+    TestCube m_DebugSphere;
+    bool m_ShowCollision = false;
+#endif
 
 
 

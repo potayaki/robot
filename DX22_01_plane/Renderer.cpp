@@ -801,3 +801,14 @@ void Renderer::SetUV(float u, float v, float uw, float vh) {
 	m_pDeviceContext->UpdateSubresource(m_pTextureBuffer, 0, NULL, &mat, 0, 0);
 }
 
+void Renderer::SetWireFrame(bool isWire) {
+    if (isWire) {
+        // ワイヤーフレームモード（線だけ）
+        m_pDeviceContext->RSSetState(m_pRasterizerStateWire);
+    }
+    else {
+        // 通常モード（塗りつぶし）
+        m_pDeviceContext->RSSetState(m_pRasterizerStateSolid);
+    }
+}
+

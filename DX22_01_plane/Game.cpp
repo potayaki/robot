@@ -59,6 +59,11 @@ void Game::Init() {
 
     // カメラ初期化
     m_instance->m_Camera.Init();
+
+#ifdef _DEBUG
+    m_instance->m_DebugSphere.Init();
+#endif
+
     //最初のシーンを読み込む
     m_instance->m_scene = new Stage1Scene;//TODO:最初のシーンをタイトルシーンにする
 
@@ -254,6 +259,39 @@ void Game::Update() {
         if (ImGui::DragFloat3("Camera Offset", offsetArr, 0.5f)) {
             cam->Setoffset(DirectX::SimpleMath::Vector3(offsetArr[0], offsetArr[1], offsetArr[2]));
         }
+        //-------------------------------------------------------------------------------------------
+        // 当たり判定のサイズをリアルタイムに変更するスライダー
+         //-------------------------------------------------------------------------------------------
+        ImGui::Separator();
+        ImGui::Text("Collision Radius Settings");
+        if (ImGui::Button(m_instance->m_ShowCollision ? "Collision (ON)" : "Collision (OFF)")) {
+            m_instance->m_ShowCollision = !m_instance->m_ShowCollision;
+        }
+       
+
+        // 弾の半径変更
+        static float debugBulletRadius = 2.0f;
+        if (ImGui::SliderFloat("Bullet Radius", &debugBulletRadius, 1.0f, 50.0f)) {
+            std::vector<BulletManager*> bMgrs = GetInstance()->GetObjects<BulletManager>();
+            if (!bMgrs.empty()) {
+                // プール内のすべての弾のサイズを書き換える
+                for (auto b : bMgrs[0]->GetPool()) {
+                    b->SetColRadius(debugBulletRadius);
+                }
+            }
+        }
+
+        // ミサイルの半径変更
+        static float debugMissileRadius = 20.0f;
+        if (ImGui::SliderFloat("Missile Radius", &debugMissileRadius, 1.0f, 100.0f)) {
+            std::vector<MissileManager*> mMgrs = GetInstance()->GetObjects<MissileManager>();
+            if (!mMgrs.empty()) {
+                // プール内のすべてのミサイルのサイズを書き換える
+                for (auto m : mMgrs[0]->GetPool()) {
+                    m->SetColRadius(debugMissileRadius);
+                }
+            }
+        }
 
     }
     else {
@@ -290,8 +328,37 @@ void Game::Draw() {
 
     Renderer::SetDepthEnable(true);
 #ifdef _DEBUG
+    if (m_instance->m_ShowCollision) {
+        Renderer::SetWireFrame(true); // 線だけモードに変更
+        Renderer::SetBlendState(2);   // 加算合成（光らせる）
 
+        auto drawSphere = [](Object* obj) {
+            Collision::Sphere s = obj->GetCollisionSphere();
+            if (s.radius > 0.0f) {
+                m_instance->m_DebugSphere.SetPosition(s.center);
+                float scale = s.radius / 10.0f;
+                m_instance->m_DebugSphere.SetScale(scale, scale, scale);
 
+                m_instance->m_DebugSphere.Draw(&m_instance->m_Camera);
+            }
+            };
+
+        // 1. 通常のオブジェクト（Player, Enemy）を描画
+        for (auto& a : m_instance->m_objects) {
+            drawSphere(a.get());
+
+            // 2. プールマネージャーなら、中身の弾やミサイルも描画
+            if (auto pBullet = dynamic_cast<BulletManager*>(a.get())) {
+                for (auto b : pBullet->GetPool()) { if (b->GetActive()) drawSphere(b); }
+            }
+            if (auto pMissile = dynamic_cast<MissileManager*>(a.get())) {
+                for (auto m : pMissile->GetPool()) { if (m->GetActive()) drawSphere(m); }
+            }
+        }
+
+        Renderer::SetBlendState(1);    // 通常の半透明に戻す
+        Renderer::SetWireFrame(false); // 塗りつぶしモードに戻す
+    }
     ImGui::Render();//DrawEndの前に呼ぶ
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 #endif // _DEBUG

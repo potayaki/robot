@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #define _CRT_SECURE_NO_WARNINGS
 #include	<d3d11.h>
 #include	<DirectXMath.h>
@@ -8,17 +8,17 @@
 #include	<vector>
 #include	<d3dcompiler.h>
 #include	<locale.h>
+#include"Renderer.h"
 
-
-//ŠO•”ƒ‰ƒCƒuƒ‰ƒŠ
+//å¤–éƒ¨ãƒ©ã‚¤ãƒ–ãƒ©ãƒª
 #pragma comment(lib,"directxtk.lib")
 #pragma comment(lib,"d3d11.lib")
 #pragma comment(lib,"d3dcompiler.lib")
 
-// Direct3D‰ð•ú‚ÌŠÈ—ª‰»ƒ}ƒNƒ
+// Direct3Dè§£æ”¾ã®ç°¡ç•¥åŒ–ãƒžã‚¯ãƒ­
 #define SAFE_RELEASE(p) { if( NULL != p ) { p->Release(); p = NULL; } }
 
-// ‚R‚c’¸“_ƒf[ƒ^
+// ï¼“ï¼¤é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿
 struct VERTEX_3D
 {
 	DirectX::SimpleMath::Vector3 position;
@@ -27,25 +27,25 @@ struct VERTEX_3D
 	DirectX::SimpleMath::Vector2 uv;
 };
 
-// ƒuƒŒƒ“ƒhƒXƒe[ƒg
+// ãƒ–ãƒ¬ãƒ³ãƒ‰ã‚¹ãƒ†ãƒ¼ãƒˆ
 enum EBlendState {
-	BS_NONE = 0,							// ”¼“§–¾‡¬–³‚µ
-	BS_ALPHABLEND,							// ”¼“§–¾‡¬
-	BS_ADDITIVE,							// ‰ÁŽZ‡¬
-	BS_SUBTRACTION,							// Œ¸ŽZ‡¬
+	BS_NONE = 0,							// åŠé€æ˜Žåˆæˆç„¡ã—
+	BS_ALPHABLEND,							// åŠé€æ˜Žåˆæˆ
+	BS_ADDITIVE,							// åŠ ç®—åˆæˆ
+	BS_SUBTRACTION,							// æ¸›ç®—åˆæˆ
 	MAX_BLENDSTATE
 };
 
 struct  LIGHT
 {
-	BOOL Enable;//Œõ‚ðŽg‚¤‚©”Û‚©
+	BOOL Enable;//å…‰ã‚’ä½¿ã†ã‹å¦ã‹
 	BOOL Dummy[3];
-	DirectX::SimpleMath::Vector4 Direction;//•ÀsŒõŒ¹‚Ì•ûŒü
-	DirectX::SimpleMath::Color Diffuse;//•ÀsŒõŒ¹‚Ì‹­‚³‚ÆF
-	DirectX::SimpleMath::Color Ambient;//ŠÂ‹«Œõ‚Ì‹­‚³‚ÆF
+	DirectX::SimpleMath::Vector4 Direction;//ä¸¦è¡Œå…‰æºã®æ–¹å‘
+	DirectX::SimpleMath::Color Diffuse;//ä¸¦è¡Œå…‰æºã®å¼·ã•ã¨è‰²
+	DirectX::SimpleMath::Color Ambient;//ç’°å¢ƒå…‰ã®å¼·ã•ã¨è‰²
 };
 
-//ƒTƒuƒZƒbƒg
+//ã‚µãƒ–ã‚»ãƒƒãƒˆ
 struct SUBSET
 {
 	std::string MtrlName;
@@ -57,7 +57,7 @@ struct SUBSET
 
 };
 
-//ƒ}ƒeƒŠƒAƒ‹
+//ãƒžãƒ†ãƒªã‚¢ãƒ«
 struct MATERIAL
 {
 	DirectX::SimpleMath::Color Ambient;
@@ -70,7 +70,7 @@ struct MATERIAL
 
 };
 //-----------------------------------------------------------------------------
-//RendererƒNƒ‰ƒX
+//Rendererã‚¯ãƒ©ã‚¹
 //-----------------------------------------------------------------------------
 class Renderer
 {
@@ -95,7 +95,7 @@ private:
 	static ID3D11DepthStencilState* m_pDepthStateEnable;
 	static ID3D11DepthStencilState* m_pDepthStateDisable;
 
-	static ID3D11BlendState* m_pBlendState[MAX_BLENDSTATE]; // ƒuƒŒƒ“ƒh ƒXƒe[ƒg;
+	static ID3D11BlendState* m_pBlendState[MAX_BLENDSTATE]; // ãƒ–ãƒ¬ãƒ³ãƒ‰ ã‚¹ãƒ†ãƒ¼ãƒˆ;
 	static ID3D11BlendState* m_pBlendStateATC;
 
 	static HRESULT CreateRenderAndDepthResources();
@@ -138,13 +138,14 @@ public:
 	static void SetLight(LIGHT light);
 	static void SetMaterial(MATERIAL material);
 	static void SetUV(float u, float v, float uw, float vh);
-	//=============================================================================
-	// ƒuƒŒƒ“ƒh ƒXƒe[ƒgÝ’è
-	//=============================================================================
+	// ãƒ–ãƒ¬ãƒ³ãƒ‰ ã‚¹ãƒ†ãƒ¼ãƒˆè¨­å®š
 	static void SetBlendState(int nBlendState) {
 		if (nBlendState >= 0 && nBlendState < MAX_BLENDSTATE) {
 			float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 			m_pDeviceContext->OMSetBlendState(m_pBlendState[nBlendState], blendFactor, 0xffffffff);
 		}
 	}
+
+    static void SetWireFrame(bool isWire);
+
 };

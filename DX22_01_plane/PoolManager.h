@@ -64,5 +64,6 @@ public:
         }
         return count;
     }
-
+    // プールの中身を外部から確認するための関数
+    const std::vector<T*>& GetPool() const { return m_pool; }
 };      

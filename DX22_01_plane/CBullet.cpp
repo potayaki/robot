@@ -98,7 +98,7 @@ void CBullet::Update() {
             float dist = Collision::DistancePointToSegment(enemy->GetPosition(), bulletsegment);
 
             //TODO: モデルの大きさに応じて hitRange を調整する
-                float hitRange = 20.0f;
+            float hitRange = m_colRadius;
 
                 // もし距離が hitRange より近ければ「ぶつかった！」と判定
                 if (dist < hitRange) {

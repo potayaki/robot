@@ -13,6 +13,8 @@ private:
 
     bool isActive = true; // ミサイルがアクティブかどうかのフラグ
 
+    float m_colRadius = 20.0f;
+
 public:
     CMissile();
     ~CMissile();
@@ -29,7 +31,11 @@ public:
    //誰から誰に
     void Shoot(Object& shooter, Object& target,float angleOffsetDebug);
 
+    Collision::Sphere GetCollisionSphere() override {
+        return { m_Position, m_colRadius };
+    }
 
+    void SetColRadius(float radius) { m_colRadius = radius; }
 
 };
 
