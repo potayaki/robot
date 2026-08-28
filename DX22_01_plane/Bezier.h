@@ -18,6 +18,12 @@ public:
 
     bool IsActive() { return mActive; }
 
+    void UpdateTargetPosition(DirectX::SimpleMath::Vector3 targetpos) {
+        if (!m_Positions.empty()) {
+            m_Positions.back() = targetpos;
+        }
+    }
+
 private:
 
     std::vector<DirectX::SimpleMath::Vector3>m_Positions;

@@ -10,7 +10,9 @@ class CEnemy :
         //敵の体
 		TestCube* m_body;
 
-        int hp = 9999;//体力
+        int hp = 3;//体力
+
+        float m_Speed = 1.5f;//Playerは1.0f
 
 		bool IsGrounded = false;//着いていた
         public:

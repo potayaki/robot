@@ -45,14 +45,18 @@ void Stage1Scene::Init() {
 	m_MySceneObjects.push_back(plane);
 
 
-        // 修正後
+      /*
         for (int i = 0; i < 10; i++) {
             CEnemy* enemy = Game::GetInstance()->AddObject<CEnemy>();
             enemy->SetPosition(60.0f*i, -3.0f, 0.0f);
             enemy->SetScale(1.0f, 1.0f, 1.0f);
             m_MySceneObjects.push_back(enemy);
         }
-    
+      */
+    CEnemy* enemy = Game::GetInstance()->AddObject<CEnemy>();
+    enemy->SetPosition(60.0f , -3.0f, 0.0f);
+    enemy->SetScale(1.0f, 1.0f, 1.0f);
+    m_MySceneObjects.push_back(enemy);
 
 
     

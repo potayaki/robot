@@ -15,6 +15,8 @@ private:
 
     float m_colRadius = 20.0f;
 
+    Object* m_target = nullptr;
+
 public:
     CMissile();
     ~CMissile();

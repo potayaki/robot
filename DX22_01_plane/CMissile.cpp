@@ -37,6 +37,25 @@ void CMissile::Update() {
         return;
     }
 
+    if (m_target != nullptr) {
+        bool Isalive = false;//最初はfalse設定
+
+        for (auto& enemy : Game::GetInstance()->GetObjects<CEnemy>()) {
+            if (enemy == m_target) {
+                Isalive = true;//生きていたらtrue
+                break;
+            }
+        }
+
+        if (isActive) {
+            m_bezier.UpdateTargetPosition(m_target->GetPosition());
+        }
+        else {
+            m_target = nullptr;
+        }
+
+    }
+
     DirectX::SimpleMath::Vector3 oldPosition = m_Position;
 
     float tick = 1.0f / 60.0f;//60FPSで更新するための時間を計算
@@ -169,7 +188,7 @@ void CMissile::Uninit() {
 }
 
 void CMissile::Shoot(Object& shooter, Object& target, float angleOffsetDebug) {
-
+    m_target = &target;
     m_bezier.Create(shooter, target, angleOffsetDebug); //ベジエ曲線を作成
 
 }

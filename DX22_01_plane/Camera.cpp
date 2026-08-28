@@ -119,7 +119,9 @@ void Camera::SetCamera(int mode) {
 
 		float aspectRatio = static_cast<float>(Application::GetWidth()) / static_cast<float>(Application::GetHeight());	// アスペクト比	
 		float nearPlane = 1.0f;       // ニアクリップ
-		float farPlane = 1000.0f;      // ファークリップ
+		float farPlane = 10000.0f;      // ファークリップ
+
+
 
 		//プロジェクション行列の生成
 		Matrix projectionMatrix;

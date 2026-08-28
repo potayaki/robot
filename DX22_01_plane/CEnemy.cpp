@@ -1,6 +1,7 @@
 ﻿#include "CEnemy.h"
 #include"Ground.h"
 #include"Game.h"
+#include"CPlayer.h"
 CEnemy::CEnemy() {
 	m_body = nullptr;
 
@@ -17,8 +18,8 @@ void CEnemy::Init() {
 }
 
 void CEnemy::Update() {
+    //地面との当たり判定-----------------------------------------------------------------------
 	std::vector<Ground*>grounds = Game::GetInstance()->GetObjects<Ground>();
-
 	if (!grounds.empty()) {//groundsの中が空っぽかそうか１つ以上作られたか
 		Ground* plane = grounds[0];
 		float planeY = plane->GetPosition().y+GetCollisionSphere().radius;//床座標の取得 +　自身の半径
@@ -33,6 +34,22 @@ void CEnemy::Update() {
 		}
 	}
 
+    //移動-----------------------------------------------------------
+    std::vector<CPlayer*>player = Game::GetInstance()->GetObjects<CPlayer>();
+    if (!player.empty() && player[0] != nullptr) {
+        DirectX::SimpleMath::Vector3 PlayerPos = player[0]->GetPosition();
+
+        DirectX::SimpleMath::Vector3 dir = PlayerPos - m_Position;
+        dir.y = 0.0f;
+
+        if (dir.LengthSquared() > 0.0001f) {
+            dir.Normalize();
+
+            m_Position += dir * m_Speed;
+            m_Rotation.y = atan2f(dir.x, dir.z);
+        }
+    }
+   
     
     
 
