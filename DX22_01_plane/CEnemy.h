@@ -12,7 +12,7 @@ class CEnemy :
 
         int hp = 3;//体力
 
-        float m_Speed = 1.5f;//Playerは1.0f
+        float m_Speed = 0.5f;//Playerは1.0f
 
 		bool IsGrounded = false;//着いていた
         public:

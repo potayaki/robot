@@ -16,6 +16,7 @@
 #include"CPlayerUI.h"
 #include"PoolManager.h"
 #include"CMissile.h"
+#include"CMiniMap.h"
 using namespace DirectX::SimpleMath;
 
 #define CrosshairSize 64.0f  // クロスヘアのサイズ
@@ -91,6 +92,11 @@ void Stage1Scene::Init() {
    m_MySceneObjects.push_back(Game::GetInstance()->AddObject<MissileManager>());
    m_MySceneObjects.push_back(Game::GetInstance()->AddObject<ParticleManager>());
    m_MySceneObjects.push_back(Game::GetInstance()->AddObject<ExplosinManager>());
+
+   CMiniMap* miniMap = Game::GetInstance()->AddUI<CMiniMap>();
+   miniMap->SetPosition(480.0f, 250.0f, 0.0f);
+   miniMap->SetScale(200.0f, 200.0f, 1.0f);
+   m_MySceneObjects.push_back(miniMap);
 }
 
 

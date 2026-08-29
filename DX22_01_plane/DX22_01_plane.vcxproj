@@ -149,6 +149,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CBullet.cpp" />
     <ClCompile Include="CEnemy.cpp" />
+    <ClCompile Include="CMiniMap.cpp" />
     <ClCompile Include="CMissile.cpp" />
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="CParticle.cpp" />
@@ -199,6 +200,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CBullet.h" />
     <ClInclude Include="CEnemy.h" />
+    <ClInclude Include="CMiniMap.h" />
     <ClInclude Include="CMissile.h" />
     <ClInclude Include="Collision.h" />
     <ClInclude Include="CParticle.h" />
