@@ -9,7 +9,7 @@
 #include"imgui_impl_dx11.h"
 #include"imgui_impl_win32.h"
 
-
+#include<chrono>
 
 #include"CPlayer.h"
 #include"CPlayerUI.h"
@@ -89,8 +89,17 @@ void Game::Update() {
         m_instance->m_scene->Update();
         // カメラ更新
         m_instance->m_Camera.Update();
-    }
-    if (doUpdate) {
+
+        static auto prevTime = std::chrono::steady_clock::now();//前回の時間を保持する変数
+
+        auto currentTime = std::chrono::steady_clock::now();//現在の時間を取得
+
+        float deltaTime = std::chrono::duration<float>(currentTime - prevTime).count();//前回からの経過時間を計算
+
+        prevTime = currentTime;
+
+        m_instance->m_gameTime += deltaTime; // ゲーム内時間を更新
+
         // テストオブジェクト更新
         for (auto& a : m_instance->m_objects) {
             a->Update();
@@ -99,6 +108,7 @@ void Game::Update() {
         for (auto& a : m_instance->m_UIs) {
             a->Update();
         }
+    
     }
 
     // 削除フラグ（IsDead）が立っているオブジェクトを一括削除
@@ -200,7 +210,8 @@ void Game::Update() {
 
         ImGui::Text("Missile Cooldown: %.2f / %.2f", GUIPlayer[0]->GetCurrentMissileTime(), GUIPlayer[0]->GetMissileTime());
 
-    
+        ImGui::Text("GameTime:%.2f", GetInstance()->m_gameTime);
+        
         //-------------------------------------------------------------------------------------------
         //Particleのオブジェクトプール表示
         //-------------------------------------------------------------------------------------------

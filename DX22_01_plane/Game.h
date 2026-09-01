@@ -46,6 +46,8 @@ public:
 	Game(); // コンストラクタ
 	~Game(); // デストラクタ
 
+    float m_gameTime;
+
 	static void Init(); // 初期化
 	static void Update(); // 更新
 	static void Draw(); // 描画
