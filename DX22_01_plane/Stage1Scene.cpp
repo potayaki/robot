@@ -100,7 +100,7 @@ void Stage1Scene::Init() {
    m_MySceneObjects.push_back(miniMap);
 
    CTimer* timerUI = Game::GetInstance()->AddUI<CTimer>();
-   timerUI->SetPosition(0.0f,0.0f, 0.0f); // 画面中央の上部
+   timerUI->SetPosition(-50.0f,330.0f, 0.0f); // 画面中央の上部
    timerUI->SetScale(40.0f, 60.0f, 1.0f);     // 数字1桁あたりの大きさ
    m_MySceneObjects.push_back(timerUI);
 }
