@@ -2,6 +2,9 @@
 #include"Ground.h"
 #include"Game.h"
 #include"CPlayer.h"
+#include"CPresentBox.h"
+//ランダム
+#include<cstdlib>
 CEnemy::CEnemy() {
 	m_body = nullptr;
 
@@ -15,6 +18,8 @@ void CEnemy::Init() {
 	m_body = new TestCube;
 	m_body->Init();
 	m_body->SetScale(1.0f, 1.0f, 1.0f); // 敵の体
+    m_body->SetTexture("assets/texture/dice.png");
+    m_body->SetMaterial(DirectX::SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f)); // 白色のマテリアル
 }
 
 void CEnemy::Update() {
@@ -56,7 +61,18 @@ void CEnemy::Update() {
 	m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z); // 仮置き
 
     if (hp <= 0) {//一番下！
-      
+
+        int dropChance = rand() % 100; // 0から99までのランダムな数を生成
+
+        if (dropChance < m_Droppercent) {
+            // プレゼントボックスを生成
+            
+            CPresentBox* presentBox = Game::GetInstance()->AddObject<CPresentBox>();
+            presentBox->SetPosition(m_Position.x, m_Position.y + 10.0f, m_Position.z); // 少し上に出す
+            
+
+        }
+
         Destroy(); // 体力が0以下になったらオブジェクトを破棄
         return;
     }

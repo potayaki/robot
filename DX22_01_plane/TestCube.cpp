@@ -1,12 +1,12 @@
-#include	"TestCube.h"
+ï»¿#include	"TestCube.h"
 #include"Object.h"
 using namespace DirectX::SimpleMath;
 
 //=======================================
-//‰Šú‰»ˆ—
+//åˆæœŸåŒ–å‡¦ç†
 //=======================================
 void TestCube::Init() {
-	// ’¸“_ƒf[ƒ^
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿
 	m_Vertices.resize(32);
 	m_Vertices[0].position = Vector3(-10, 10, 10);
 	m_Vertices[1].position = Vector3(10, 10, 10);
@@ -130,10 +130,10 @@ void TestCube::Init() {
 	m_Vertices[21].normal = Vector3(0, -1, 0);
 	m_Vertices[22].normal = Vector3(0, -1, 0);
 	m_Vertices[23].normal = Vector3(0, -1, 0);
-	// ’¸“_ƒoƒbƒtƒ@¶¬
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	m_VertexBuffer.Create(m_Vertices);
 
-	// ƒCƒ“ƒfƒbƒNƒf[ƒ^
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ãƒ‡ãƒ¼ã‚¿
 	m_Indices.resize(40);
 
 	m_Indices = {
@@ -151,21 +151,29 @@ void TestCube::Init() {
 		21,23,22
 	};
 
-	// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@¶¬
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	m_IndexBuffer.Create(m_Indices);
 
-	// ƒVƒF[ƒ_ƒIƒuƒWƒFƒNƒg¶¬
+	// ã‚·ã‚§ãƒ¼ãƒ€ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç”Ÿæˆ
 	m_Shader.Create("shader/litTextureVS.hlsl", "shader/litTexturePS.hlsl");
 
 	bool sts = m_texture.Load("assets/texture/dice.png");
 	assert(sts == true);
+
+    m_Material = std::make_unique<Material>();
+    MATERIAL mtrl;
+    mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f); // çœŸã£ç™½
+    mtrl.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);
+    mtrl.TextureEnable = true;
+    m_Material->Create(mtrl);
+
 	float Scalesize = 0.3f;
 	m_Scale = Vector3(Scalesize);
 	m_Position = Vector3(-15.0f,10.0f,10.0f);
 }
 
 //=======================================
-//XVˆ—
+//æ›´æ–°å‡¦ç†
 //=======================================
 void TestCube::Update() {
 	//m_Rotation.x += 0.01f;
@@ -174,41 +182,45 @@ void TestCube::Update() {
 }
 
 //=======================================
-//•`‰æˆ—
+//æç”»å‡¦ç†
 //=======================================
 void TestCube::Draw(Camera* cam) {
-	//ƒJƒƒ‰‚ğ‘I‘ğ‚·‚é
+	//ã‚«ãƒ¡ãƒ©ã‚’é¸æŠã™ã‚‹
 	cam->SetCamera();
 
-	// SRTî•ñì¬
+	// SRTæƒ…å ±ä½œæˆ
 	Matrix r = Matrix::CreateFromYawPitchRoll(m_Rotation.y, m_Rotation.x, m_Rotation.z);
 	Matrix t = Matrix::CreateTranslation(m_Position.x, m_Position.y, m_Position.z);
 	Matrix s = Matrix::CreateScale(m_Scale.x, m_Scale.y, m_Scale.z);
 
 	Matrix worldmtx;
 	worldmtx = s * r * t;
-	Renderer::SetWorldMatrix(&worldmtx); // GPU‚ÉƒZƒbƒg
+	Renderer::SetWorldMatrix(&worldmtx); // GPUã«ã‚»ãƒƒãƒˆ
 
-	// •`‰æ‚Ìˆ—
+	// æç”»ã®å‡¦ç†
 	ID3D11DeviceContext* devicecontext;
 	devicecontext = Renderer::GetDeviceContext();
 
-	// ƒgƒ|ƒƒW[‚ğƒZƒbƒgiƒvƒŠƒ~ƒeƒBƒuƒ^ƒCƒvj
-	devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);//’¸“_‚ÌŒ‹‚Ñ•û‚Ì‹K‘¥
+	// ãƒˆãƒãƒ­ã‚¸ãƒ¼ã‚’ã‚»ãƒƒãƒˆï¼ˆãƒ—ãƒªãƒŸãƒ†ã‚£ãƒ–ã‚¿ã‚¤ãƒ—ï¼‰
+	devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);//é ‚ç‚¹ã®çµã³æ–¹ã®è¦å‰‡
 
 	m_Shader.SetGPU();
 	m_VertexBuffer.SetGPU();
 	m_IndexBuffer.SetGPU();
 	m_texture.SetGPU();
 
+    if (m_Material) {
+        m_Material->SetGPU();
+    }
+
 	devicecontext->DrawIndexed(
-		m_Indices.size(),	// •`‰æ‚·‚éƒCƒ“ƒfƒbƒNƒX”
-		0,					// Å‰‚ÌƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ÌˆÊ’u
+		m_Indices.size(),	// æç”»ã™ã‚‹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+		0,					// æœ€åˆã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½ç½®
 		0);
 }
 
 //=======================================
-//I—¹ˆ—
+//çµ‚äº†å‡¦ç†
 //=======================================
 void TestCube::Uninit() {
 

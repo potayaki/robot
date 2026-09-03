@@ -1,28 +1,32 @@
-#pragma once
+ï»¿#pragma once
 
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 #include"Texture.h"
 #include"Object.h"
 #include"string"
+#include<memory>
+#include"Material.h"    
 //-----------------------------------------------------------------------------
-//TestCubeƒNƒ‰ƒX
+//TestCubeã‚¯ãƒ©ã‚¹
 //-----------------------------------------------------------------------------
 class TestCube:public Object {
 private:
 
-	// ’¸“_ƒf[ƒ^
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿
 	std::vector<VERTEX_3D> m_Vertices;
 
-	//ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^
+	//ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿
 	std::vector<unsigned int> m_Indices;
 
-	// •`‰æ‚Ìˆ×‚Ìî•ñiƒƒbƒVƒ…‚ÉŠÖ‚í‚éî•ñj
-	IndexBuffer	 m_IndexBuffer; // ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@
-	VertexBuffer<VERTEX_3D>	m_VertexBuffer; // ’¸“_ƒoƒbƒtƒ@
+	// æç”»ã®ç‚ºã®æƒ…å ±ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥ã«é–¢ã‚ã‚‹æƒ…å ±ï¼‰
+	IndexBuffer	 m_IndexBuffer; // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡
+	VertexBuffer<VERTEX_3D>	m_VertexBuffer; // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡
 
 	
 	Texture m_texture;
+
+    std::unique_ptr<Material> m_Material; // ãƒãƒ†ãƒªã‚¢ãƒ«æƒ…å ±
 
 public:
 	void Init()override;

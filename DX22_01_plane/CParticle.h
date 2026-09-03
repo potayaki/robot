@@ -59,5 +59,5 @@ public:
     static void Preload();
 
 };
-using ParticleManager = PoolManager<CParticle, 1000>; // 1000個のパーティクルを管理するプールマネージャ
+using ParticleManager = PoolManager<CParticle, 5000>; // 1000個のパーティクルを管理するプールマネージャ
 

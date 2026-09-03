@@ -35,7 +35,7 @@ void Ground::Init() {
 	m_IndexBuffer.Create(m_Indices);
 
 	// シェーダオブジェクト生成
-	m_Shader.Create("shader/gridVS.hlsl", "shader/gridPS.hlsl");
+	m_Shader.Create("shader/litTextureVS.hlsl", "shader/litTexturePS.hlsl");
 
 	// テクスチャの読み込み（画像パスは環境に合わせてください）
 	bool sts = m_Texture.Load("assets/texture/field.jpg");

@@ -1,12 +1,12 @@
-#include	"Shader.h"
+ï»¿#include	"Shader.h"
 #include	"renderer.h"
-
+#include"Application.h"
 //=======================================
-//Shaderì¬
+//Shaderä½œæˆ
 //=======================================
 void Shader::Create(std::string vs, std::string ps)
 {
-	// ’¸“_ƒf[ƒ^‚Ì’è‹`
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã®å®šç¾©
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -19,7 +19,7 @@ void Shader::Create(std::string vs, std::string ps)
 
 	ID3D11Device* device = Renderer::GetDevice();
 
-	// ’¸“_ƒVƒF[ƒ_[ƒIƒuƒWƒFƒNƒg‚ð¶¬A“¯Žž‚É’¸“_ƒŒƒCƒAƒEƒg‚à¶¬
+	// é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆã€åŒæ™‚ã«é ‚ç‚¹ãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆã‚‚ç”Ÿæˆ
 	HRESULT hr = Renderer::CreateVertexShader(
 		&m_pVertexShader,
 		&m_pVertexLayout,
@@ -28,13 +28,14 @@ void Shader::Create(std::string vs, std::string ps)
 		vs.c_str()
 		);
 	if (FAILED(hr)) {
-		MessageBox(nullptr, "CreateVertexShader error", "error", MB_OK);
+		//MessageBox(nullptr, "CreateVertexShader error", "error", MB_OK);
+        MessageBox(Application::GetWindow(), "CreateVertexShader error", "error", MB_OK);
 		return;
 	}
 
-	// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[‚ð¶¬
+	// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ç”Ÿæˆ
 
-	hr = Renderer::CreatePixelShader(			// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[ƒIƒuƒWƒFƒNƒg‚ð¶¬
+	hr = Renderer::CreatePixelShader(			// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆ
 		&m_pPixelShader,
 		ps.c_str()
 		);
@@ -47,14 +48,14 @@ void Shader::Create(std::string vs, std::string ps)
 }
 
 //=======================================
-//GPU‚Éƒf[ƒ^‚ð‘—‚é
+//GPUã«ãƒ‡ãƒ¼ã‚¿ã‚’é€ã‚‹
 //=======================================
 void Shader::SetGPU()
 {
 	ID3D11DeviceContext* devicecontext = Renderer::GetDeviceContext();
 
-	devicecontext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);		// ’¸“_ƒVƒF[ƒ_[‚ðƒZƒbƒg
-	devicecontext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);		// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[‚ðƒZƒbƒg
-	devicecontext->IASetInputLayout(m_pVertexLayout.Get());				// ’¸“_ƒŒƒCƒAƒEƒgƒZƒbƒg
+	devicecontext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);		// é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ã‚»ãƒƒãƒˆ
+	devicecontext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);		// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ã‚»ãƒƒãƒˆ
+	devicecontext->IASetInputLayout(m_pVertexLayout.Get());				// é ‚ç‚¹ãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆã‚»ãƒƒãƒˆ
 }
 

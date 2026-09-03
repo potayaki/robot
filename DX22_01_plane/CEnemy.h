@@ -15,6 +15,9 @@ class CEnemy :
         float m_Speed = 0.5f;//Playerは1.0f
 
 		bool IsGrounded = false;//着いていた
+
+        int m_Droppercent = 100;//ドロップ率
+
         public:
 		CEnemy();
 		~CEnemy();

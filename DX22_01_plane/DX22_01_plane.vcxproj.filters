@@ -195,6 +195,9 @@
     <ClCompile Include="CEnemySpawn.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="CPresentBox.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imstb_truetype.h">
@@ -356,6 +359,9 @@
     <ClInclude Include="CEnemySpawn.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="CPresentBox.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shader\common.hlsl">
@@ -376,10 +382,10 @@
     <FxCompile Include="shader\UI_RingPS.hlsl">
       <Filter>リソース ファイル</Filter>
     </FxCompile>
-    <FxCompile Include="gridVS.hlsl">
+    <FxCompile Include="shader\gridPS.hlsl">
       <Filter>リソース ファイル</Filter>
     </FxCompile>
-    <FxCompile Include="gridPS.hlsl">
+    <FxCompile Include="shader\gridVS.hlsl">
       <Filter>リソース ファイル</Filter>
     </FxCompile>
   </ItemGroup>

@@ -27,6 +27,8 @@ private:
     float m_DigitSpacing = 35.0f; // 数字と数字の間隔
     float m_PointWidth = 10.0f; // 小数点の大きさ
     float m_PointSpacing = 24.0f; // 小数点の後にあける間隔
+
+
 public:
     CTimer();
     ~CTimer();
