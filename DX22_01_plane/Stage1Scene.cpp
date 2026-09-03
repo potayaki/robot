@@ -18,6 +18,7 @@
 #include"CMissile.h"
 #include"CMiniMap.h"
 #include"CTimer.h"
+#include"CEnemySpawn.h"
 using namespace DirectX::SimpleMath;
 
 #define CrosshairSize 64.0f  // クロスヘアのサイズ
@@ -95,14 +96,18 @@ void Stage1Scene::Init() {
    m_MySceneObjects.push_back(Game::GetInstance()->AddObject<ExplosinManager>());
 
    CMiniMap* miniMap = Game::GetInstance()->AddUI<CMiniMap>();
-   miniMap->SetPosition(480.0f, 250.0f, 0.0f);
+   miniMap->SetPosition(-480.0f, 250.0f, 0.0f);
    miniMap->SetScale(200.0f, 200.0f, 1.0f);
    m_MySceneObjects.push_back(miniMap);
 
    CTimer* timerUI = Game::GetInstance()->AddUI<CTimer>();
-   timerUI->SetPosition(-50.0f,330.0f, 0.0f); // 画面中央の上部
+   timerUI->SetPosition(-50.0f,320.0f, 0.0f); // 画面中央の上部
    timerUI->SetScale(40.0f, 60.0f, 1.0f);     // 数字1桁あたりの大きさ
    m_MySceneObjects.push_back(timerUI);
+
+   CEnemySpawn* pawner = Game::GetInstance()->AddObject<CEnemySpawn>();
+   m_MySceneObjects.push_back(pawner);
+
 }
 
 
@@ -112,6 +117,7 @@ void Stage1Scene::Update() {
         auto mouse = Input::GetMousePosition();
         m_BulletCrosshair->SetPosition(mouse.x, mouse.y, 0.0f);
     }
+
     if (m_MissileCrosshair) {
         auto mouse = Input::GetMousePosition();
         m_MissileCrosshair->SetPosition(mouse.x, mouse.y, 0.0f);

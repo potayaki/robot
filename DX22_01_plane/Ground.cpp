@@ -1,86 +1,86 @@
-#include "Ground.h"
+ï»¿#include "Ground.h"
 #include"stb_image.h"
 using namespace DirectX::SimpleMath;
 //=======================================
-//‰Šú‰»ˆ—
+//åˆæœŸåŒ–å‡¦ç†
 //=======================================
 void Ground::Init() {
 
-	// 4‚Â‚Ì’¸“_‚Å1–‡‚Ì•½‚ç‚È°‚ğì‚é
+	// 4ã¤ã®é ‚ç‚¹ã§1æšã®å¹³ã‚‰ãªåºŠã‚’ä½œã‚‹
 	m_Vertices.resize(4);
 
-	m_Vertices[0].position = Vector3(-1.0f, 0.0f, 1.0f); // ¶‰œ
-	m_Vertices[1].position = Vector3(1.0f, 0.0f, 1.0f); // ‰E‰œ
-	m_Vertices[2].position = Vector3(-1.0f, 0.0f, -1.0f); // è‘O¶
-	m_Vertices[3].position = Vector3(1.0f, 0.0f, -1.0f); // è‘O‰E
+	m_Vertices[0].position = Vector3(-1.0f, 0.0f, 1.0f); // å·¦å¥¥
+	m_Vertices[1].position = Vector3(1.0f, 0.0f, 1.0f); // å³å¥¥
+	m_Vertices[2].position = Vector3(-1.0f, 0.0f, -1.0f); // æ‰‹å‰å·¦
+	m_Vertices[3].position = Vector3(1.0f, 0.0f, -1.0f); // æ‰‹å‰å³
 
 	for (int i = 0; i < 4; i++) {
 		m_Vertices[i].color = Color(1.0f, 1.0f, 1.0f, 1.0f);
-		m_Vertices[i].normal = Vector3(0.0f, 1.0f, 0.0f); // ^ã‚ğŒü‚­–@ü
+		m_Vertices[i].normal = Vector3(0.0f, 1.0f, 0.0f); // çœŸä¸Šã‚’å‘ãæ³•ç·š
 	}
 
-	// UVÀ•Wi°‚ªL‚¢‚Ì‚ÅƒeƒNƒXƒ`ƒƒ‚ğ10‰ñƒŠƒs[ƒg‚³‚¹‚éİ’èj
+	// UVåº§æ¨™ï¼ˆåºŠãŒåºƒã„ã®ã§ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’10å›ãƒªãƒ”ãƒ¼ãƒˆã•ã›ã‚‹è¨­å®šï¼‰
 	m_Vertices[0].uv = Vector2(0.0f, 0.0f);
 	m_Vertices[1].uv = Vector2(10.0f, 0.0f);
 	m_Vertices[2].uv = Vector2(0.0f, 10.0f);
 	m_Vertices[3].uv = Vector2(10.0f, 10.0f);
 
-	// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^ (OŠpŒ`2–‡)
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ (ä¸‰è§’å½¢2æš)
 	m_Indices.resize(6);
 	m_Indices[0] = 0; m_Indices[1] = 1; m_Indices[2] = 2;
 	m_Indices[3] = 2; m_Indices[4] = 1; m_Indices[5] = 3;
 
-	// ƒoƒbƒtƒ@¶¬
+	// ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	m_VertexBuffer.Create(m_Vertices);
 	m_IndexBuffer.Create(m_Indices);
 
-	// ƒVƒF[ƒ_ƒIƒuƒWƒFƒNƒg¶¬
-	m_Shader.Create("shader/litTextureVS.hlsl", "shader/litTexturePS.hlsl");
+	// ã‚·ã‚§ãƒ¼ãƒ€ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç”Ÿæˆ
+	m_Shader.Create("shader/gridVS.hlsl", "shader/gridPS.hlsl");
 
-	// ƒeƒNƒXƒ`ƒƒ‚Ì“Ç‚İ‚İi‰æ‘œƒpƒX‚ÍŠÂ‹«‚É‡‚í‚¹‚Ä‚­‚¾‚³‚¢j
+	// ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®èª­ã¿è¾¼ã¿ï¼ˆç”»åƒãƒ‘ã‚¹ã¯ç’°å¢ƒã«åˆã‚ã›ã¦ãã ã•ã„ï¼‰
 	bool sts = m_Texture.Load("assets/texture/field.jpg");
 	assert(sts == true);
 
-	// ƒ}ƒeƒŠƒAƒ‹‚Ìİ’è
+	// ãƒãƒ†ãƒªã‚¢ãƒ«ã®è¨­å®š
 	m_Material = std::make_unique<Material>();
 	MATERIAL mtrl;
 	mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
 	mtrl.TextureEnable = true;
 	m_Material->Create(mtrl);
 
-	// ‰ŠúˆÊ’u‚ÆƒXƒP[ƒ‹
+	// åˆæœŸä½ç½®ã¨ã‚¹ã‚±ãƒ¼ãƒ«
 	m_Position = Vector3(0.0f, 0.0f, 0.0f);
-	m_Scale = Vector3(1.0f, 1.0f, 1.0f);
+	m_Scale = Vector3(10000.0f, 0.0f, 10000.0f);
 }
 
 //=======================================
-//XVˆ—
+//æ›´æ–°å‡¦ç†
 //=======================================
 void Ground::Update() {
 
 }
 
 //=======================================
-//•`‰æˆ—
+//æç”»å‡¦ç†
 //=======================================
 void Ground::Draw(Camera* cam) {
-	//ƒJƒƒ‰‚ğ‘I‘ğ‚·‚é
+	//ã‚«ãƒ¡ãƒ©ã‚’é¸æŠã™ã‚‹
 	cam->SetCamera();
 
-	// SRTî•ñì¬
+	// SRTæƒ…å ±ä½œæˆ
 	Matrix r = Matrix::CreateFromYawPitchRoll(m_Rotation.y, m_Rotation.x, m_Rotation.z);
 	Matrix t = Matrix::CreateTranslation(m_Position.x, m_Position.y, m_Position.z);
 	Matrix s = Matrix::CreateScale(m_Scale.x, m_Scale.y, m_Scale.z);
 
 	Matrix worldmtx;
 	worldmtx = s * r * t;
-	Renderer::SetWorldMatrix(&worldmtx); // GPU‚ÉƒZƒbƒg
+	Renderer::SetWorldMatrix(&worldmtx); // GPUã«ã‚»ãƒƒãƒˆ
 
-	// •`‰æ‚Ìˆ—
+	// æç”»ã®å‡¦ç†
 	ID3D11DeviceContext* devicecontext;
 	devicecontext = Renderer::GetDeviceContext();
 
-	// ƒgƒ|ƒƒW[‚ğƒZƒbƒgiƒvƒŠƒ~ƒeƒBƒuƒ^ƒCƒvj
+	// ãƒˆãƒãƒ­ã‚¸ãƒ¼ã‚’ã‚»ãƒƒãƒˆï¼ˆãƒ—ãƒªãƒŸãƒ†ã‚£ãƒ–ã‚¿ã‚¤ãƒ—ï¼‰
 	devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	m_Shader.SetGPU();
@@ -90,17 +90,19 @@ void Ground::Draw(Camera* cam) {
 	m_Material->SetGPU();
 
 	devicecontext->DrawIndexed(
-		m_Indices.size(),	// •`‰æ‚·‚éƒCƒ“ƒfƒbƒNƒX”
-		0,					// Å‰‚ÌƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ÌˆÊ’u
+		m_Indices.size(),	// æç”»ã™ã‚‹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+		0,					// æœ€åˆã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½ç½®
 		0);
 }
 
 //=======================================
-//I—¹ˆ—
+//çµ‚äº†å‡¦ç†
 //=======================================
 void Ground::Uninit() {
 
 }
+
+
 
 std::vector<VERTEX_3D> Ground::GetVertices() {
 	std::vector<VERTEX_3D> res;
