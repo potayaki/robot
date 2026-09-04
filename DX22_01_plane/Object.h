@@ -39,6 +39,8 @@ public:
 	void SetScale(DirectX::SimpleMath::Vector3 scl) { m_Scale = scl; }
 	Object* SetScale(float x, float y, float z) { m_Scale.x = x; m_Scale.y = y; m_Scale.z = z; return this; }
 
+    Object* SetScale(float size) { m_Scale.x = size; m_Scale.y = size; m_Scale.z = size; return this; }
+
     //デフォルトでは半径0（当たり判定なし）の球を返すようにしておく
     virtual Collision::Sphere GetCollisionSphere() {
         return { m_Position, 0.0f };

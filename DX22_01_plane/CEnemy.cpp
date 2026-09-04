@@ -68,7 +68,7 @@ void CEnemy::Update() {
             // プレゼントボックスを生成
             
             CPresentBox* presentBox = Game::GetInstance()->AddObject<CPresentBox>();
-            presentBox->SetPosition(m_Position.x, m_Position.y + 10.0f, m_Position.z); // 少し上に出す
+            presentBox->SetPosition(m_Position.x, m_Position.y + 5.0f, m_Position.z); // 少し上に出す
             
 
         }

@@ -19,6 +19,7 @@
 #include"CMiniMap.h"
 #include"CTimer.h"
 #include"CEnemySpawn.h"
+#include"CPresentBox.h"
 using namespace DirectX::SimpleMath;
 
 #define CrosshairSize 64.0f  // クロスヘアのサイズ
@@ -38,6 +39,8 @@ Stage1Scene::~Stage1Scene() {
 
 // 初期化
 void Stage1Scene::Init() {
+
+    CPresentBox::LoadResource(); // 共有モデルのロード
 	
 	CPlayer* player = Game::GetInstance()->AddObject<CPlayer>();
 	player->SetPosition(0.0f,-3.0f,-500.0f)->SetScale(1.0f, 1.0f, 1.0f);
@@ -134,6 +137,6 @@ void Stage1Scene::Uninit() {
 	for (auto& o : m_MySceneObjects) {
         o->Destroy();
 	}
-
+    CPresentBox::UnloadResource(); // 共有モデルの解放
 }
 
