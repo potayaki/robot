@@ -18,6 +18,10 @@ class CEnemy :
 
         int m_Droppercent = 100;//ドロップ率
 
+        int damage = 2;//プレイヤーに与えるダメージ量
+
+        float m_AttackTimer = 0.0f; // 攻撃のクールダウンタイマー
+
         public:
 		CEnemy();
 		~CEnemy();
@@ -38,6 +42,8 @@ class CEnemy :
        Collision::Sphere GetCollisionSphere() override {
             return { m_Position, 10.0f }; // 敵の当たり判定の半径を10に設定
        }
+
+
 
 };
 

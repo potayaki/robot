@@ -23,6 +23,9 @@ void CEnemy::Init() {
 }
 
 void CEnemy::Update() {
+    if (m_AttackTimer > 0.0f) {
+        m_AttackTimer -= 1.0f;
+    }
     //地面との当たり判定-----------------------------------------------------------------------
 	std::vector<Ground*>grounds = Game::GetInstance()->GetObjects<Ground>();
 	if (!grounds.empty()) {//groundsの中が空っぽかそうか１つ以上作られたか
@@ -47,20 +50,31 @@ void CEnemy::Update() {
         DirectX::SimpleMath::Vector3 dir = PlayerPos - m_Position;
         dir.y = 0.0f;
 
+        float distance = dir.Length();
+
         if (dir.LengthSquared() > 0.0001f) {
             dir.Normalize();
 
             m_Position += dir * m_Speed;
             m_Rotation.y = atan2f(dir.x, dir.z);
         }
+
+        float hitRange = GetCollisionSphere().radius + player[0]->GetCollisionSphere().radius;
+
+
+        if (distance < hitRange && m_AttackTimer <= 0.0f) {
+            // プレイヤーと敵が接触した場合の処理
+            player[0]->TakeDamage(damage); // プレイヤーにダメージを与える
+            m_AttackTimer = 60.0f; // 攻撃のクールダウンを設定
+        }
+
     }
    
-    
     
 
 	m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z); // 仮置き
 
-    if (hp <= 0) {//一番下！
+    if (hp <= 0) {
 
         int dropChance = rand() % 100; // 0から99までのランダムな数を生成
 

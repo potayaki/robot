@@ -46,6 +46,8 @@ void CPlayer::Init() {
 
 void CPlayer::Update() {
 
+   
+
     m_velocity.y -= Gravity;
     m_Position += m_velocity;
     if (m_currentBulletTime > 0) {

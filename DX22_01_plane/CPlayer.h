@@ -3,7 +3,7 @@
 #include"TestCube.h"
 #include"GolfBall.h"
 #include"Bezier.h"
-
+#include<iostream>
 
 
 class CPlayer : public Object
@@ -23,6 +23,8 @@ private:
 	bool IsGrounded = false;//地面についているか
     
     int hp = 100;
+
+    
 	
 public:
 	CPlayer();
@@ -85,6 +87,17 @@ public:
     Collision::Sphere GetCollisionSphere()override {
         return { m_Position,10.0f };//半径10
     }
+
+    void TakeDamage(int damage) {
+        
+        hp -= damage;
+        if (hp < 0) {
+            hp = 0;
+        }
+        std::cout << "プレイヤーがダメージを受けた！ 残りHP: " << hp << std::endl;
+    
+    }
+
 
 };
 
