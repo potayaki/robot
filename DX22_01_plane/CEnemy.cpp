@@ -115,4 +115,17 @@ void CEnemy::Onland() {
 void CEnemy::OnHit(int& damage) {
     hp -= damage; // 体力を減らす
     std::cout << "Enemy hit! Remaining HP: " << hp << std::endl; // デバッグ用に体力を表示
+    //Game::GetInstance()->GetCamera()->SetShake(20.0f, 2.0f); // カメラを揺らす
+    std::vector<CPlayer*>player = Game::GetInstance()->GetObjects<CPlayer>();
+    float distance = (player[0]->GetPosition() - m_Position).Length();
+
+    float MaxShakeDistance = 3000.0f;//最大距離
+
+    if (distance < MaxShakeDistance) {
+        float Shakewariai = 1.0f - (distance / MaxShakeDistance); // 距離に応じて揺れの割合を計算
+        float MaxPower = 10.0f; // 最大揺れの強さ
+        float finalPower = MaxPower * Shakewariai; // 最終的な揺れの強さを計算
+        Game::GetInstance()->GetCamera()->SetShake(20.0f, finalPower);
+    }
+
 }

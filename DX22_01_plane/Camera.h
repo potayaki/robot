@@ -22,6 +22,9 @@ private:
 
 	DirectX::SimpleMath::Vector3 offset = DirectX::SimpleMath::Vector3(0.0f, 30.0f, -150.0f);
 
+    float m_ShakeTime = 0.0f;
+    float m_ShakePower = 0.0f;
+
 public:
 	void Init();
 	void Update();
@@ -45,5 +48,9 @@ public:
         return m_CameraDirection;
     }
 
+    void SetShake(float time, float power) {
+        m_ShakeTime = time;
+        m_ShakePower = power;
+    }
 
 };

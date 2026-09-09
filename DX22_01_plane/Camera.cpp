@@ -100,6 +100,27 @@ void Camera::Update() {
             m_Position = playerpos + rotatedOffset;
 		}	
 	}
+
+    if (m_ShakeTime > 0.0f) {
+        // -1.0 ～ 1.0 のランダムな乱数を作って、強さを掛け算する
+        float rx = ((rand() % 100) / 50.0f - 1.0f) * m_ShakePower;
+        float ry = ((rand() % 100) / 50.0f - 1.0f) * m_ShakePower;
+        float rz = ((rand() % 100) / 50.0f - 1.0f) * m_ShakePower;
+
+        // 座標と注視点の両方にズレを足すことで画面全体がガタガタ揺れる
+        m_Position.x += rx;
+        m_Position.y += ry;
+        m_Position.z += rz;
+
+        m_Target.x += rx;
+        m_Target.y += ry;
+        m_Target.z += rz;
+
+        // タイマーを減らす
+        m_ShakeTime -= 1.0f;
+
+    }
+
 }
 
 //=======================================
