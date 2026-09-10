@@ -3,21 +3,22 @@
 #include"Game.h"
 #include"CPlayer.h"
 #include"CPresentBox.h"
+#include"ExplosionManager.h"
 //ランダム
 #include<cstdlib>
 CEnemy::CEnemy() {
-	m_body = nullptr;
+    m_body = nullptr;
 
 }
 
 CEnemy::~CEnemy() {
-	Uninit();
+    Uninit();
 }
 
 void CEnemy::Init() {
-	m_body = new TestCube;
-	m_body->Init();
-	m_body->SetScale(1.0f, 1.0f, 1.0f); // 敵の体
+    m_body = new TestCube;
+    m_body->Init();
+    m_body->SetScale(1.0f, 1.0f, 1.0f); // 敵の体
     m_body->SetTexture("assets/texture/dice.png");
     m_body->SetMaterial(DirectX::SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f)); // 白色のマテリアル
 }
@@ -27,20 +28,20 @@ void CEnemy::Update() {
         m_AttackTimer -= 1.0f;
     }
     //地面との当たり判定-----------------------------------------------------------------------
-	std::vector<Ground*>grounds = Game::GetInstance()->GetObjects<Ground>();
-	if (!grounds.empty()) {//groundsの中が空っぽかそうか１つ以上作られたか
-		Ground* plane = grounds[0];
-		float planeY = plane->GetPosition().y+GetCollisionSphere().radius;//床座標の取得 +　自身の半径
+    std::vector<Ground*>grounds = Game::GetInstance()->GetObjects<Ground>();
+    if (!grounds.empty()) {//groundsの中が空っぽかそうか１つ以上作られたか
+        Ground* plane = grounds[0];
+        float planeY = plane->GetPosition().y + GetCollisionSphere().radius;//床座標の取得 +　自身の半径
 
-		if (m_Position.y <= planeY) {
-			m_Position.y = planeY;
-			Onland();
-		}
-		else {
-			//空中状態
-			IsGrounded = false;
-		}
-	}
+        if (m_Position.y <= planeY) {
+            m_Position.y = planeY;
+            Onland();
+        }
+        else {
+            //空中状態
+            IsGrounded = false;
+        }
+    }
 
     //移動-----------------------------------------------------------
     std::vector<CPlayer*>player = Game::GetInstance()->GetObjects<CPlayer>();
@@ -69,10 +70,10 @@ void CEnemy::Update() {
         }
 
     }
-   
-    
 
-	m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z); // 仮置き
+
+
+    m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z); // 仮置き
 
     if (hp <= 0) {
 
@@ -80,10 +81,10 @@ void CEnemy::Update() {
 
         if (dropChance < m_Droppercent) {
             // プレゼントボックスを生成
-            
+
             CPresentBox* presentBox = Game::GetInstance()->AddObject<CPresentBox>();
             presentBox->SetPosition(m_Position.x, m_Position.y + 5.0f, m_Position.z); // 少し上に出す
-            
+
 
         }
 
@@ -93,29 +94,35 @@ void CEnemy::Update() {
 }
 
 void CEnemy::Draw(Camera* cam) {
-		if (m_body) {
-		m_body->Draw(cam);
-	}
+    if (m_body) {
+        m_body->Draw(cam);
+    }
 
 }
 
 void CEnemy::Uninit() {
-	if (m_body) {
-		m_body->Uninit();
-		delete m_body;
-		m_body = nullptr;
-	}
+    if (m_body) {
+        m_body->Uninit();
+        delete m_body;
+        m_body = nullptr;
+    }
 }
 
 void CEnemy::Onland() {
-		IsGrounded = true;
-		
+    IsGrounded = true;
+
 }
 
 void CEnemy::OnHit(int& damage) {
     hp -= damage; // 体力を減らす
     std::cout << "Enemy hit! Remaining HP: " << hp << std::endl; // デバッグ用に体力を表示
     //Game::GetInstance()->GetCamera()->SetShake(20.0f, 2.0f); // カメラを揺らす
+
+    std::vector<ExplosionManager*> managers = Game::GetInstance()->GetObjects<ExplosionManager>();
+    if (!managers.empty() && managers[0] != nullptr) {
+        managers[0]->CreateExplosion(m_Position); // 敵の位置で爆発！
+    }
+
     std::vector<CPlayer*>player = Game::GetInstance()->GetObjects<CPlayer>();
     float distance = (player[0]->GetPosition() - m_Position).Length();
 

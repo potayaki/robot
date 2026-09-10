@@ -20,6 +20,7 @@
 #include"CTimer.h"
 #include"CEnemySpawn.h"
 #include"CPresentBox.h"
+#include"ExplosionManager.h"
 using namespace DirectX::SimpleMath;
 
 #define CrosshairSize 64.0f  // クロスヘアのサイズ
@@ -77,7 +78,7 @@ void Stage1Scene::Init() {
    m_MissileCrosshair->SetScale(CrosshairSize * 4, CrosshairSize * 4, 10000.0f);
    m_MySceneObjects.push_back(m_MissileCrosshair);
 
-   billboard::LoadTextures("assets/texture/PNG/Smoke/Smoke_Frame_", ".png", 10); // 10枚の画像を読み込む
+   billboard::LoadTextures("smoke", "assets/texture/PNG/Smoke/Smoke_Frame_", ".png", 10); // 10枚の画像を読み込む
 
    CParticle::Preload(); // パーティクル用のモデルを事前に読み込む
 
@@ -96,7 +97,7 @@ void Stage1Scene::Init() {
    m_MySceneObjects.push_back(Game::GetInstance()->AddObject<BulletManager>());
    m_MySceneObjects.push_back(Game::GetInstance()->AddObject<MissileManager>());
    m_MySceneObjects.push_back(Game::GetInstance()->AddObject<ParticleManager>());
-   m_MySceneObjects.push_back(Game::GetInstance()->AddObject<ExplosinManager>());
+   //m_MySceneObjects.push_back(Game::GetInstance()->AddObject<ExplosinManager>());
 
    CMiniMap* miniMap = Game::GetInstance()->AddUI<CMiniMap>();
    miniMap->SetPosition(-480.0f, 250.0f, 0.0f);
@@ -110,6 +111,9 @@ void Stage1Scene::Init() {
 
    CEnemySpawn* pawner = Game::GetInstance()->AddObject<CEnemySpawn>();
    m_MySceneObjects.push_back(pawner);
+
+   ExplosionManager* explosionManager = Game::GetInstance()->AddObject<ExplosionManager>();
+   m_MySceneObjects.push_back(explosionManager);
 
 }
 

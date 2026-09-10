@@ -158,6 +158,7 @@
     <ClCompile Include="CPlayerUI.cpp" />
     <ClCompile Include="CPresentBox.cpp" />
     <ClCompile Include="CTimer.cpp" />
+    <ClCompile Include="ExplosionManager.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GolfBall.cpp" />
     <ClCompile Include="Ground.cpp" />
@@ -212,6 +213,7 @@
     <ClInclude Include="CPlayerUI.h" />
     <ClInclude Include="CPresentBox.h" />
     <ClInclude Include="CTimer.h" />
+    <ClInclude Include="ExplosionManager.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GolfBall.h" />
     <ClInclude Include="Ground.h" />

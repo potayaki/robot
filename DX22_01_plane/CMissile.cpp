@@ -117,10 +117,11 @@ void CMissile::Update() {
             if (dist < hitRange) {
 
                 enemy->OnHit(damage);
-
+                
                 std::vector<ParticleManager*> pManagers = Game::GetInstance()->GetObjects<ParticleManager>();
+                
                 if (!pManagers.empty()) {
-
+                    /*
                     // パーティクルを生成
                     for (size_t i = 0; i < 20; i++) {// 20個のパーティクルを生成
                         CParticle* p = pManagers[0]->Spawn();
@@ -141,6 +142,9 @@ void CMissile::Update() {
                             p->SetLife(30.0f + (rand() % 30));
                         }
                     }
+                    */
+                
+                
 
 
                     //billboardのエフェクトを生成

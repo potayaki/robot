@@ -387,7 +387,7 @@ void Game::Uninit() {
     m_instance->m_Plane.Uninit();
     m_instance->m_model.Uninit();
 
-    billboard::ReleaseTextures();//ビルボードのテクスチャ解放
+    billboard::ReleaseTextures("smoke");//ビルボードのテクスチャ解放
 
     /*
     for (auto& a : m_instance->m_objects) {

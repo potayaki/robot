@@ -36,12 +36,14 @@ void CParticle::Update() {
 
     if (m_type == Test) {
         // 速度の分だけ移動
+        
         m_Position += m_velocity;
         m_velocity.y -= 0.02f; // 重力
 
         // クルクル回転させる
         m_Rotation.x += 0.1f;
         m_Rotation.y += 0.1f;
+        
 
     }
     else if (m_type == Spark) {
