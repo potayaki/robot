@@ -1,4 +1,7 @@
 ﻿#pragma once
+/*
+キャラクターの敵のクラス
+*/
 #include "TestCube.h"	
 #include"TestModel.h"
 #include "Object.h"

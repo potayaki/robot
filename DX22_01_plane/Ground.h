@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 #include "Camera.h"
@@ -7,23 +7,23 @@
 #include"Object.h"
 #include "Material.h"
 //-----------------------------------------------------------------------------
-//TestPlaneƒNƒ‰ƒX
+//Groundã‚¯ãƒ©ã‚¹ã€€åºŠ
 //-----------------------------------------------------------------------------
 class Ground : public Object
 {
 	
 
-	// ’¸“_ƒf[ƒ^
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿
 	std::vector<VERTEX_3D> m_Vertices;
 
-	//ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^
+	//ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿
 	std::vector<unsigned int> m_Indices;
 
-	// •`‰æ‚Ìˆ×‚Ìî•ñiƒƒbƒVƒ…‚ÉŠÖ‚í‚éî•ñj
-	IndexBuffer	 m_IndexBuffer; // ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@
-	VertexBuffer<VERTEX_3D>	m_VertexBuffer; // ’¸“_ƒoƒbƒtƒ@
+	// æç”»ã®ç‚ºã®æƒ…å ±ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥ã«é–¢ã‚ã‚‹æƒ…å ±ï¼‰
+	IndexBuffer	 m_IndexBuffer; // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡
+	VertexBuffer<VERTEX_3D>	m_VertexBuffer; // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡
 
-	// •`‰æ‚Ìˆ×‚Ìî•ñiŒ©‚½–Ú‚ÉŠÖ‚í‚é•”•ªj
+	// æç”»ã®ç‚ºã®æƒ…å ±ï¼ˆè¦‹ãŸç›®ã«é–¢ã‚ã‚‹éƒ¨åˆ†ï¼‰
 	
 	Texture m_Texture;
 	std::unique_ptr<Material>m_Material;

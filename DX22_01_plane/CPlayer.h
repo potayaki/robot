@@ -1,4 +1,7 @@
 ﻿#pragma once
+/*
+プレイヤークラス
+*/
 #include "Object.h"
 #include"TestCube.h"
 #include"GolfBall.h"
@@ -13,10 +16,12 @@ private:
      const int maxRocket = 20;//最大ミサイル数
 	TestCube* m_body;//body
 
-    float  m_BulletTime = 60 * 0.1;//60フレームで０．５秒間隔で打つ用の保存
+    //Bullet
+    float  m_BulletTime = 60 * 0.1;//60フレームで何秒間隔
     float m_currentBulletTime = 0.0f;//次打てるまでの秒数0なら撃てる
 
-    float m_MissileTime = 60 * 2;//60フレームで０．５秒間隔で打つ用の保存
+    //Missile
+    float m_MissileTime = 60 * 2;//60フレームで何秒間隔で打つ用の保存
     float m_currentMissileTime = 0.0f;//次打てるまでの秒数0なら撃てる
 
 	DirectX::SimpleMath::Vector3 m_velocity = { 0,0,0 };

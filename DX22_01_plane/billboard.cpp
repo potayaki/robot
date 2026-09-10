@@ -2,18 +2,23 @@
 #include "Renderer.h"
 #include "Game.h"
 
+//--------------------------------
+// 静的メンバ変数の定義
+//--------------------------------
+
+//グループごとにまとめて読み込んだテクスチャ
 std::map<std::string, std::vector<Texture*>> billboard::s_textureGroups;
 
-// 共有する画像配列の実体
-std::vector<Texture*> billboard::m_sharedTextures;
+//billboardクラスのインスタンス数をカウントする静的変数
 int billboard::m_instanceCount = 0;
 
 billboard::billboard() {
-    m_maxFrames = 1;
-    m_currentFrame = 0;
-    m_animTimer = 0.0f;
-    m_animSpeed = 0.1f;
-    m_loop = false;
+    //アニメーション初期値
+    m_maxFrames = 1;//コマ数
+    m_currentFrame = 0;//現在のコマ
+    m_animTimer = 0.0f;//経過時間
+    m_animSpeed = 0.1f;//次のコマに切り替えるまでの時間
+    m_loop = false;//ループ再生するかどうか
 }
 
 billboard::~billboard() {
@@ -37,24 +42,40 @@ void billboard::Init() {
     m_Vertices[2].position = DirectX::SimpleMath::Vector3(-0.5f, -0.5f, 0);
     m_Vertices[3].position = DirectX::SimpleMath::Vector3(0.5f, -0.5f, 0);
 
+    /*
     m_Vertices[0].color = DirectX::SimpleMath::Color(1, 1, 1, 1);
     m_Vertices[1].color = DirectX::SimpleMath::Color(1, 1, 1, 1);
     m_Vertices[2].color = DirectX::SimpleMath::Color(1, 1, 1, 1);
     m_Vertices[3].color = DirectX::SimpleMath::Color(1, 1, 1, 1);
+    */
+    //全頂点の色を白に設定
+    for (int i = 0; i < 4; i++) {
+        m_Vertices[i].color = DirectX::SimpleMath::Color(1, 1, 1, 1);
+    }
 
     m_Vertices[0].uv = DirectX::SimpleMath::Vector2(0, 0);
     m_Vertices[1].uv = DirectX::SimpleMath::Vector2(1, 0);
     m_Vertices[2].uv = DirectX::SimpleMath::Vector2(0, 1);
     m_Vertices[3].uv = DirectX::SimpleMath::Vector2(1, 1);
 
+    //GPUへ頂点バッファ作成
     m_VertexBuffer.Create(m_Vertices);
 
+    //--------------
+    //インデックス
+    //--------------
     m_Indices.resize(4);
     m_Indices[0] = 0; m_Indices[1] = 1; m_Indices[2] = 2; m_Indices[3] = 3;
     m_IndexBuffer.Create(m_Indices);
 
+    //--------------
+    //シェーダー
+    //--------------
     m_Shader.Create("shader/unlitTextureVS.hlsl", "shader/unlitTexturePS.hlsl");
 
+    //--------------
+    //マテリアル
+    //--------------
     m_Material = std::make_unique<Material>();
     MATERIAL mtrl;
     mtrl.Diffuse = DirectX::SimpleMath::Color(1, 1, 1, 1);
@@ -62,6 +83,10 @@ void billboard::Init() {
     m_Material->Create(mtrl);
 }
 
+
+//--------------
+//アニメーションの設定
+//--------------
 void billboard::SetAnim(float animSpeed, bool loop) {
     m_animSpeed = animSpeed;
     m_loop = loop;
@@ -69,9 +94,16 @@ void billboard::SetAnim(float animSpeed, bool loop) {
     m_animTimer = 0.0f;
 }
 
+
+//--------------
+// テクスチャ読み込み（静的）
+// groupKey: "explosion", "smoke" など
+// baseName: "Explosion_", ext: ".png"
+// count: 連番の枚数
+//--------------
 void billboard::LoadTextures(const std::string& groupKey, const std::string& baseName, const std::string& ext, int count) {
-    auto& textures = s_textureGroups[groupKey]; //[cite: 28]
-    if (!textures.empty()) return; // このグループは既に読み込まれていたら何もしない[cite: 28]
+    auto& textures = s_textureGroups[groupKey]; 
+    if (!textures.empty()) return; // このグループは既に読み込まれていたら何もしない
 
     // もし count が 1 なら、連番をつけずにそのまま読み込む（スプライトシート用）
     if (count == 1) {
@@ -92,6 +124,9 @@ void billboard::LoadTextures(const std::string& groupKey, const std::string& bas
     }
 }
 
+//--------------
+//テクスチャ解放（静的）
+//--------------
 void billboard::ReleaseTextures(const std::string& groupKey) {
     auto it = s_textureGroups.find(groupKey); 
     if (it == s_textureGroups.end()) return; 
@@ -99,6 +134,9 @@ void billboard::ReleaseTextures(const std::string& groupKey) {
     s_textureGroups.erase(it); 
 }
 
+//--------------
+//更新処理
+//--------------
 void billboard::Update() {
     // 簡易的なタイマー（60FPS想定なら 1.0f/60.0f を足す）
     m_animTimer += (1.0f / 60.0f);
@@ -108,6 +146,7 @@ void billboard::Update() {
         m_animTimer = 0.0f;
         m_currentFrame++;
 
+        //スプライトシートの場合
         if (m_SplitX > 1 || m_SplitY > 1) {
             // 1コマあたりの縦横のサイズ（割合）
             float u_step = 1.0f / m_SplitX;
@@ -147,6 +186,9 @@ void billboard::Update() {
     }
 }
 
+//--------------
+//描画処理
+//--------------
 void billboard::Draw(Camera* cam) {
     auto it = s_textureGroups.find(m_groupKey); 
     if (m_maxFrames == 0 || it == s_textureGroups.end() || it->second.empty()) return; 
@@ -177,8 +219,7 @@ void billboard::Draw(Camera* cam) {
     m_IndexBuffer.SetGPU();
 
 
-    // ここがパラパラ漫画のポイント！現在のフレームの画像をセットする
-   // m_sharedTextures[0]->SetGPU();
+    // 現在のフレームの画像をセットする
     it->second[0]->SetGPU();
 
     m_Material->SetGPU();

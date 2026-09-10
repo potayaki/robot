@@ -1,4 +1,7 @@
 ﻿#pragma once
+/*
+パーティクルのクラス
+*/
 #include "Object.h"
 #include "TestCube.h"
 

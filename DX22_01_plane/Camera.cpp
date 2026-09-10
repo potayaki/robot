@@ -27,7 +27,7 @@ void Camera::Update() {
 
 #ifdef _DEBUG
 
-
+    //デバック用のカメラ操作
 	if (Input::GetKeyPress(VK_K)) {
 		m_CameraDirection += 0.02f;
 	}
@@ -35,45 +35,32 @@ void Camera::Update() {
 		m_CameraDirection -= 0.02f;
 	}
 
-    /*
-	if (Input::GetKeyPress(VK_LEFT)) {
-		m_Target.x -= speed;
-	}
-	if (Input::GetKeyPress(VK_RIGHT)) {
-		m_Target.x += speed;
-	}
-	if (Input::GetKeyPress(VK_UP)) {
-		m_Target.z += speed;
-	}
-	if (Input::GetKeyPress(VK_DOWN)) {
-		m_Target.z -= speed;
-	}
-    */
+    
 #endif // _DEBUG
 
-    //現在のウィンドウの幅取得
-    //TODO : 毎回ウィンドウの幅取ってるからInitのm_Widthを使う
+    // 現在のウィンドウサイズ取得（TODO: Initで保存した値を使うべき）
     RECT clientRect;
     GetClientRect(Application::GetWindow(), &clientRect);
     int Width = clientRect.right - clientRect.left;
 
-    //マウスの現在地を取得
+    //マウスの座標を取得(ウィンドウ座標に変換)
     POINT MousePos;
     GetCursorPos(&MousePos);
     ScreenToClient(Application::GetWindow(), &MousePos);
 
     //TODO : 画面端のどのくらいの幅で回転するか
-    const int edgeWidth = 100;
-    const float RotationSpeed = 0.02f;
+    const int edgeWidth = 100;//端の判定幅
+    const float RotationSpeed = 0.02f;//回転速度
 
-    //右端
+    //カメラの右回転
     if (MousePos.x >= Width - edgeWidth) {
         m_CameraDirection += RotationSpeed;
-    }
+    }//カメラの左回転
     else if (MousePos.x <= edgeWidth) {
         m_CameraDirection -= RotationSpeed;
     }
 
+    //カメラ位置を注視点＋回転オフセット
 	Vector3 pos = m_Target;
 	pos.y += 20;
 	pos.x += sin(m_CameraDirection) * 50;
@@ -81,33 +68,40 @@ void Camera::Update() {
 	m_Position = pos;
 	
 
-
+    // -------------------------------------
+    //ステージ１ではプレイヤー追従カメラにする
+    //-------------------------------------
 	Scene* CurrentScene = Game::GetInstance()->GetScene();
-	if (dynamic_cast<Stage1Scene*>(CurrentScene) != nullptr) {//ステージ１シーンのとき
+	if (dynamic_cast<Stage1Scene*>(CurrentScene) != nullptr) {
+        
 
 		std::vector<CPlayer*>player = Game::GetInstance()->GetObjects<CPlayer>();
 		if (!player.empty()) {//プレイヤーがいるとき
 			Vector3	playerpos = player[0]->GetPosition();
-			m_Position = playerpos + offset;
+            m_Position = playerpos + offset;//プレイヤーの位置＋オフセットでカメラ位置を決定
 			SetTarget(playerpos);
 
+            //offsetのx,zを回転させる
             float radius = sqrt(offset.x * offset.x + offset.z * offset.z); //初期値なら150
             Vector3 rotatedOffset;
             rotatedOffset.x = sin(m_CameraDirection) * radius;
             rotatedOffset.y = offset.y;
             rotatedOffset.z = cos(m_CameraDirection) * radius;
 
-            m_Position = playerpos + rotatedOffset;
+            m_Position = playerpos + rotatedOffset;//プレイヤーの周囲を回転しながら追従
 		}	
 	}
 
+    //-------------------------------------
+    //カメラの揺れ
+    //------------------------------------- 
     if (m_ShakeTime > 0.0f) {
         // -1.0 ～ 1.0 のランダムな乱数を作って、強さを掛け算する
         float rx = ((rand() % 100) / 50.0f - 1.0f) * m_ShakePower;
         float ry = ((rand() % 100) / 50.0f - 1.0f) * m_ShakePower;
         float rz = ((rand() % 100) / 50.0f - 1.0f) * m_ShakePower;
 
-        // 座標と注視点の両方にズレを足すことで画面全体がガタガタ揺れる
+        // カメラ位置と注視点を同時に揺らすと画面全体が揺れる
         m_Position.x += rx;
         m_Position.y += ry;
         m_Position.z += rz;
@@ -127,7 +121,7 @@ void Camera::Update() {
 //描画処理
 //=======================================
 void Camera::SetCamera(int mode) {
-	if (mode == 0) {//３D
+	if (mode == 0) {//３Dカメラ
 
 		// ビュー変換後列作成
 		Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
@@ -179,17 +173,21 @@ void Camera::SetTarget(DirectX::SimpleMath::Vector3 target) {
 	m_Target = target;
 }
 
+//-------------------------------------
+//マウスレイを取得
+ //-------------------------------------
 bool Camera::GetMouseRay(DirectX::SimpleMath::Vector3& rayOrigin, DirectX::SimpleMath::Vector3& rayDirection) const {
     const auto mouse = Input::GetMousePosition();
 
-    const float halfWidth = Application::GetWidth() * 0.5f;
-    const float halfHeight = Application::GetHeight() * 0.5f;
+    const float halfWidth = Application::GetWidth() * 0.5f;//ウィンドウ幅の半分
+    const float halfHeight = Application::GetHeight() * 0.5f;//ウィンドウ高さの半分
 
     //-1.0 ～ 1.0 に正規化
     const float ndcX = mouse.x / halfWidth;
         // Y軸はウィンドウ座標と3D空間で上下逆転するため、マイナスをつける
         const float ndcY = mouse.y / halfHeight;
 
+        // 3D空間での視野角とアスペクト比を考慮して、レイの方向を計算する
     constexpr float fov = DirectX::XMConvertToRadians(45.0f);
     const float aspect =
         static_cast<float>(Application::GetWidth()) /
@@ -197,6 +195,7 @@ bool Camera::GetMouseRay(DirectX::SimpleMath::Vector3& rayOrigin, DirectX::Simpl
 
     const float tanHalfFov = tanf(fov * 0.5f);
 
+    
     Vector3 forward = m_Target - m_Position;
     if (forward.LengthSquared() < 0.0001f) {
         return false;

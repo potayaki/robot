@@ -1,5 +1,7 @@
 ﻿#pragma once
-
+/*
+ベジエ曲線CMissileで使われている
+*/
 #include <DirectXMath.h>
 #include<vector>
 #include"Object.h"

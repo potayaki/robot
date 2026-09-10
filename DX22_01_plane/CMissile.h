@@ -1,4 +1,6 @@
 ﻿#pragma once
+/*
+プレイヤーが右クリックで打つミサイル*/
 #include "Object.h"
 #include"TestModel.h"
 #include"Bezier.h"
@@ -13,7 +15,7 @@ private:
 
     bool isActive = true; // ミサイルがアクティブかどうかのフラグ
 
-    float m_colRadius = 20.0f;
+    float m_colRadius = 2.0f;
 
     Object* m_target = nullptr;
 

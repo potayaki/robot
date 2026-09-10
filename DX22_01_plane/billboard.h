@@ -1,4 +1,8 @@
 ﻿#pragma once
+/*
+3D空間において、常にカメラの方を向く板ポリゴンを描画するクラス
+爆発、煙、花火などのエフェクトに使用する。
+*/
 #include "Object.h"
 #include"Texture.h"
 #include"Material.h"
@@ -11,19 +15,26 @@
 class billboard : public Object
 {
 private:
+  //--------------
+ //静的テクスチャ管理
+//--------------
     static std::vector<Texture*>m_sharedTextures;
     static std::map<std::string, std::vector<Texture*>> s_textureGroups; //
     std::string m_groupKey; // 自分がどのグループの画像を使うか
     static int m_instanceCount; 
 
+    //--------------
     //板ポリゴンの描画データ
+//--------------
     std::vector<VERTEX_3D> m_Vertices;
     std::vector<unsigned int> m_Indices;
     VertexBuffer<VERTEX_3D> m_VertexBuffer;
     IndexBuffer m_IndexBuffer;
     std::unique_ptr<Material> m_Material;
 
+    //--------------
     // --- アニメーション用データ ---
+//--------------
     int m_maxFrames;     // 総枚数
     int m_currentFrame;  // 現在表示している画像の番号
     float m_animTimer;   // 時間計測用タイマー
