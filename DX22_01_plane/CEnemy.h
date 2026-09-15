@@ -19,7 +19,7 @@ class CEnemy :
 
 		bool IsGrounded = false;//着いていた
 
-        int m_Droppercent = 100;//ドロップ率
+        int m_Droppercent = 10;//プレゼントのドロップ率
 
         int damage = 2;//プレイヤーに与えるダメージ量
 

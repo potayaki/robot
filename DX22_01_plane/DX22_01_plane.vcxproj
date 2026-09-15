@@ -147,6 +147,7 @@
     <ClCompile Include="Bezier.cpp" />
     <ClCompile Include="billboard.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CAutoturret.cpp" />
     <ClCompile Include="CBullet.cpp" />
     <ClCompile Include="CEnemy.cpp" />
     <ClCompile Include="CEnemySpawn.cpp" />
@@ -202,6 +203,7 @@
     <ClInclude Include="Bezier.h" />
     <ClInclude Include="billboard.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CAutoturret.h" />
     <ClInclude Include="CBullet.h" />
     <ClInclude Include="CEnemy.h" />
     <ClInclude Include="CEnemySpawn.h" />
