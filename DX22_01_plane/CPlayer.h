@@ -24,6 +24,8 @@ private:
     float m_MissileTime = 60 * 2;//60フレームで何秒間隔で打つ用の保存
     float m_currentMissileTime = 0.0f;//次打てるまでの秒数0なら撃てる
 
+    //Tarret
+    int m_MaxTurret = 3;//最大設置数
 	DirectX::SimpleMath::Vector3 m_velocity = { 0,0,0 };
 	bool IsGrounded = false;//地面についているか
     

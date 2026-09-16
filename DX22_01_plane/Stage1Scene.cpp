@@ -21,6 +21,7 @@
 #include"CEnemySpawn.h"
 #include"CPresentBox.h"
 #include"ExplosionManager.h"
+#include"CAutoturret.h"
 using namespace DirectX::SimpleMath;
 
 #define CrosshairSize 64.0f  // クロスヘアのサイズ
@@ -134,7 +135,11 @@ void Stage1Scene::Init() {
    CEnemySpawn* pawner = Game::GetInstance()->AddObject<CEnemySpawn>();
    m_MySceneObjects.push_back(pawner);
 
-
+   //--------------------
+   //砲台用のモデルの事前読み込み
+   //--------------------
+   using AutoTurretManager = PoolManager<CAutoturret, 3>;
+   m_MySceneObjects.push_back(Game::GetInstance()->AddObject<AutoTurretManager>());
 }
 
 

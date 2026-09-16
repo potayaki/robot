@@ -46,7 +46,7 @@ void CPlayer::Init() {
 
 void CPlayer::Update() {
 
-   
+
 
     m_velocity.y -= Gravity;
     m_Position += m_velocity;
@@ -134,9 +134,18 @@ void CPlayer::Move() {
         StartMissile();
     }
 
-    if (Input::GetKeyPress(VK_F)) {
-        CAutoturret* turret = Game::GetInstance()->AddObject<CAutoturret>();
-        turret->SetPosition(m_Position.x, m_Position.y, m_Position.z);
+    if (Input::GetKeyTrigger(VK_F)) {
+        using AutoturretManager = PoolManager<CAutoturret, 3>;
+
+        std::vector<AutoturretManager*> managers = Game::GetInstance()->GetObjects<AutoturretManager>();
+        if (!managers.empty()) {
+            CAutoturret* turret = managers[0]->Spawn();
+            if (turret != nullptr) {
+                // Spawn() 内で寿命やタイマーの初期化を行うか、ここで位置を設定
+                turret->SetPosition(m_Position.x, m_Position.y, m_Position.z);
+                turret->SetLife(100.0f); // 寿命のリセット
+            }
+        }
     }
 
 }
@@ -285,7 +294,7 @@ void CPlayer::StartMissile() {
         if (enemys.empty() || mManagers.empty()) {
             return;
         }
-       
+
         Camera* camera = Game::GetInstance()->GetCamera();
         Vector3 rayOrigin, rayDirection;
         if (camera != nullptr) {

@@ -9,6 +9,9 @@ private:
     float m_attackCooldown = 10.0f; // 攻撃のクールダウン時間
     float m_radius = 500.0f; // 攻撃範囲の半径
     int damage = 1; // 攻撃のダメージ量
+
+    bool m_Active = false; // 自動砲台がアクティブかどうかのフラグ
+
 public:
     CAutoturret();
     ~CAutoturret();
@@ -28,5 +31,15 @@ public:
     Collision::Sphere GetCollisionSphere() override {
         return { m_Position, 5.0f }; // 自動砲台の当たり判定の半径を5に設定
     }
+
+    void Spawn(const DirectX::SimpleMath::Vector3& position) {
+        m_Position = position;
+        m_Active = true; // 自動砲台をアクティブにする
+        m_life = 100.0f; // 寿命をリセット
+        m_attackCooldown = 10.0f; // クールダウンをリセット
+
+    }
+
+
 };
 

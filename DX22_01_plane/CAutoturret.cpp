@@ -14,20 +14,15 @@ CAutoturret::~CAutoturret() {
 void CAutoturret::Init() {
     m_model = new TestModel();
     m_model->Init();
-    m_model->SetScale(0.1f, 0.1f, 0.1f); // 自動砲台のスケールを設定
-    //テクスチャディレクトリ
-    std::string texDirectory = "assets/model/golfball/golf_ball.mtl";
-    std::u8string modelFile = u8"assets/model/golfball/golf_ball.obj";
-    //Meshを読み込む
-    std::string tmpStr1(reinterpret_cast<const char*>(modelFile.c_str()), modelFile.size());
-    m_model->Load(tmpStr1, texDirectory);
+    m_model->SetScale(1.0f); // 自動砲台のスケールを設定
+    m_model->Load("assets/model/bullet/Bullett.fbx", "assets/model/bullet");
 }
 
 void CAutoturret::Update() {
     m_life -= 0.1f; // 寿命を減少させる処理（例として毎フレーム0.1減少）
     if (m_life <= 0.0f) {
-        // 寿命が尽きた場合の処理（例: オブジェクトを削除するなど）
-        Destroy();
+        m_Active = false; // 寿命が尽きた場合の処理（例: オブジェクトを削除するなど）
+        
         return;
     }
 
@@ -41,16 +36,16 @@ void CAutoturret::Update() {
         float distance = (enemy->GetPosition() - m_Position).Length();
 
         if (distance < minDistance) {
-            minDistance = minDistance;
+            minDistance = distance;
             minEnemy = enemy;
         }
     }
 
-    if (m_attackCooldown < 0.0f) {
+    if (m_attackCooldown > 0.0f) {
         m_attackCooldown -= 1.0f; // クールダウンタイマーを減少させる
     }
 
-    if (minEnemy != nullptr && minDistance < m_radius && m_attackCooldown < 0.0f) {
+    if (minEnemy != nullptr && minDistance < m_radius && m_attackCooldown <= 0.0f) {
         //TODO : 攻撃内容
         minEnemy->OnHit(damage);
         m_attackCooldown = 10.0f; // 攻撃後にクールダウンをリセット

@@ -5,7 +5,7 @@ void ExplosionManager::Init() {
 
     for (int i = 0; i < POOL_SIZE; i++) {
         m_pool[i] = new billboard();
-        m_pool[i]->SetTextureGroup("explosion"); // ★追加：爆発グループに属することを教える[cite: 28]
+        m_pool[i]->SetTextureGroup("explosion"); //：爆発グループに属することを教える
         m_pool[i]->Init();
         m_pool[i]->SetAnim(0.005f, false); 
         m_pool[i]->SetSpriteSheet(4, 4, 16);

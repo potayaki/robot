@@ -7,7 +7,7 @@ class PoolManager : public Object
 {
 private:
     std::vector<T*> m_pool; // プールのリスト
-
+    int m_currentIndex = 0;
 public:
     static const int MAXSIZE = Max_Size; // プールの最大サイズを定数として公開
     PoolManager() {}
@@ -51,8 +51,14 @@ public:
                 return obj;
             }
         }
-        return nullptr; // 全て使用中の場合は nullptr
+
+        T* obj = m_pool[m_currentIndex];
+        obj->SetActive(true);
+        m_currentIndex = (m_currentIndex + 1) % Max_Size; // 次のインデックスへ進める
+        return obj;
+
     }
+    
 
     //Debug
     int GetActiveCount() const {
