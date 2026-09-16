@@ -5,9 +5,9 @@
 #include"CEnemy.h"
 #include"CBullet.h"
 #include"CMissile.h"
+#include"CAutoturret.h"
 #include"PoolManager.h"
 #include<algorithm>
-
 struct TargetInfo {
     CEnemy* enemy;
     float dotScore;//1.0に近いほど真ん中naiseki
@@ -107,6 +107,8 @@ void CPlayer::Move() {
     if (Input::GetKeyPress(VK_D)) { moveX += rightX; moveZ += rightZ; }
     if (Input::GetKeyPress(VK_A)) { moveX -= rightX; moveZ -= rightZ; }
 
+
+
     DirectX::SimpleMath::Vector3 movedir(moveX, 0.0f, moveZ);
 
     if (movedir.LengthSquared() > 0.0f) {
@@ -132,7 +134,10 @@ void CPlayer::Move() {
         StartMissile();
     }
 
-
+    if (Input::GetKeyPress(VK_F)) {
+        CAutoturret* turret = Game::GetInstance()->AddObject<CAutoturret>();
+        turret->SetPosition(m_Position.x, m_Position.y, m_Position.z);
+    }
 
 }
 
