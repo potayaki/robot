@@ -25,9 +25,9 @@ void CMissile::Init() {
 
     m_body->Init();
 
-    m_body->Load("assets/model/bullet/Bullett.fbx", "assets/model/bullet");
+    m_body->Load("assets/model/rocket/cruisemissile.fbx", "assets/model/rocket");
 
-    m_body->SetScale(2.5f, 2.0f, 2.5f);
+    m_body->SetScale(5.5f);
 
 }
 

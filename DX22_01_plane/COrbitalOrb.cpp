@@ -1,5 +1,7 @@
 ﻿#include "COrbitalOrb.h"
 #include <DirectXMath.h>
+#include"Game.h"
+#include"CEnemy.h"
 
 COrbitalOrb::COrbitalOrb() {
     m_body = nullptr;
@@ -70,5 +72,5 @@ void COrbitalOrb::Uninit() {
 
 Collision::Sphere COrbitalOrb::GetCollisionSphere() {
     // 独自の当たり判定サイズを返す（敵との接触判定用）
-    return { m_Position, 2.0f };
+    return { m_Position,8.0f };
 }

@@ -10,6 +10,9 @@ private:
     float m_radius;         // 回転半径
     float m_speed;          // 回転スピード
 
+    float m_cooldownTime; // クールダウン時間
+    int m_damage;         // ダメージ量
+
 public:
     COrbitalOrb();
     ~COrbitalOrb();
