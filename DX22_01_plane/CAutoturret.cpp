@@ -14,7 +14,7 @@ CAutoturret::~CAutoturret() {
 void CAutoturret::Init() {
     m_model = new TestModel();
     m_model->Init();
-    m_model->SetScale(1.0f); // 自動砲台のスケールを設定
+    m_model->SetScale(3.0f); // 自動砲台のスケールを設定
     m_model->Load("assets/model/bullet/Bullett.fbx", "assets/model/bullet");
 }
 
