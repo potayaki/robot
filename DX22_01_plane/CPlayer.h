@@ -7,8 +7,8 @@
 #include"GolfBall.h"
 #include"Bezier.h"
 #include<iostream>
-
-
+#include<vector>
+#include"COrbitalOrb.h"
 class CPlayer : public Object
 {
 private:
@@ -31,7 +31,7 @@ private:
     
     int hp = 100;
 
-    
+    std::vector<COrbitalOrb*> m_orbs; // オーブのリスト
 	
 public:
 	CPlayer();
@@ -71,7 +71,7 @@ public:
     float GetMissileTime() { return m_MissileTime; }
     float GetCurrentMissileTime() { return m_currentMissileTime; }
 
-
+    void CreateOrbs(int count);
 
     //debug用
     int getCurRocket() { return curRocket; }

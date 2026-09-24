@@ -78,6 +78,25 @@ void CPlayer::Onland() {
     m_velocity.y = 0;
 }
 
+void CPlayer::CreateOrbs(int count) {
+    float radius = 50.0f; // 回転半径
+    float speed = 0.05f; // 回転スピード
+
+    for (int i = 0; i < count; ++i) {
+        // 360度（XM_2PI）を個数で割って、等間隔に配置する
+        float startAngle = (DirectX::XM_2PI / count) * i;
+
+        // ゲームの世界にオーブを出現させる
+        COrbitalOrb* orb = Game::GetInstance()->AddObject<COrbitalOrb>();
+
+        // オーブにプレイヤー情報と初期設定を渡す
+        if (orb != nullptr) {
+            orb->SetOrbitalParam(this, startAngle, radius, speed);
+            m_orbs.push_back(orb); // リストに追加
+        }
+    }
+}
+
 
 
 
@@ -147,6 +166,13 @@ void CPlayer::Move() {
             }
         }
     }
+
+    if (Input::GetKeyTrigger(VK_V)) {
+
+        CreateOrbs(3); // 例として3つのオーブを生成
+
+    }
+
 
 }
 

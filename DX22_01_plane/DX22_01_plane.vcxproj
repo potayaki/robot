@@ -154,6 +154,7 @@
     <ClCompile Include="CMiniMap.cpp" />
     <ClCompile Include="CMissile.cpp" />
     <ClCompile Include="Collision.cpp" />
+    <ClCompile Include="COrbitalOrb.cpp" />
     <ClCompile Include="CParticle.cpp" />
     <ClCompile Include="CPlayer.cpp" />
     <ClCompile Include="CPlayerUI.cpp" />
@@ -210,6 +211,7 @@
     <ClInclude Include="CMiniMap.h" />
     <ClInclude Include="CMissile.h" />
     <ClInclude Include="Collision.h" />
+    <ClInclude Include="COrbitalOrb.h" />
     <ClInclude Include="CParticle.h" />
     <ClInclude Include="CPlayer.h" />
     <ClInclude Include="CPlayerUI.h" />
