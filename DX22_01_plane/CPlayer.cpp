@@ -47,6 +47,9 @@ void CPlayer::Init() {
 void CPlayer::Update() {
 
 
+    if (m_hp <= 0) {
+        //TODO : 死亡処理
+    }
 
     m_velocity.y -= Gravity;
     m_Position += m_velocity;

@@ -29,7 +29,7 @@ private:
 	DirectX::SimpleMath::Vector3 m_velocity = { 0,0,0 };
 	bool IsGrounded = false;//地面についているか
     
-    int hp = 100;
+    int m_hp = 100;
 
     std::vector<COrbitalOrb*> m_orbs; // オーブのリスト
 	
@@ -65,7 +65,7 @@ public:
 	// 当たり判定用（車体の位置を返す）
 	//DirectX::SimpleMath::Vector3 GetPosition() { return m_Position; }
 
-    int GetHp() { return hp; }
+    int GetHp() { return m_hp; }
     int GetMaxHp() { return 100; }
 
     float GetMissileTime() { return m_MissileTime; }
@@ -88,7 +88,7 @@ public:
     }
 
     void SetHP(int num) {
-        hp = num;
+        m_hp = num;
     }
 
     Collision::Sphere GetCollisionSphere()override {
@@ -97,11 +97,11 @@ public:
 
     void TakeDamage(int damage) {
         
-        hp -= damage;
-        if (hp < 0) {
-            hp = 0;
+        m_hp -= damage;
+        if (m_hp < 0) {
+            m_hp = 0;
         }
-        std::cout << "プレイヤーがダメージを受けた！ 残りHP: " << hp << std::endl;
+        std::cout << "プレイヤーがダメージを受けた！ 残りHP: " << m_hp << std::endl;
     
     }
 
