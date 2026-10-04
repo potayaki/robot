@@ -8,6 +8,7 @@
 #include"CAutoturret.h"
 #include"PoolManager.h"
 #include<algorithm>
+#include<cmath>
 struct TargetInfo {
     CEnemy* enemy;
     float dotScore;//1.0に近いほど真ん中naiseki
@@ -19,6 +20,21 @@ namespace {
     const float Gravity = 0.008f;
     const float speed = 1.0f;
     const float JumpPower = 0.5f;
+
+    // カメラからの照準線が敵の球に入る最初の距離を求める。
+    bool RaySphereHitDistance(const Vector3& origin, const Vector3& direction,
+        const Collision::Sphere& sphere, float& hitDistance) {
+        const Vector3 fromCenter = origin - sphere.center;
+        const float b = fromCenter.Dot(direction);
+        const float c = fromCenter.LengthSquared() - sphere.radius * sphere.radius;
+        const float discriminant = b * b - c; // direction は単位ベクトル。
+        if (discriminant < 0.0f) return false;
+
+        const float root = std::sqrt(discriminant);
+        const float nearDistance = -b - root;
+        hitDistance = nearDistance > 0.0f ? nearDistance : -b + root;
+        return hitDistance > 0.0f;
+    }
 }
 
 CPlayer::CPlayer() {
@@ -201,36 +217,41 @@ void CPlayer::StartBullet() {
     if (m_currentBulletTime > 0) return;
 
     Vector3 rayOrigin;
-    Vector3 Direction;
+    Vector3 direction;
 
     Camera* camera = Game::GetInstance()->GetCamera();
-    if (camera != nullptr) {
-        camera->GetMouseRay(rayOrigin, Direction);
-    }
+    if (camera == nullptr || !camera->GetMouseRay(rayOrigin, direction)) return;
 
     std::vector<Ground*> grounds = Game::GetInstance()->GetObjects<Ground>();
     if (grounds.empty()) {
         return;
     }
 
-    const float GroundY = grounds[0]->GetPosition().y;
-    Vector3 targetPosition;
+    const float groundY = grounds[0]->GetPosition().y;
+    // 地面や敵が無い方向では、弾の飛行距離に合わせた遠方を目標にする。
+    constexpr float maxAimDistance = 3000.0f;
+    float nearestDistance = maxAimDistance;
+    Vector3 targetPosition = rayOrigin + direction * nearestDistance;
 
-    // レイが下を向いていて、かつ床との交点があるかを計算
-    float t = -1.0f;
-    if (fabs(Direction.y) > 0.001f) {
-        t = (GroundY - rayOrigin.y) / Direction.y;
+    // カメラの照準線が地面に当たる場合は、その交点を目標候補にする。
+    if (direction.y < -0.001f) {
+        const float groundDistance = (groundY - rayOrigin.y) / direction.y;
+        if (groundDistance > 0.0f && groundDistance < nearestDistance) {
+            nearestDistance = groundDistance;
+            targetPosition = rayOrigin + direction * groundDistance;
+        }
     }
 
-    if (t > 0.0f) {
-        // カーソルが床に触れている場合（今まで通りの処理）
-        targetPosition = rayOrigin + Direction * t;
-    }
-    else {
-        // カーソルが空を向いている場合
-        // レイの方向へ十分に遠い距離（例えば1000.0f）をターゲットにする
-        float maxDistance = 1000.0f;
-        targetPosition = rayOrigin + Direction * maxDistance;
+    // 敵が地面より手前に見えている場合は敵の中心を狙い、TPSの発射位置との視差を補正する。
+    for (CEnemy* enemy : Game::GetInstance()->GetObjects<CEnemy>()) {
+        if (enemy == nullptr || enemy->IsDead()) continue;
+        float hitDistance = 0.0f;
+        const Collision::Sphere sphere = enemy->GetCollisionSphere();
+        if (RaySphereHitDistance(rayOrigin, direction, sphere, hitDistance) &&
+            hitDistance < nearestDistance) {
+            nearestDistance = hitDistance;
+            targetPosition = sphere.center;
+        }
     }
 
     // プレイヤー付近から弾を発射

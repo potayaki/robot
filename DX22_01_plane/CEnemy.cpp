@@ -3,11 +3,12 @@
 #include"Game.h"
 #include"CPlayer.h"
 #include"CPresentBox.h"
-#include"ExplosionManager.h"
 //ランダム
 #include<cstdlib>
 namespace {
     constexpr float SlimeFacingOffset = DirectX::XM_PI; // モデルの正面はゲームの+Zと逆向き
+    // FBXを0.2倍・X軸-30ラジアンにしたとき、モデルの最下点は原点より約0.5下にある。
+    constexpr float SlimeModelBottomY = -0.5f;
 }
 CEnemy::CEnemy() {
     m_body = nullptr;
@@ -81,7 +82,10 @@ void CEnemy::Update() {
 
 
 
-    m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z); // 仮置き
+    // 当たり判定の球は中心を半径分だけ地面から上げているため、モデルの底面が地面に合う位置へ下げる。
+    m_body->SetPosition(m_Position.x,
+        m_Position.y - GetCollisionSphere().radius - SlimeModelBottomY,
+        m_Position.z);
     m_body->SetRotation(DirectX::SimpleMath::Vector3(
         m_Rotation.x, m_Rotation.y + SlimeFacingOffset, m_Rotation.z));
 
@@ -124,25 +128,7 @@ void CEnemy::Onland() {
 }
 
 void CEnemy::OnHit(int& damage) {
+    // 共通の被弾処理ではダメージだけを扱い、爆発と画面揺れはミサイルの命中処理に任せる。
     hp -= damage; // 体力を減らす
     std::cout << "Enemy hit! Remaining HP: " << hp << std::endl; // デバッグ用に体力を表示
-    //Game::GetInstance()->GetCamera()->SetShake(20.0f, 2.0f); // カメラを揺らす
-
-    std::vector<ExplosionManager*> managers = Game::GetInstance()->GetObjects<ExplosionManager>();
-    if (!managers.empty() && managers[0] != nullptr) {
-        managers[0]->CreateExplosion(m_Position); // 敵の位置で爆発！
-    }
-
-    std::vector<CPlayer*>player = Game::GetInstance()->GetObjects<CPlayer>();
-    float distance = (player[0]->GetPosition() - m_Position).Length();
-
-    float MaxShakeDistance = 3000.0f;//最大距離
-
-    if (distance < MaxShakeDistance) {
-        float Shakewariai = 1.0f - (distance / MaxShakeDistance); // 距離に応じて揺れの割合を計算
-        float MaxPower = 10.0f; // 最大揺れの強さ
-        float finalPower = MaxPower * Shakewariai; // 最終的な揺れの強さを計算
-        Game::GetInstance()->GetCamera()->SetShake(20.0f, finalPower);
-    }
-
 }

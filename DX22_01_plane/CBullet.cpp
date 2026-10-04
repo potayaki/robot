@@ -5,7 +5,32 @@
 #include"CParticle.h"
 #include"Ground.h"
 #include"PoolManager.h"
+#include<cmath>
 
+namespace {
+// 弾の1フレーム分の軌道と敵の球が最初に接する位置を、0～1の割合で求める。
+bool SegmentSphereHitFraction(const Collision::Segment& segment,
+    const Collision::Sphere& sphere, float bulletRadius, float& hitFraction) {
+    const Vector3 step = segment.end - segment.start;
+    const float stepLengthSq = step.LengthSquared();
+    if (stepLengthSq <= 0.000001f) return false;
+
+    const Vector3 fromCenter = segment.start - sphere.center;
+    const float combinedRadius = sphere.radius + bulletRadius;
+    const float c = fromCenter.LengthSquared() - combinedRadius * combinedRadius;
+    if (c <= 0.0f) {
+        hitFraction = 0.0f; // すでに球の内側から始まっている場合。
+        return true;
+    }
+
+    const float b = fromCenter.Dot(step);
+    const float discriminant = b * b - stepLengthSq * c;
+    if (discriminant < 0.0f) return false;
+
+    hitFraction = (-b - std::sqrt(discriminant)) / stepLengthSq;
+    return hitFraction >= 0.0f && hitFraction <= 1.0f;
+}
+}
 
 
 CBullet::CBullet() {
@@ -42,19 +67,6 @@ void CBullet::Update() {
     m_model->SetRotation(m_Rotation);
 
     //--------------------
-    //地面との当たり判定(Y座標より下なら消す)
-    //--------------------
-    std::vector<Ground*> grounds = Game::GetInstance()->GetObjects<Ground>();
-    if (!grounds.empty()) {
-        Ground* plane = grounds[0]; // 最初のGroundオブジェクトを取得
-        float planeY = plane->GetPosition().y; // GroundオブジェクトのY座標を取得
-        if (m_Position.y < planeY) {
-            SetActive(false); // 弾を非アクティブにする
-            return;
-        }
-    }
-
-    //--------------------
     //パーティクル(弾の軌道)を生成
     //--------------------
     std::vector<ParticleManager*> pManagers = Game::GetInstance()->GetObjects<ParticleManager>();
@@ -76,38 +88,42 @@ void CBullet::Update() {
     bulletsegment.start = OldPosition;
     bulletsegment.end = m_Position;
 
-    //--------------------
-    // 敵との当たり判定
-   //--------------------
-    std::vector<CEnemy*> enemies = Game::GetInstance()->GetObjects<CEnemy>();
-
-    for (auto enemy : enemies) {
-
-        //プレイヤーに近い敵だけ当たり判定を行うようにする（処理軽量化のため）
-        DirectX::SimpleMath::Vector3 diff = enemy->GetPosition() - m_Position;
-        float distance = diff.LengthSquared();
-
-        float CheckRange = 100.0f; // 当たり判定の範囲（例: 100.0f）
-
-        if (distance < (CheckRange * CheckRange)) {// 敵が近くにいる場合のみ当たり判定を行う
-
-
-            // 「Distance」で、弾と敵の距離を測る
-            float dist = Collision::DistancePointToSegment(enemy->GetPosition(), bulletsegment);
-
-            //TODO: モデルの大きさに応じて hitRange を調整する
-            float hitRange = m_colRadius + enemy->GetCollisionSphere().radius;
-
-            // もし距離が hitRange より近ければ「ぶつかった！」と判定
-            if (dist < hitRange) {
-                // 敵に「当たったよ！」と伝える
-                enemy->OnHit(damage);
-
-                // 弾自身も役目を終えて消える
-                SetActive(false); // 弾を非アクティブにする
-                return;
-            }
+    // 弾の半径を含め、今フレームの軌道が地面に最初に触れる位置を求める。
+    float groundHitFraction = 2.0f; // 1より大きい値は「このフレームでは当たらない」。
+    const std::vector<Ground*> grounds = Game::GetInstance()->GetObjects<Ground>();
+    if (!grounds.empty() && grounds[0] != nullptr) {
+        const float groundCollisionY = grounds[0]->GetPosition().y + m_colRadius;
+        if (OldPosition.y <= groundCollisionY) {
+            groundHitFraction = 0.0f;
         }
+        else if (m_Position.y <= groundCollisionY) {
+            groundHitFraction = (groundCollisionY - OldPosition.y) /
+                (m_Position.y - OldPosition.y);
+        }
+    }
+
+    // 複数の敵が重なっていても、弾の軌道上で最初に当たる敵を選ぶ。
+    CEnemy* firstEnemy = nullptr;
+    float enemyHitFraction = 2.0f;
+    for (CEnemy* enemy : Game::GetInstance()->GetObjects<CEnemy>()) {
+        if (enemy == nullptr || enemy->IsDead()) continue;
+        float fraction = 0.0f;
+        if (SegmentSphereHitFraction(bulletsegment, enemy->GetCollisionSphere(),
+                m_colRadius, fraction) && fraction < enemyHitFraction) {
+            firstEnemy = enemy;
+            enemyHitFraction = fraction;
+        }
+    }
+
+    // 同じフレームで敵と地面の両方を通っても、手前にある方だけに命中させる。
+    if (firstEnemy != nullptr && enemyHitFraction <= groundHitFraction) {
+        firstEnemy->OnHit(damage);
+        SetActive(false);
+        return;
+    }
+    if (groundHitFraction <= 1.0f) {
+        SetActive(false);
+        return;
     }
 }
 

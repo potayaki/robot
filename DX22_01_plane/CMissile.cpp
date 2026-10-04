@@ -2,8 +2,10 @@
 #include"Game.h"
 #include<cmath>
 #include"CEnemy.h"
+#include"CPlayer.h"
 #include"Collision.h"
 #include"CParticle.h"
+#include"ExplosionManager.h"
 
 #include"billboard.h"
 
@@ -117,6 +119,24 @@ void CMissile::Update() {
             if (dist < hitRange) {
 
                 enemy->OnHit(damage);
+
+                // 爆発エフェクトはミサイルが敵に命中したときだけ生成する。
+                std::vector<ExplosionManager*> explosionManagers =
+                    Game::GetInstance()->GetObjects<ExplosionManager>();
+                if (!explosionManagers.empty() && explosionManagers[0] != nullptr) {
+                    explosionManagers[0]->CreateExplosion(enemy->GetPosition());
+                }
+
+                // 画面揺れもミサイル命中時だけ発生させ、プレイヤーから遠い爆発ほど弱くする。
+                std::vector<CPlayer*> players = Game::GetInstance()->GetObjects<CPlayer>();
+                if (!players.empty() && players[0] != nullptr) {
+                    float distance = (players[0]->GetPosition() - enemy->GetPosition()).Length();
+                    constexpr float maxShakeDistance = 3000.0f;
+                    if (distance < maxShakeDistance) {
+                        float shakePower = 10.0f * (1.0f - distance / maxShakeDistance);
+                        Game::GetInstance()->GetCamera()->SetShake(20.0f, shakePower);
+                    }
+                }
                 
                 std::vector<ParticleManager*> pManagers = Game::GetInstance()->GetObjects<ParticleManager>();
                 
@@ -164,12 +184,11 @@ void CMissile::Update() {
 
 
 
-                    // ミサイル自身も役目を終えて消える
-                    SetActive(false);
-
-                    // これ以上他の敵と判定しないように、Updateを終了する
-                    return;
                 }
+
+                // パーティクル管理が無い場合も命中は一度だけにし、爆発を連続生成しない。
+                SetActive(false);
+                return;
             }
 
         }
