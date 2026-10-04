@@ -2,7 +2,7 @@
 #include"Ground.h"
 #include"Game.h"
 #include"input.h"
-#include"CEnemy.h"
+#include"EnemyTarget.h"
 #include"CBullet.h"
 #include"CMissile.h"
 #include"CAutoturret.h"
@@ -10,7 +10,7 @@
 #include<algorithm>
 #include<cmath>
 struct TargetInfo {
-    CEnemy* enemy;
+    EnemyTarget* enemy;
     float dotScore;//1.0に近いほど真ん中naiseki
 };
 
@@ -243,7 +243,8 @@ void CPlayer::StartBullet() {
     }
 
     // 敵が地面より手前に見えている場合は敵の中心を狙い、TPSの発射位置との視差を補正する。
-    for (CEnemy* enemy : Game::GetInstance()->GetObjects<CEnemy>()) {
+    // 飛行ドローンも照準線の候補に含め、プレイヤーから発射する弾の視差を補正する。
+    for (EnemyTarget* enemy : Game::GetInstance()->GetObjects<EnemyTarget>()) {
         if (enemy == nullptr || enemy->IsDead()) continue;
         float hitDistance = 0.0f;
         const Collision::Sphere sphere = enemy->GetCollisionSphere();
@@ -283,7 +284,8 @@ void CPlayer::StartBullet() {
 void CPlayer::StartMissile() {
     if (m_currentMissileTime <= 0) {
         //敵の取得
-        std::vector<CEnemy*> enemys = Game::GetInstance()->GetObjects<CEnemy>();
+        // ミサイルのロックオン対象にも、すべての種類の敵を含める。
+        std::vector<EnemyTarget*> enemys = Game::GetInstance()->GetObjects<EnemyTarget>();
         std::vector<MissileManager*> mManagers = Game::GetInstance()->GetObjects<MissileManager>();
 
 
@@ -300,6 +302,7 @@ void CPlayer::StartMissile() {
         std::vector<TargetInfo>Targets;
 
         for (auto& enemy : enemys) {
+            if (enemy == nullptr || enemy->IsDead()) continue;
             //カメラから敵へのベクトル
             Vector3 toEnemy = enemy->GetPosition() - rayOrigin;
             toEnemy.Normalize();
@@ -352,7 +355,7 @@ void CPlayer::StartMissile() {
                 CMissile* missile = mManagers[0]->Spawn();
                 if (missile != nullptr) {
                     // i をターゲットの数で割った余り（%）を使うことで、A→B→C→A→B... と順番に配る！
-                    CEnemy* target = Targets[i % Targets.size()].enemy;
+                    EnemyTarget* target = Targets[i % Targets.size()].enemy;
                     missile->Shoot(*this, *target, angles[i]);
                 }
             }

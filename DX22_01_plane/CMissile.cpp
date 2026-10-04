@@ -1,7 +1,7 @@
 ﻿#include "CMissile.h"
 #include"Game.h"
 #include<cmath>
-#include"CEnemy.h"
+#include"EnemyTarget.h"
 #include"CPlayer.h"
 #include"Collision.h"
 #include"CParticle.h"
@@ -40,22 +40,20 @@ void CMissile::Update() {
     }
 
     if (m_target != nullptr) {
-        bool Isalive = false;//最初はfalse設定
-
-        for (auto& enemy : Game::GetInstance()->GetObjects<CEnemy>()) {
-            if (enemy == m_target) {
-                Isalive = true;//生きていたらtrue
+        bool targetIsAlive = false;
+        // 消えた敵のポインタを参照しないよう、現在存在する共通の敵リストで確認する。
+        for (EnemyTarget* enemy : Game::GetInstance()->GetObjects<EnemyTarget>()) {
+            if (enemy == m_target && !enemy->IsDead()) {
+                targetIsAlive = true;
                 break;
             }
         }
-
-        if (isActive) {
+        if (targetIsAlive) {
             m_bezier.UpdateTargetPosition(m_target->GetPosition());
         }
         else {
             m_target = nullptr;
         }
-
     }
 
     DirectX::SimpleMath::Vector3 oldPosition = m_Position;
@@ -98,9 +96,11 @@ void CMissile::Update() {
 
     //TODO : 今は数が少ないからいいけど多くなったら重くなるから今後カメラの中だけとかでする
     //敵を全部取得
-    std::vector<CEnemy*> enemies = Game::GetInstance()->GetObjects<CEnemy>();
+    // ドローンを含む全敵を、それぞれの当たり判定半径で判定する。
+    std::vector<EnemyTarget*> enemies = Game::GetInstance()->GetObjects<EnemyTarget>();
 
     for (auto& enemy : enemies) {
+        if (enemy == nullptr || enemy->IsDead()) continue;
 
         DirectX::SimpleMath::Vector3 diff = enemy->GetPosition() - m_Position;
         float distance = diff.LengthSquared(); // 敵との距離を計算（距離の二乗を使用）
@@ -112,8 +112,8 @@ void CMissile::Update() {
             // 「Distance」で、ミサイルと敵の距離を測る
             float dist = Collision::DistancePointToSegment(enemy->GetPosition(), MissileSegment);
 
-            // TODO: モデルの大きさに応じて hitRange を調整する
-            float hitRange = m_colRadius;
+            // ミサイルと敵の球の半径を合算し、空中のドローンにも正しく命中させる。
+            float hitRange = m_colRadius + enemy->GetCollisionSphere().radius;
 
             //当たったかどうかの判定
             if (dist < hitRange) {
@@ -211,6 +211,8 @@ void CMissile::Uninit() {
 }
 
 void CMissile::Shoot(Object& shooter, Object& target, float angleOffsetDebug) {
+    // プールから再利用したときも、前回の命中状態を引き継がない。
+    SetActive(true);
     m_target = &target;
     m_bezier.Create(shooter, target, angleOffsetDebug); //ベジエ曲線を作成
 

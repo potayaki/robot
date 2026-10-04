@@ -1,5 +1,5 @@
 ﻿#include "CAutoturret.h"
-#include"CEnemy.h"
+#include"EnemyTarget.h"
 #include<vector>
 #include"Game.h"
 CAutoturret::CAutoturret() {
@@ -28,11 +28,13 @@ void CAutoturret::Update() {
 
     m_model->SetPosition(m_Position);
 
-    std::vector<CEnemy*> enemies = Game::GetInstance()->GetObjects<CEnemy>();
-    CEnemy* minEnemy = nullptr;
+    // 自動砲台もドローンを攻撃対象として認識する。
+    std::vector<EnemyTarget*> enemies = Game::GetInstance()->GetObjects<EnemyTarget>();
+    EnemyTarget* minEnemy = nullptr;
     float minDistance = 9999.0f; // 十分大きな値で初期化
 
-    for (CEnemy*enemy : enemies) {
+    for (EnemyTarget* enemy : enemies) {
+        if (enemy == nullptr || enemy->IsDead()) continue;
         float distance = (enemy->GetPosition() - m_Position).Length();
 
         if (distance < minDistance) {

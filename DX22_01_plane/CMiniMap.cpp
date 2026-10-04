@@ -3,7 +3,7 @@
 #include "Application.h"
 #include "Game.h"
 #include "CPlayer.h"
-#include "CEnemy.h"
+#include "EnemyTarget.h"
 
 using namespace DirectX::SimpleMath;
 
@@ -110,7 +110,8 @@ void CMiniMap::Draw(Camera* cam) {
     Renderer::SetMaterial(mtrlEnemy);
 
     Vector3 playerPos = players[0]->GetPosition();
-    std::vector<CEnemy*> enemies = Game::GetInstance()->GetObjects<CEnemy>();
+    // 飛行ドローンも既存の敵マーカーとして表示する。
+    std::vector<EnemyTarget*> enemies = Game::GetInstance()->GetObjects<EnemyTarget>();
 
     // CPlayerのMoveと同じ計算式で「カメラの前と右」を取得する！
     float angle = cam->GetCameraDirection();
@@ -120,6 +121,7 @@ void CMiniMap::Draw(Camera* cam) {
     float rightZ = sinf(angle);
 
     for (auto& enemy : enemies) {
+        if (enemy == nullptr || enemy->IsDead()) continue;
         Vector3 diff = enemy->GetPosition() - playerPos;
 
         // 内積を使って、敵が「プレイヤーの前方向に何m」「右方向に何m」いるか直接測る

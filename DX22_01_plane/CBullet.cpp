@@ -1,6 +1,6 @@
 ﻿#include "CBullet.h"
 #include"Game.h"
-#include"CEnemy.h"
+#include"EnemyTarget.h"
 #include"Collision.h"
 #include"CParticle.h"
 #include"Ground.h"
@@ -103,9 +103,10 @@ void CBullet::Update() {
     }
 
     // 複数の敵が重なっていても、弾の軌道上で最初に当たる敵を選ぶ。
-    CEnemy* firstEnemy = nullptr;
+    EnemyTarget* firstEnemy = nullptr;
     float enemyHitFraction = 2.0f;
-    for (CEnemy* enemy : Game::GetInstance()->GetObjects<CEnemy>()) {
+    // 共通型で取得し、飛行ドローンにもスライムと同じ線分判定を適用する。
+    for (EnemyTarget* enemy : Game::GetInstance()->GetObjects<EnemyTarget>()) {
         if (enemy == nullptr || enemy->IsDead()) continue;
         float fraction = 0.0f;
         if (SegmentSphereHitFraction(bulletsegment, enemy->GetCollisionSphere(),

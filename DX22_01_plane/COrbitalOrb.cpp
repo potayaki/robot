@@ -1,7 +1,7 @@
 ﻿#include "COrbitalOrb.h"
 #include <DirectXMath.h>
 #include"Game.h"
-#include"CEnemy.h"
+#include"EnemyTarget.h"
 
 COrbitalOrb::COrbitalOrb() {
     m_body = nullptr;
@@ -66,9 +66,10 @@ void COrbitalOrb::Update() {
     // クールダウンが0の時だけ攻撃判定を行う
     if (m_cooldownTime <= 0.0f) {
         // ゲーム上のすべての敵を取得
-        std::vector<CEnemy*> enemies = Game::GetInstance()->GetObjects<CEnemy>();
+        // オーブの接触判定もスライムとドローンで共通にする。
+        std::vector<EnemyTarget*> enemies = Game::GetInstance()->GetObjects<EnemyTarget>();
 
-        for (CEnemy* enemy : enemies) {
+        for (EnemyTarget* enemy : enemies) {
             // 敵が死んでいる、または非アクティブなら判定しない
             if (enemy == nullptr || enemy->IsDead() || !enemy->GetActive()) {
                 continue;

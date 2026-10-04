@@ -150,6 +150,7 @@
     <ClCompile Include="CAutoturret.cpp" />
     <ClCompile Include="CBullet.cpp" />
     <ClCompile Include="CEnemy.cpp" />
+    <ClCompile Include="CFlyingEnemy.cpp" />
     <ClCompile Include="CEnemySpawn.cpp" />
     <ClCompile Include="CMiniMap.cpp" />
     <ClCompile Include="CMissile.cpp" />
@@ -207,6 +208,8 @@
     <ClInclude Include="CAutoturret.h" />
     <ClInclude Include="CBullet.h" />
     <ClInclude Include="CEnemy.h" />
+    <ClInclude Include="CFlyingEnemy.h" />
+    <ClInclude Include="EnemyTarget.h" />
     <ClInclude Include="CEnemySpawn.h" />
     <ClInclude Include="CMiniMap.h" />
     <ClInclude Include="CMissile.h" />

@@ -84,6 +84,9 @@
     <ClCompile Include="CEnemy.cpp">
       <Filter>ソース ファイル\Object</Filter>
     </ClCompile>
+    <ClCompile Include="CFlyingEnemy.cpp">
+      <Filter>ソース ファイル\Object</Filter>
+    </ClCompile>
     <ClCompile Include="CMissile.cpp">
       <Filter>ソース ファイル\Object</Filter>
     </ClCompile>
@@ -285,6 +288,12 @@
       <Filter>ヘッダー ファイル\Object</Filter>
     </ClInclude>
     <ClInclude Include="CEnemy.h">
+      <Filter>ヘッダー ファイル\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="CFlyingEnemy.h">
+      <Filter>ヘッダー ファイル\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyTarget.h">
       <Filter>ヘッダー ファイル\Object</Filter>
     </ClInclude>
     <ClInclude Include="CMiniMap.h">

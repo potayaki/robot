@@ -9,6 +9,7 @@
 #include"CPlayer.h"
 #include"Collision.h"
 #include"CEnemy.h"
+#include "CFlyingEnemy.h"
 #include<cmath>
 #include"CBullet.h"
 #include"billboard.h"
@@ -69,6 +70,11 @@ void Stage1Scene::Init() {
     enemy->SetPosition(60.0f , -3.0f, 0.0f);
     enemy->SetScale(1.0f, 1.0f, 1.0f);
     m_MySceneObjects.push_back(enemy);
+
+    // 開始直後から新しい敵を確認できるよう、プレイヤー前方にドローンを1機配置する。
+    CFlyingEnemy* drone = Game::GetInstance()->AddObject<CFlyingEnemy>();
+    drone->SetPosition(65.0f, 40.0f, -365.0f);
+    m_MySceneObjects.push_back(drone);
 
 
     

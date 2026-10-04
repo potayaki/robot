@@ -4,9 +4,9 @@
 */
 //#include "TestCube.h"	
 #include"TestModel.h"
-#include "Object.h"
+#include "EnemyTarget.h"
 class CEnemy :
-    public Object
+    public EnemyTarget
 {
 
     private:
@@ -35,7 +35,7 @@ class CEnemy :
 		void Uninit()override;
 
 		void Onland();
-        void OnHit(int &damage);//弾に当たったときの処理
+        void OnHit(int &damage) override;//弾に当たったときの処理
 
 		void SetPosition(float x, float y, float z) {
 			DirectX::SimpleMath::Vector3 p = { x,y,z };
