@@ -34,6 +34,12 @@ ID3D11DepthStencilState* Renderer::m_pDepthStateDisable{};
 static ID3D11RasterizerState* m_pRasterizerStateSolid = NULL;     // 通常用
 static ID3D11RasterizerState* m_pRasterizerStateWire = NULL;      // ワイヤーフレーム用
 
+// 4倍アンチエイリアス用の描画先。画面表示用バッファは1倍のまま保持する。
+static UINT g_msaaSampleCount = 1;
+static ID3D11Texture2D* g_backBufferTexture = nullptr;
+static ID3D11Texture2D* g_msaaColorTexture = nullptr;
+static ID3D11RenderTargetView* g_msaaRenderTargetView = nullptr;
+
 ID3D11BlendState* Renderer::m_pBlendState[MAX_BLENDSTATE]; // ブレンドステート配列
 ID3D11BlendState* Renderer::m_pBlendStateATC{}; // 特定のアルファテストとカバレッジ（ATC）用のブレンドステート
 
@@ -53,7 +59,8 @@ HRESULT Renderer::Init() {
 	swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // バッファの使用用途を設定
 	swapChainDesc.OutputWindow = Application::GetWindow(); // スワップチェーンのターゲットウィンドウを設定
-	swapChainDesc.SampleDesc.Count = 1; // マルチサンプリングの設定（アンチエイリアスのサンプル数とクオリティ）
+	// 表示用バッファは1倍にし、対応GPUでは別の4倍描画先を使う。
+	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.SampleDesc.Quality = 0; //同上
 	swapChainDesc.Windowed = TRUE; // ウィンドウモード（フルスクリーンではなく、ウィンドウモードで実行）
 
@@ -71,6 +78,17 @@ HRESULT Renderer::Init() {
 		&m_FeatureLevel,    // 作成されたデバイスの機能レベルを受け取る変数へのポインタ
 		&m_pDeviceContext); // 作成されたデバイスコンテキストを受け取るポインタ
 	if (FAILED(hr)) return hr;
+
+	UINT colorQualityLevels = 0;
+	UINT depthQualityLevels = 0;
+	// 色と深度の両方が4倍サンプリングに対応する場合だけ有効にする。
+	if (SUCCEEDED(m_pDevice->CheckMultisampleQualityLevels(
+		DXGI_FORMAT_R8G8B8A8_UNORM, 4, &colorQualityLevels)) &&
+		SUCCEEDED(m_pDevice->CheckMultisampleQualityLevels(
+			DXGI_FORMAT_D32_FLOAT, 4, &depthQualityLevels)) &&
+		colorQualityLevels > 0 && depthQualityLevels > 0) {
+		g_msaaSampleCount = 4;
+	}
 
 	
 
@@ -97,7 +115,7 @@ HRESULT Renderer::Init() {
 	//rasterizerDesc.CullMode = D3D11_CULL_FRONT; //ポリゴン表をカリング
 	//rasterizerDesc.CullMode = D3D11_CULL_NONE; //カリングしない(裏も表も表示される)
 	rasterizerDesc.DepthClipEnable = TRUE;
-	rasterizerDesc.MultisampleEnable = FALSE;
+	rasterizerDesc.MultisampleEnable = g_msaaSampleCount > 1;
 	ID3D11RasterizerState* rs{};
 	hr = m_pDevice->CreateRasterizerState(&rasterizerDesc, &rs);
 	if (FAILED(hr)) return hr;
@@ -158,7 +176,7 @@ HRESULT Renderer::Init() {
 	smpDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	smpDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 	smpDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	smpDesc.MaxAnisotropy = 4;
+	smpDesc.MaxAnisotropy = 8; // 斜めから見る地面の模様を、ミップマップ使用時もくっきり保つ。
 	smpDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	ID3D11SamplerState* samplerState{};
@@ -199,8 +217,9 @@ HRESULT Renderer::Init() {
 	light.Enable = true;
 	light.Direction = Vector4(0.5f, -1.0f, 0.8f, 0.0f);
 	light.Direction.Normalize();
-	light.Diffuse = Color(1.5f, 1.5f, 1.5f, 1.0f);
-	light.Ambient = Color(0.2f, 0.2f, 0.2f, 1.0f);
+	// 強すぎる直射光を抑え、少し暖かい日光と青みのある環境光で自然な陰影にする。
+	light.Diffuse = Color(1.05f, 1.02f, 0.96f, 1.0f);
+	light.Ambient = Color(0.28f, 0.31f, 0.34f, 1.0f);
 	SetLight(light);
 
 	bufferDesc.ByteWidth = sizeof(MATERIAL);
@@ -230,7 +249,7 @@ HRESULT Renderer::Init() {
 	rsDesc.SlopeScaledDepthBias = 0.0f;
 	rsDesc.DepthClipEnable = TRUE;
 	rsDesc.ScissorEnable = FALSE;
-	rsDesc.MultisampleEnable = FALSE;
+	rsDesc.MultisampleEnable = g_msaaSampleCount > 1;
 	rsDesc.AntialiasedLineEnable = FALSE;
 
 	// 1. 通常モード（Solid）
@@ -255,17 +274,33 @@ HRESULT Renderer::Init() {
 //--------------------------------------------------------------------------------------
 HRESULT Renderer::CreateRenderAndDepthResources() {
 	// レンダーターゲットビュー作成
-	ID3D11Texture2D* renderTarget{};
-	HRESULT hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&renderTarget);
+	HRESULT hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&g_backBufferTexture);
 	if (FAILED(hr)) return hr;
 
     // バックバッファの情報を取得
     D3D11_TEXTURE2D_DESC backbufferDesc{};
-    renderTarget->GetDesc(&backbufferDesc);
+    g_backBufferTexture->GetDesc(&backbufferDesc);
 
-	if (renderTarget != nullptr) hr = m_pDevice->CreateRenderTargetView(renderTarget, NULL, &m_pRenderTargetView);
-	renderTarget->Release();
+	hr = m_pDevice->CreateRenderTargetView(g_backBufferTexture, NULL, &m_pRenderTargetView);
 	if (FAILED(hr)) return hr;
+
+	if (g_msaaSampleCount > 1) {
+		// 輪郭を滑らかに描くため、画面表示用とは別の4倍サンプリング描画先を作る。
+		D3D11_TEXTURE2D_DESC msaaDesc{};
+		msaaDesc.Width = backbufferDesc.Width;
+		msaaDesc.Height = backbufferDesc.Height;
+		msaaDesc.MipLevels = 1;
+		msaaDesc.ArraySize = 1;
+		msaaDesc.Format = backbufferDesc.Format;
+		msaaDesc.SampleDesc.Count = g_msaaSampleCount;
+		msaaDesc.SampleDesc.Quality = 0;
+		msaaDesc.Usage = D3D11_USAGE_DEFAULT;
+		msaaDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
+		hr = m_pDevice->CreateTexture2D(&msaaDesc, nullptr, &g_msaaColorTexture);
+		if (FAILED(hr)) return hr;
+		hr = m_pDevice->CreateRenderTargetView(g_msaaColorTexture, nullptr, &g_msaaRenderTargetView);
+		if (FAILED(hr)) return hr;
+	}
 
 	// デプスステンシルバッファ作成
 	// ※（デプスバッファ = 深度バッファ = Zバッファ）→奥行を判定して前後関係を正しく描画できる
@@ -284,8 +319,9 @@ HRESULT Renderer::CreateRenderAndDepthResources() {
 	textureDesc.ArraySize = 1;                            // テクスチャの配列サイズ（通常1）
 	// 遠くのスライムの目と体が同じ深度に丸められてちらつかないよう、32ビット浮動小数点の深度を使う。
 	textureDesc.Format = DXGI_FORMAT_D32_FLOAT;
-	textureDesc.SampleDesc.Count = 1;                     // スワップチェーンと同じサンプル設定
-	textureDesc.SampleDesc.Quality = 0;                   // 同上
+	// 実際の描画先と深度バッファのサンプル数を揃える。
+	textureDesc.SampleDesc.Count = g_msaaSampleCount;
+	textureDesc.SampleDesc.Quality = 0;
 	textureDesc.Usage = D3D11_USAGE_DEFAULT;              // 使用方法はデフォルト（GPUで使用）
 	textureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;     // 深度ステンシルバッファとして使用
 	textureDesc.CPUAccessFlags = 0;                       // CPUからのアクセスは不要
@@ -296,11 +332,14 @@ HRESULT Renderer::CreateRenderAndDepthResources() {
 	// デプスステンシルビュー作成
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc{};
 	depthStencilViewDesc.Format = textureDesc.Format; // デプスステンシルバッファのフォーマットを設定
-	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D; // ビューの次元を2Dテクスチャとして設定（2Dテクスチャ用のデプスステンシルビュー）
+	// マルチサンプルの有無に合わせて、深度ビューの種類を選ぶ。
+	depthStencilViewDesc.ViewDimension = textureDesc.SampleDesc.Count > 1
+		? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
 	depthStencilViewDesc.Flags = 0; // 特別なフラグは設定しない（デフォルトの動作）
-	if (depthStencile != nullptr)m_pDevice->CreateDepthStencilView(depthStencile, &depthStencilViewDesc, &m_pDepthStencilView);
-	if (FAILED(hr)) return hr;
+	// 4倍深度ビューの作成失敗も検出し、無効なビューで描画を続けない。
+	hr = m_pDevice->CreateDepthStencilView(depthStencile, &depthStencilViewDesc, &m_pDepthStencilView);
 	depthStencile->Release();
+	if (FAILED(hr)) return hr;
 	
 	return S_OK;
 }
@@ -326,7 +365,10 @@ void Renderer::Uninit() {
 	}
 	SAFE_RELEASE(m_pLightBuffer);
 	SAFE_RELEASE(m_pDepthStencilView);
+	SAFE_RELEASE(g_msaaRenderTargetView);
+	SAFE_RELEASE(g_msaaColorTexture);
 	SAFE_RELEASE(m_pRenderTargetView);
+	SAFE_RELEASE(g_backBufferTexture);
 	SAFE_RELEASE(m_pSwapChain);
 	SAFE_RELEASE(m_pDeviceContext);
 	SAFE_RELEASE(m_pDevice);
@@ -339,11 +381,14 @@ void Renderer::Uninit() {
 void Renderer::DrawStart() {
 	// 画面塗りつぶし色
 	float clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f }; //red,green,blue,alpha
+	// 対応GPUでは高精細な描画先へ、それ以外では従来の画面バッファへ描く。
+	ID3D11RenderTargetView* renderTarget = g_msaaRenderTargetView
+		? g_msaaRenderTargetView : m_pRenderTargetView;
 
 	// 描画先のキャンバスと使用する深度バッファを指定する
-	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
+	m_pDeviceContext->OMSetRenderTargets(1, &renderTarget, m_pDepthStencilView);
 	// 描画先キャンバスを塗りつぶす
-	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, clearColor);
+	m_pDeviceContext->ClearRenderTargetView(renderTarget, clearColor);
 	// 深度バッファをリセットする
 	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
@@ -352,6 +397,12 @@ void Renderer::DrawStart() {
 //描画終了
 //--------------------------------------------------------------------------------------
 void Renderer::DrawEnd() {
+	if (g_msaaColorTexture) {
+		// 4倍サンプルの描画結果を1ピクセルに合成してから画面へ表示する。
+		m_pDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+		m_pDeviceContext->ResolveSubresource(g_backBufferTexture, 0,
+			g_msaaColorTexture, 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+	}
 	// ダブルバッファの切り替えを行い画面を更新する
 	m_pSwapChain->Present(1, 0);
 }
@@ -450,6 +501,13 @@ void Renderer::SetProjectionMatrix(Matrix* ProjectionMatrix) {
 HRESULT Renderer::ResizeWindow(int width, int height) {
 	// スワップチェインが存在しない場合は処理しない
 	if (!m_pSwapChain)return S_FALSE;
+	if (width <= 0 || height <= 0) return S_FALSE;
+
+	// リサイズ前に描画先の参照を外し、旧サイズのバッファを解放する。
+	m_pDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+	SAFE_RELEASE(g_msaaRenderTargetView);
+	SAFE_RELEASE(g_msaaColorTexture);
+	SAFE_RELEASE(g_backBufferTexture);
 
 	// 既存のレンダーターゲットビューを解放
 	if (m_pRenderTargetView) {
@@ -464,10 +522,11 @@ HRESULT Renderer::ResizeWindow(int width, int height) {
 	}
 
 	// スワップチェインのバッファサイズを新しいウィンドウサイズに合わせて変更
-	m_pSwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0);
+	HRESULT hr = m_pSwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0);
+	if (FAILED(hr)) return hr;
 
 	// レンダーターゲットビュー・デプスステンシルバッファ・デプスステンシルビュー作成
-	HRESULT hr = CreateRenderAndDepthResources();
+	hr = CreateRenderAndDepthResources();
 	if (FAILED(hr)) return hr;
 
 	// ウィンドウとターゲットのアスペクト比を比較してビューポートを調整

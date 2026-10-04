@@ -116,8 +116,8 @@ void Stage1Scene::Init() {
  //　UI　ミニマップ
 // --------------------
    CMiniMap* miniMap = Game::GetInstance()->AddUI<CMiniMap>();
-   miniMap->SetPosition(-480.0f, 250.0f, 0.0f);
-   miniMap->SetScale(200.0f, 200.0f, 1.0f);
+   miniMap->SetPosition(-555.0f, 280.0f, 0.0f);
+   miniMap->SetScale(150.0f, 150.0f, 1.0f);
    m_MySceneObjects.push_back(miniMap);
 
   //--------------------

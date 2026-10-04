@@ -39,17 +39,47 @@ bool Texture::Load(const std::string& filename)
 
 	ID3D11Device* device = Renderer::GetDevice();
 
-	HRESULT hr = device->CreateTexture2D(&desc, &subResource, pTexture.GetAddressOf());
+	// 縮小表示時に遠景の地面やモデルの模様がちらつかないよう、対応GPUではミップマップを生成する。
+	UINT formatSupport = 0;
+	bool useMipmaps = SUCCEEDED(device->CheckFormatSupport(desc.Format, &formatSupport)) &&
+		(formatSupport & D3D11_FORMAT_SUPPORT_MIP_AUTOGEN) != 0;
+	HRESULT hr = E_FAIL;
+	if (useMipmaps) {
+		desc.MipLevels = 0; // 画像サイズに合わせて全段階のミップレベルを確保する。
+		desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+		desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+		hr = device->CreateTexture2D(&desc, nullptr, pTexture.GetAddressOf());
+		if (SUCCEEDED(hr)) {
+			Renderer::GetDeviceContext()->UpdateSubresource(pTexture.Get(), 0, nullptr,
+				pixels, subResource.SysMemPitch, 0);
+		}
+		else {
+			// 自動生成できない環境では従来の1段階テクスチャに戻す。
+			useMipmaps = false;
+			pTexture.Reset();
+			desc.MipLevels = 1;
+			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+			desc.MiscFlags = 0;
+		}
+	}
+	if (!useMipmaps) {
+		hr = device->CreateTexture2D(&desc, &subResource, pTexture.GetAddressOf());
+	}
 	if (FAILED(hr)) {
 		stbi_image_free(pixels);
 		return false;
 	}
 
 	// SRV生成
+	m_srv.Reset();
 	hr = device->CreateShaderResourceView(pTexture.Get(), nullptr, m_srv.GetAddressOf());
 	if (FAILED(hr)) {
 		stbi_image_free(pixels);
 		return false;
+	}
+	if (useMipmaps) {
+		// 0段目の画像から縮小版を作り、距離に応じてGPUが選べるようにする。
+		Renderer::GetDeviceContext()->GenerateMips(m_srv.Get());
 	}
 
 	// ピクセルイメージ解放

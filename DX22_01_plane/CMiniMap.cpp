@@ -26,11 +26,11 @@ void CMiniMap::Init() {
     m_Vertices[2].uv = Vector2(0, 1);
     m_Vertices[3].uv = Vector2(1, 1);
 
-    // ★修正：枠用の頂点は「白色」で作る
-    for (int i = 0; i < 4; i++) m_Vertices[i].color = Color(1, 1, 1, 1);
+    // 外枠の色にする。
+    for (int i = 0; i < 4; i++) m_Vertices[i].color = Color(1.0f, 1.0f, 1.0f, 1.0f);
     m_VertexBufferBg.Create(m_Vertices);
 
-    // ★修正：敵の点用の頂点は「赤色」で作る
+    // 敵の点用の頂点は「赤色」で作る
     for (int i = 0; i < 4; i++) m_Vertices[i].color = Color(1.0f, 0.0f, 0.0f, 1.0f);
     m_VertexBufferEnemy.Create(m_Vertices);
 
@@ -43,6 +43,7 @@ void CMiniMap::Init() {
     m_Shader.Create("shader/unlitTextureVS.hlsl", "shader/unlitTexturePS.hlsl");
 
     m_TexBackground.Load("assets/texture/black.png");
+    m_TexFrame.Load("assets/texture/white.png");
     m_TexEnemy.Load("assets/texture/spark.png");
     m_TexPlayer.Load("assets/texture/icchann.png");
 
@@ -68,27 +69,38 @@ void CMiniMap::Draw(Camera* cam) {
     m_IndexBuffer.SetGPU();
     Renderer::SetUV(0, 0, 1, 1);
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-    Renderer::SetBlendState(1);
+    Renderer::SetBlendState(BS_ALPHABLEND);
 
     // ==========================================
-    // 1. レーダー背景（枠）の描画
+    // 1. レーダーの外枠と背景の描画
     // ==========================================
+    // 外側を青灰色で描き、黒い空との境界をはっきりさせる。
     m_VertexBufferBg.SetGPU();
-    m_TexBackground.SetGPU();
+    m_TexFrame.SetGPU();
 
     MATERIAL mtrlBg;
     mtrlBg.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
     mtrlBg.TextureEnable = true;
     Renderer::SetMaterial(mtrlBg);
 
-    // 背景は丸いので回転させず、そのまま所定の位置に描画
+    // 背景より大きい四角形を先に描き、外側の約2ピクセルを細い枠として残す。
     Matrix worldMtxBg = Matrix::CreateScale(m_Scale) * Matrix::CreateTranslation(m_Position);
     Renderer::SetWorldMatrix(&worldMtxBg);
+    dc->DrawIndexed(4, 0, 0);
+
+    // 枠の内側だけ従来の黒背景で覆い、赤い敵の点の視認性を保つ。
+    m_VertexBufferPlayer.SetGPU();
+    m_TexBackground.SetGPU();
+    Matrix innerScale = Matrix::CreateScale(m_Scale.x * 0.98f, m_Scale.y * 0.98f, m_Scale.z);
+    Matrix worldMtxInner = innerScale * Matrix::CreateTranslation(m_Position);
+    Renderer::SetWorldMatrix(&worldMtxInner);
     dc->DrawIndexed(4, 0, 0);
 
     // ==========================================
     // 2. 敵の点の描画
     // ==========================================
+    // spark.png は黒背景付きなので、敵の点だけ加算合成して黒い四角を描かない。
+    Renderer::SetBlendState(BS_ADDITIVE);
     m_VertexBufferEnemy.SetGPU();
     m_TexEnemy.SetGPU();
 
@@ -145,6 +157,8 @@ void CMiniMap::Draw(Camera* cam) {
         Renderer::SetWorldMatrix(&pWorld);
         dc->DrawIndexed(4, 0, 0);
     }
+    // プレイヤーの画像は通常の透明合成で描くため、加算合成をここで解除する。
+    Renderer::SetBlendState(BS_ALPHABLEND);
     // ==========================================
    //3.Player
    // ==========================================

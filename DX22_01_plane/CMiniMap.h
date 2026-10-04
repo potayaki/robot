@@ -14,9 +14,10 @@ private:
 
     VertexBuffer<VERTEX_3D> m_VertexBufferBg;    // ：背景（枠）用
     VertexBuffer<VERTEX_3D> m_VertexBufferEnemy; // ：敵（赤色）用
-    VertexBuffer<VERTEX_3D> m_VertexBufferPlayer; // ：敵（赤色）用
+    VertexBuffer<VERTEX_3D> m_VertexBufferPlayer; // プレイヤーと黒い内側背景に使う白色の頂点
 
-    Texture m_TexBackground; // レーダーの枠用
+    Texture m_TexBackground; // レーダーの内側背景用
+    Texture m_TexFrame;      // 黒い空でも見える色付きの外枠用
     Texture m_TexPlayer;//プレイヤー
     Texture m_TexEnemy;      // 敵の点用
 
