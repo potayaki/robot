@@ -6,6 +6,9 @@
 #include"ExplosionManager.h"
 //ランダム
 #include<cstdlib>
+namespace {
+    constexpr float SlimeFacingOffset = DirectX::XM_PI; // モデルの正面はゲームの+Zと逆向き
+}
 CEnemy::CEnemy() {
     m_body = nullptr;
 
@@ -18,8 +21,13 @@ CEnemy::~CEnemy() {
 void CEnemy::Init() {
     m_body = new TestModel();
     m_body->Init();
-    m_body->Load("assets/model/slime/Slime.fbx", "assets/model/slime/albedo.tga");
-    m_body->SetScale(1.0f, 1.0f, 1.0f); // 敵の体
+    // FBX が参照する元の Albedo.png は無いため、同梱の albedo.tga を使う。
+    m_body->Load("assets/model/slime/Slime.fbx", "assets/model/slime",
+        "assets/model/slime/albedo.tga", true);
+    m_body->SetScale(0.2f); // 敵の体
+    m_Rotation.x = -30.0f; // スライムの見た目に合わせた傾き
+    m_body->SetRotation(DirectX::SimpleMath::Vector3(
+        m_Rotation.x, m_Rotation.y + SlimeFacingOffset, m_Rotation.z));
     //m_body->SetMaterial(DirectX::SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f)); // 白色のマテリアル
 }
 
@@ -74,6 +82,8 @@ void CEnemy::Update() {
 
 
     m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z); // 仮置き
+    m_body->SetRotation(DirectX::SimpleMath::Vector3(
+        m_Rotation.x, m_Rotation.y + SlimeFacingOffset, m_Rotation.z));
 
     if (hp <= 0) {
 

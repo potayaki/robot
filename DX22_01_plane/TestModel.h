@@ -27,6 +27,7 @@ public:
 	void Draw(Camera* cam)override;
 	void Uninit()override;
 
-	//モデルとテクスチャ
-    void Load(std::string modelFile, std::string texFile);
+	// モデル、FBX が参照するテクスチャのフォルダ、必要なら明示的に割り当てる画像
+    void Load(std::string modelFile, std::string texDirectory,
+        std::string overrideTextureFile = "", bool smoothNormals = false);
 };

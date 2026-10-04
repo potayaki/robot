@@ -55,9 +55,6 @@ bool Texture::Load(const std::string& filename)
 	// ピクセルイメージ解放
 	stbi_image_free(pixels);
 
-	// テクスチャ解放
-	pTexture->Release();
-
 	return true;
 }
 

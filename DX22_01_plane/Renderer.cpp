@@ -282,7 +282,8 @@ HRESULT Renderer::CreateRenderAndDepthResources() {
 
 	textureDesc.MipLevels = 1;                            // ミップレベルは1（ミップマップは使用しない）
 	textureDesc.ArraySize = 1;                            // テクスチャの配列サイズ（通常1）
-	textureDesc.Format = DXGI_FORMAT_D16_UNORM;           // フォーマットは16ビットの深度バッファを使用
+	// 遠くのスライムの目と体が同じ深度に丸められてちらつかないよう、32ビット浮動小数点の深度を使う。
+	textureDesc.Format = DXGI_FORMAT_D32_FLOAT;
 	textureDesc.SampleDesc.Count = 1;                     // スワップチェーンと同じサンプル設定
 	textureDesc.SampleDesc.Quality = 0;                   // 同上
 	textureDesc.Usage = D3D11_USAGE_DEFAULT;              // 使用方法はデフォルト（GPUで使用）
