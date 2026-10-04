@@ -1,0 +1,1265 @@
+{
+  "animations": [
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_Attack01_ANIM",
+      "file": "Beholder/Beholder_Attack01_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_Attack02RPT_ANIM",
+      "file": "Beholder/Beholder_Attack02RPT_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_Attack02ST_ANIM",
+      "file": "Beholder/Beholder_Attack02ST_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_Attack03_ANIM",
+      "file": "Beholder/Beholder_Attack03_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_Die_ANIM",
+      "file": "Beholder/Beholder_Die_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_Dizzy_ANIM",
+      "file": "Beholder/Beholder_Dizzy_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_GetHit_ANIM",
+      "file": "Beholder/Beholder_GetHit_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_IdleBattle_ANIM",
+      "file": "Beholder/Beholder_IdleBattle_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_IdleNormal_ANIM",
+      "file": "Beholder/Beholder_IdleNormal_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_Run_ANIM",
+      "file": "Beholder/Beholder_Run_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_SenseSomethingRPT_ANIM",
+      "file": "Beholder/Beholder_SenseSomethingRPT_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_SenseSomethingST_ANIM",
+      "file": "Beholder/Beholder_SenseSomethingST_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_Taunting_ANIM",
+      "file": "Beholder/Beholder_Taunting_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_Victory_ANIM",
+      "file": "Beholder/Beholder_Victory_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_WalkBWD_ANIM",
+      "file": "Beholder/Beholder_WalkBWD_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_WalkFWD_ANIM",
+      "file": "Beholder/Beholder_WalkFWD_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_WalkLeft_ANIM",
+      "file": "Beholder/Beholder_WalkLeft_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Beholder/Beholder_WalkRight_ANIM",
+      "file": "Beholder/Beholder_WalkRight_ANIM.fbx",
+      "character": "Beholder",
+      "model": "../Beholder.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_Skeleton.Beholder_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_Attack01_ANIM",
+      "file": "Cactus/Cactus_Attack01_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_Attack02_ANIM",
+      "file": "Cactus/Cactus_Attack02_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_Die_ANIM",
+      "file": "Cactus/Cactus_Die_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_Dizzy_ANIM",
+      "file": "Cactus/Cactus_Dizzy_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_GetHit_ANIM",
+      "file": "Cactus/Cactus_GetHit_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_IdleBattle_ANIM",
+      "file": "Cactus/Cactus_IdleBattle_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_IdleNormal_ANIM",
+      "file": "Cactus/Cactus_IdleNormal_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_IdlePlant_ANIM",
+      "file": "Cactus/Cactus_IdlePlant_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_IdlePlantToBattle_ANIM",
+      "file": "Cactus/Cactus_IdlePlantToBattle_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_RunFWD_ANIM",
+      "file": "Cactus/Cactus_RunFWD_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_SenseSomethingMaint_ANIM",
+      "file": "Cactus/Cactus_SenseSomethingMaint_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_SenseSomethingStart_ANIM",
+      "file": "Cactus/Cactus_SenseSomethingStart_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_Taunting_ANIM",
+      "file": "Cactus/Cactus_Taunting_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_Victory_ANIM",
+      "file": "Cactus/Cactus_Victory_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_WalkBWD_ANIM",
+      "file": "Cactus/Cactus_WalkBWD_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_WalkFWD_ANIM",
+      "file": "Cactus/Cactus_WalkFWD_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_WalkLFT_ANIM",
+      "file": "Cactus/Cactus_WalkLFT_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Cactus/Cactus_WalkRGT_ANIM",
+      "file": "Cactus/Cactus_WalkRGT_ANIM.fbx",
+      "character": "Cactus",
+      "model": "../Cactus.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_Skeleton.Cactus_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_Attack01_ANIM",
+      "file": "ChestMonster/ChestMonster_Attack01_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_Attack02_ANIM",
+      "file": "ChestMonster/ChestMonster_Attack02_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_Die_ANIM",
+      "file": "ChestMonster/ChestMonster_Die_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_Dizzy_ANIM",
+      "file": "ChestMonster/ChestMonster_Dizzy_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_GetHit_ANIM",
+      "file": "ChestMonster/ChestMonster_GetHit_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_IdleBattle_ANIM",
+      "file": "ChestMonster/ChestMonster_IdleBattle_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_IdleChest_ANIM",
+      "file": "ChestMonster/ChestMonster_IdleChest_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_IdleNormal_ANIM",
+      "file": "ChestMonster/ChestMonster_IdleNormal_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_Run_ANIM",
+      "file": "ChestMonster/ChestMonster_Run_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_SenseSomethingRPT_ANIM",
+      "file": "ChestMonster/ChestMonster_SenseSomethingRPT_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_SenseSomethingST_ANIM",
+      "file": "ChestMonster/ChestMonster_SenseSomethingST_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_Taunting_ANIM",
+      "file": "ChestMonster/ChestMonster_Taunting_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_Victory_ANIM",
+      "file": "ChestMonster/ChestMonster_Victory_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_WalkBWD_ANIM",
+      "file": "ChestMonster/ChestMonster_WalkBWD_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_WalkFWD_ANIM",
+      "file": "ChestMonster/ChestMonster_WalkFWD_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_WalkLeft_ANIM",
+      "file": "ChestMonster/ChestMonster_WalkLeft_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/ChestMonster/ChestMonster_WalkRight_ANIM",
+      "file": "ChestMonster/ChestMonster_WalkRight_ANIM.fbx",
+      "character": "ChestMonster",
+      "model": "../ChestMonster.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_Skeleton.ChestMonster_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_Attack01Angry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_Attack01Angry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_Attack02Angry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_Attack02Angry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_Attack03Angry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_Attack03Angry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_DieAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_DieAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_DizzyAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_DizzyAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_GetHitAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_GetHitAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_IdleBattleAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_IdleBattleAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_IdleNormalAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_IdleNormalAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_IdlePlantToBattleAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_IdlePlantToBattleAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_runFWDAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_runFWDAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_SenseSomethingMaintainAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_SenseSomethingMaintainAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_SenseSomethingStartAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_SenseSomethingStartAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_TauntingAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_TauntingAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_VictoryAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_VictoryAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_walkBWDAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_walkBWDAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_walkFWDAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_walkFWDAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_walkLFTAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_walkLFTAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/AngryVersion/Mushroom_walkRGTAngry_ANIM",
+      "file": "Mushroom/AngryVersion/Mushroom_walkRGTAngry_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/Mushroom_IdlePlant_ANIM",
+      "file": "Mushroom/Mushroom_IdlePlant_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_Attack01Smile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_Attack01Smile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_Attack02Smile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_Attack02Smile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_Attack03Smile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_Attack03Smile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_DieSmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_DieSmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_DizzySmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_DizzySmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_GetHitSmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_GetHitSmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_IdleBattleSmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_IdleBattleSmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_IdleNormalSmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_IdleNormalSmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_IdlePlantToBattleSmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_IdlePlantToBattleSmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_runFWDSmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_runFWDSmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_SenseSomethingMaintainSmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_SenseSomethingMaintainSmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_SenseSomethingStartSmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_SenseSomethingStartSmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_TauntingSmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_TauntingSmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_VictorySmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_VictorySmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_walkBWDSmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_walkBWDSmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_walkFWDSmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_walkFWDSmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_walkLFTSmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_walkLFTSmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Mushroom/SmileVersion/Mushroom_walkRGTSmile_ANIM",
+      "file": "Mushroom/SmileVersion/Mushroom_walkRGTSmile_ANIM.fbx",
+      "character": "Mushroom",
+      "model": "../Mushroom.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_Skeleton.Mushroom_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_Attack01_ANIM",
+      "file": "Slime/Slime_Attack01_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_Attack02_ANIM",
+      "file": "Slime/Slime_Attack02_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_Die_ANIM",
+      "file": "Slime/Slime_Die_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_Dizzy_ANIM",
+      "file": "Slime/Slime_Dizzy_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_GetHit_ANIM",
+      "file": "Slime/Slime_GetHit_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_IdleBattle_ANIM",
+      "file": "Slime/Slime_IdleBattle_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_IdleNormal_ANIM",
+      "file": "Slime/Slime_IdleNormal_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_Run_ANIM",
+      "file": "Slime/Slime_Run_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_SenseSomethingRoutine_ANIM",
+      "file": "Slime/Slime_SenseSomethingRoutine_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_SenseSomethingStart_ANIM",
+      "file": "Slime/Slime_SenseSomethingStart_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_Taunt_ANIM",
+      "file": "Slime/Slime_Taunt_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_Victory_ANIM",
+      "file": "Slime/Slime_Victory_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_Walk_ANIM",
+      "file": "Slime/Slime_Walk_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_WalkBack_ANIM",
+      "file": "Slime/Slime_WalkBack_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_WalkLeft_ANIM",
+      "file": "Slime/Slime_WalkLeft_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Slime/Slime_WalkRight_ANIM",
+      "file": "Slime/Slime_WalkRight_ANIM.fbx",
+      "character": "Slime",
+      "model": "../Slime.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_Skeleton.Slime_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm08/Swarm08_Attack_Anim",
+      "file": "Swarm08/Swarm08_Attack_Anim.fbx",
+      "character": "Swarm08",
+      "model": "../Swarm08.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm08_SK_Skeleton.Swarm08_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm08/Swarm08_Die_Anim",
+      "file": "Swarm08/Swarm08_Die_Anim.fbx",
+      "character": "Swarm08",
+      "model": "../Swarm08.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm08_SK_Skeleton.Swarm08_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm08/Swarm08_GetHit_Anim",
+      "file": "Swarm08/Swarm08_GetHit_Anim.fbx",
+      "character": "Swarm08",
+      "model": "../Swarm08.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm08_SK_Skeleton.Swarm08_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm08/Swarm08_Idle_Anim",
+      "file": "Swarm08/Swarm08_Idle_Anim.fbx",
+      "character": "Swarm08",
+      "model": "../Swarm08.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm08_SK_Skeleton.Swarm08_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm08/Swarm08_MoveBWD_Anim",
+      "file": "Swarm08/Swarm08_MoveBWD_Anim.fbx",
+      "character": "Swarm08",
+      "model": "../Swarm08.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm08_SK_Skeleton.Swarm08_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm08/Swarm08_MoveFWD_Anim",
+      "file": "Swarm08/Swarm08_MoveFWD_Anim.fbx",
+      "character": "Swarm08",
+      "model": "../Swarm08.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm08_SK_Skeleton.Swarm08_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm08/Swarm08_MoveLFT_Anim",
+      "file": "Swarm08/Swarm08_MoveLFT_Anim.fbx",
+      "character": "Swarm08",
+      "model": "../Swarm08.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm08_SK_Skeleton.Swarm08_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm08/Swarm08_MoveRGT_Anim",
+      "file": "Swarm08/Swarm08_MoveRGT_Anim.fbx",
+      "character": "Swarm08",
+      "model": "../Swarm08.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm08_SK_Skeleton.Swarm08_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm09/Swarm09_Attack_Anim",
+      "file": "Swarm09/Swarm09_Attack_Anim.fbx",
+      "character": "Swarm09",
+      "model": "../Swarm09.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm09_SK_Skeleton.Swarm09_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm09/Swarm09_Die_Anim",
+      "file": "Swarm09/Swarm09_Die_Anim.fbx",
+      "character": "Swarm09",
+      "model": "../Swarm09.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm09_SK_Skeleton.Swarm09_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm09/Swarm09_GetHit_Anim",
+      "file": "Swarm09/Swarm09_GetHit_Anim.fbx",
+      "character": "Swarm09",
+      "model": "../Swarm09.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm09_SK_Skeleton.Swarm09_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm09/Swarm09_Idle_Anim",
+      "file": "Swarm09/Swarm09_Idle_Anim.fbx",
+      "character": "Swarm09",
+      "model": "../Swarm09.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm09_SK_Skeleton.Swarm09_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm09/Swarm09_MoveBWD_Anim",
+      "file": "Swarm09/Swarm09_MoveBWD_Anim.fbx",
+      "character": "Swarm09",
+      "model": "../Swarm09.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm09_SK_Skeleton.Swarm09_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm09/Swarm09_MoveFWD_Anim",
+      "file": "Swarm09/Swarm09_MoveFWD_Anim.fbx",
+      "character": "Swarm09",
+      "model": "../Swarm09.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm09_SK_Skeleton.Swarm09_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm09/Swarm09_MoveLFT_Anim",
+      "file": "Swarm09/Swarm09_MoveLFT_Anim.fbx",
+      "character": "Swarm09",
+      "model": "../Swarm09.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm09_SK_Skeleton.Swarm09_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/Swarm09/Swarm09_MoveRGT_Anim",
+      "file": "Swarm09/Swarm09_MoveRGT_Anim.fbx",
+      "character": "Swarm09",
+      "model": "../Swarm09.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm09_SK_Skeleton.Swarm09_SK_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_Attack01_ANIM",
+      "file": "TurtleShell/TurtleShell_Attack01_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_Attack02_ANIM",
+      "file": "TurtleShell/TurtleShell_Attack02_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_Defend_ANIM",
+      "file": "TurtleShell/TurtleShell_Defend_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_DefendHit_ANIM",
+      "file": "TurtleShell/TurtleShell_DefendHit_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_Die_ANIM",
+      "file": "TurtleShell/TurtleShell_Die_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_Dizzy_ANIM",
+      "file": "TurtleShell/TurtleShell_Dizzy_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_GetHit_ANIM",
+      "file": "TurtleShell/TurtleShell_GetHit_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_IdleBattle_ANIM",
+      "file": "TurtleShell/TurtleShell_IdleBattle_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_IdleNormal_ANIM",
+      "file": "TurtleShell/TurtleShell_IdleNormal_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_Run_ANIM",
+      "file": "TurtleShell/TurtleShell_Run_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_SenseSomethingRT_ANIM",
+      "file": "TurtleShell/TurtleShell_SenseSomethingRT_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_SenseSomethingStart_ANIM",
+      "file": "TurtleShell/TurtleShell_SenseSomethingStart_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_Taunt_ANIM",
+      "file": "TurtleShell/TurtleShell_Taunt_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_Victory_ANIM",
+      "file": "TurtleShell/TurtleShell_Victory_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_Walk_ANIM",
+      "file": "TurtleShell/TurtleShell_Walk_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_WalkBack_ANIM",
+      "file": "TurtleShell/TurtleShell_WalkBack_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_WalkLeft_ANIM",
+      "file": "TurtleShell/TurtleShell_WalkLeft_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    },
+    {
+      "asset": "/Game/MonsterForSurvivalGame/Animation/Polyart/TurtleShell/TurtleShell_WalkRight_ANIM",
+      "file": "TurtleShell/TurtleShell_WalkRight_ANIM.fbx",
+      "character": "TurtleShell",
+      "model": "../TurtleShell.fbx",
+      "skeleton": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_Skeleton.TurtleShell_Skeleton",
+      "success": true,
+      "errors": []
+    }
+  ],
+  "skipped": []
+}

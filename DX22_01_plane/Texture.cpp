@@ -1,22 +1,22 @@
-#include	<iostream>
+ï»¿#include	<iostream>
 #include	"Texture.h"
 #include	"stb_image.h"
 #include	"renderer.h"
 
-// ƒeƒNƒXƒ`ƒƒ‚ğƒ[ƒh
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’ãƒ­ãƒ¼ãƒ‰
 bool Texture::Load(const std::string& filename)
 {
 	bool sts = true;
 	unsigned char* pixels;
 
-	// ‰æ‘œ“Ç‚İ‚İ
+	// ç”»åƒèª­ã¿è¾¼ã¿
 	pixels = stbi_load(filename.c_str(), &m_width, &m_height, &m_bpp, 4);
 	if (pixels == nullptr) {
 		std::cout << filename.c_str() << " Load error " << std::endl;
 		return false;
 	}
 
-	// ƒeƒNƒXƒ`ƒƒ2DƒŠƒ\[ƒX¶¬
+	// ãƒ†ã‚¯ã‚¹ãƒãƒ£2Dãƒªã‚½ãƒ¼ã‚¹ç”Ÿæˆ
 	ComPtr<ID3D11Texture2D> pTexture;
 
 	D3D11_TEXTURE2D_DESC desc;
@@ -45,29 +45,29 @@ bool Texture::Load(const std::string& filename)
 		return false;
 	}
 
-	// SRV¶¬
+	// SRVç”Ÿæˆ
 	hr = device->CreateShaderResourceView(pTexture.Get(), nullptr, m_srv.GetAddressOf());
 	if (FAILED(hr)) {
 		stbi_image_free(pixels);
 		return false;
 	}
 
-	// ƒsƒNƒZƒ‹ƒCƒ[ƒW‰ğ•ú
+	// ãƒ”ã‚¯ã‚»ãƒ«ã‚¤ãƒ¡ãƒ¼ã‚¸è§£æ”¾
 	stbi_image_free(pixels);
 
-	// ƒeƒNƒXƒ`ƒƒ‰ğ•ú
+	// ãƒ†ã‚¯ã‚¹ãƒãƒ£è§£æ”¾
 	pTexture->Release();
 
 	return true;
 }
 
-// ƒeƒNƒXƒ`ƒƒ‚ğƒƒ‚ƒŠ‚©‚çƒ[ƒh
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’ãƒ¡ãƒ¢ãƒªã‹ã‚‰ãƒ­ãƒ¼ãƒ‰
 bool Texture::LoadFromFemory(const unsigned char* Data,int len) {
 
 	bool sts = true;
 	unsigned char* pixels;
 
-	// ‰æ‘œ“Ç‚İ‚İ
+	// ç”»åƒèª­ã¿è¾¼ã¿
 	pixels = stbi_load_from_memory(Data, 
 		len, 
 		&m_width, 
@@ -75,7 +75,7 @@ bool Texture::LoadFromFemory(const unsigned char* Data,int len) {
 		&m_bpp, 
 		STBI_rgb_alpha);
 
-	// ƒeƒNƒXƒ`ƒƒ2DƒŠƒ\[ƒX¶¬
+	// ãƒ†ã‚¯ã‚¹ãƒãƒ£2Dãƒªã‚½ãƒ¼ã‚¹ç”Ÿæˆ
 	ComPtr<ID3D11Texture2D> pTexture;
 
 	D3D11_TEXTURE2D_DESC desc;
@@ -104,22 +104,23 @@ bool Texture::LoadFromFemory(const unsigned char* Data,int len) {
 		return false;
 	}
 
-	// SRV¶¬
+	// SRVç”Ÿæˆ
 	hr = device->CreateShaderResourceView(pTexture.Get(), nullptr, m_srv.GetAddressOf());
 	if (FAILED(hr)) {
 		stbi_image_free(pixels);
 		return false;
 	}
 
-	// ƒsƒNƒZƒ‹ƒCƒ[ƒW‰ğ•ú
+	// ãƒ”ã‚¯ã‚»ãƒ«ã‚¤ãƒ¡ãƒ¼ã‚¸è§£æ”¾
 	stbi_image_free(pixels);
 
 	return true;
 }
 
-// ƒeƒNƒXƒ`ƒƒ‚ğGPU‚ÉƒZƒbƒg
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’GPUã«ã‚»ãƒƒãƒˆ
 void Texture::SetGPU()
 {
 	ID3D11DeviceContext* devicecontext = Renderer::GetDeviceContext();
 	devicecontext->PSSetShaderResources(0, 1, m_srv.GetAddressOf());
 }
+

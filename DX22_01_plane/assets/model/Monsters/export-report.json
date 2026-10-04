@@ -1,0 +1,56 @@
+[
+  {
+    "asset": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Beholder_SK",
+    "file": "C:\\Users\\arata\\Documents\\Codex\\2026-09-28\\https-teams-microsoft-com-l-message\\outputs\\EnemyAssets\\Beholder.fbx",
+    "success": true,
+    "errors": []
+  },
+  {
+    "asset": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Cactus_SK",
+    "file": "C:\\Users\\arata\\Documents\\Codex\\2026-09-28\\https-teams-microsoft-com-l-message\\outputs\\EnemyAssets\\Cactus.fbx",
+    "success": true,
+    "errors": []
+  },
+  {
+    "asset": "/Game/MonsterForSurvivalGame/Mesh/Polyart/ChestMonster_SK",
+    "file": "C:\\Users\\arata\\Documents\\Codex\\2026-09-28\\https-teams-microsoft-com-l-message\\outputs\\EnemyAssets\\ChestMonster.fbx",
+    "success": true,
+    "errors": []
+  },
+  {
+    "asset": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Mushroom_SK",
+    "file": "C:\\Users\\arata\\Documents\\Codex\\2026-09-28\\https-teams-microsoft-com-l-message\\outputs\\EnemyAssets\\Mushroom.fbx",
+    "success": true,
+    "errors": []
+  },
+  {
+    "asset": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Slime_SK",
+    "file": "C:\\Users\\arata\\Documents\\Codex\\2026-09-28\\https-teams-microsoft-com-l-message\\outputs\\EnemyAssets\\Slime.fbx",
+    "success": true,
+    "errors": []
+  },
+  {
+    "asset": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm08_SK",
+    "file": "C:\\Users\\arata\\Documents\\Codex\\2026-09-28\\https-teams-microsoft-com-l-message\\outputs\\EnemyAssets\\Swarm08.fbx",
+    "success": true,
+    "errors": []
+  },
+  {
+    "asset": "/Game/MonsterForSurvivalGame/Mesh/Polyart/Swarm09_SK",
+    "file": "C:\\Users\\arata\\Documents\\Codex\\2026-09-28\\https-teams-microsoft-com-l-message\\outputs\\EnemyAssets\\Swarm09.fbx",
+    "success": true,
+    "errors": []
+  },
+  {
+    "asset": "/Game/MonsterForSurvivalGame/Mesh/Polyart/TurtleShell_SK",
+    "file": "C:\\Users\\arata\\Documents\\Codex\\2026-09-28\\https-teams-microsoft-com-l-message\\outputs\\EnemyAssets\\TurtleShell.fbx",
+    "success": true,
+    "errors": []
+  },
+  {
+    "asset": "<Object '/Game/MonsterForSurvivalGame/Texture/BasecolorDefault_TEX.BasecolorDefault_TEX' (0x000001E46CBFF600) Class 'Texture2D'>",
+    "file": "C:\\Users\\arata\\Documents\\Codex\\2026-09-28\\https-teams-microsoft-com-l-message\\outputs\\EnemyAssets\\albedo.tga",
+    "success": true,
+    "errors": []
+  }
+]

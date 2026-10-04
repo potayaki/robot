@@ -16,11 +16,11 @@ CEnemy::~CEnemy() {
 }
 
 void CEnemy::Init() {
-    m_body = new TestCube;
+    m_body = new TestModel();
     m_body->Init();
+    m_body->Load("assets/model/slime/Slime.fbx", "assets/model/slime/albedo.tga");
     m_body->SetScale(1.0f, 1.0f, 1.0f); // 敵の体
-    m_body->SetTexture("assets/texture/dice.png");
-    m_body->SetMaterial(DirectX::SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f)); // 白色のマテリアル
+    //m_body->SetMaterial(DirectX::SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f)); // 白色のマテリアル
 }
 
 void CEnemy::Update() {

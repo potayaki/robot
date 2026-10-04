@@ -1,0 +1,842 @@
+[
+  {
+    "file": "Beholder/Beholder_Attack01_ANIM.fbx",
+    "duration_seconds": 0.7333333333333333,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_Attack02RPT_ANIM.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_Attack02ST_ANIM.fbx",
+    "duration_seconds": 0.5333333333333333,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_Attack03_ANIM.fbx",
+    "duration_seconds": 0.7333333333333333,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_Die_ANIM.fbx",
+    "duration_seconds": 0.7333333333333333,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_Dizzy_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_GetHit_ANIM.fbx",
+    "duration_seconds": 0.7333333333333333,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_IdleBattle_ANIM.fbx",
+    "duration_seconds": 0.7333333333333333,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_IdleNormal_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_Run_ANIM.fbx",
+    "duration_seconds": 0.5333333333333333,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_SenseSomethingRPT_ANIM.fbx",
+    "duration_seconds": 3.6666666666666665,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_SenseSomethingST_ANIM.fbx",
+    "duration_seconds": 0.7333333333333333,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_Taunting_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_Victory_ANIM.fbx",
+    "duration_seconds": 2.0,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_WalkBWD_ANIM.fbx",
+    "duration_seconds": 0.9333333333333333,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_WalkFWD_ANIM.fbx",
+    "duration_seconds": 0.9333333333333333,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_WalkLeft_ANIM.fbx",
+    "duration_seconds": 0.9333333333333333,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Beholder/Beholder_WalkRight_ANIM.fbx",
+    "duration_seconds": 0.9333333333333333,
+    "channels": 46,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_Attack01_ANIM.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_Attack02_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_Die_ANIM.fbx",
+    "duration_seconds": 0.7333333333333333,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_Dizzy_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_GetHit_ANIM.fbx",
+    "duration_seconds": 0.7333333333333333,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_IdleBattle_ANIM.fbx",
+    "duration_seconds": 0.5666666666666667,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_IdleNormal_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_IdlePlant_ANIM.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_IdlePlantToBattle_ANIM.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_RunFWD_ANIM.fbx",
+    "duration_seconds": 0.5333333333333333,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_SenseSomethingMaint_ANIM.fbx",
+    "duration_seconds": 4.0,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_SenseSomethingStart_ANIM.fbx",
+    "duration_seconds": 0.7333333333333333,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_Taunting_ANIM.fbx",
+    "duration_seconds": 2.3333333333333335,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_Victory_ANIM.fbx",
+    "duration_seconds": 4.0,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_WalkBWD_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_WalkFWD_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_WalkLFT_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Cactus/Cactus_WalkRGT_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 18,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_Attack01_ANIM.fbx",
+    "duration_seconds": 0.8,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_Attack02_ANIM.fbx",
+    "duration_seconds": 0.7333333333333333,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_Die_ANIM.fbx",
+    "duration_seconds": 0.9333333333333333,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_Dizzy_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_GetHit_ANIM.fbx",
+    "duration_seconds": 0.6,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_IdleBattle_ANIM.fbx",
+    "duration_seconds": 0.7333333333333333,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_IdleChest_ANIM.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_IdleNormal_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_Run_ANIM.fbx",
+    "duration_seconds": 0.5333333333333333,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_SenseSomethingRPT_ANIM.fbx",
+    "duration_seconds": 4.666666666666667,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_SenseSomethingST_ANIM.fbx",
+    "duration_seconds": 0.26666666666666666,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_Taunting_ANIM.fbx",
+    "duration_seconds": 2.0,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_Victory_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_WalkBWD_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_WalkFWD_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_WalkLeft_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "ChestMonster/ChestMonster_WalkRight_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 22,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_Attack01Angry_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_Attack02Angry_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_Attack03Angry_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_DieAngry_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_DizzyAngry_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_GetHitAngry_ANIM.fbx",
+    "duration_seconds": 0.7333333333333333,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_IdleBattleAngry_ANIM.fbx",
+    "duration_seconds": 0.5666666666666667,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_IdleNormalAngry_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_IdlePlantToBattleAngry_ANIM.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_runFWDAngry_ANIM.fbx",
+    "duration_seconds": 0.5333333333333333,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_SenseSomethingMaintainAngry_ANIM.fbx",
+    "duration_seconds": 4.0,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_SenseSomethingStartAngry_ANIM.fbx",
+    "duration_seconds": 0.8,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_TauntingAngry_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_VictoryAngry_ANIM.fbx",
+    "duration_seconds": 2.0,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_walkBWDAngry_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_walkFWDAngry_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_walkLFTAngry_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/AngryVersion/Mushroom_walkRGTAngry_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/Mushroom_IdlePlant_ANIM.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_Attack01Smile_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_Attack02Smile_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_Attack03Smile_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_DieSmile_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_DizzySmile_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_GetHitSmile_ANIM.fbx",
+    "duration_seconds": 0.7333333333333333,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_IdleBattleSmile_ANIM.fbx",
+    "duration_seconds": 0.5666666666666667,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_IdleNormalSmile_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_IdlePlantToBattleSmile_ANIM.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_runFWDSmile_ANIM.fbx",
+    "duration_seconds": 0.5333333333333333,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_SenseSomethingMaintainSmile_ANIM.fbx",
+    "duration_seconds": 4.0,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_SenseSomethingStartSmile_ANIM.fbx",
+    "duration_seconds": 0.8,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_TauntingSmile_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_VictorySmile_ANIM.fbx",
+    "duration_seconds": 2.0,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_walkBWDSmile_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_walkFWDSmile_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_walkLFTSmile_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Mushroom/SmileVersion/Mushroom_walkRGTSmile_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 17,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_Attack01_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_Attack02_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_Die_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_Dizzy_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_GetHit_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_IdleBattle_ANIM.fbx",
+    "duration_seconds": 0.8,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_IdleNormal_ANIM.fbx",
+    "duration_seconds": 1.6666666666666667,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_Run_ANIM.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_SenseSomethingRoutine_ANIM.fbx",
+    "duration_seconds": 2.3333333333333335,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_SenseSomethingStart_ANIM.fbx",
+    "duration_seconds": 2.066666666666667,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_Taunt_ANIM.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_Victory_ANIM.fbx",
+    "duration_seconds": 2.6666666666666665,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_Walk_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_WalkBack_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_WalkLeft_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Slime/Slime_WalkRight_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 10,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm08/Swarm08_Attack_Anim.fbx",
+    "duration_seconds": 0.5333333333333333,
+    "channels": 16,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm08/Swarm08_Die_Anim.fbx",
+    "duration_seconds": 0.6333333333333333,
+    "channels": 16,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm08/Swarm08_GetHit_Anim.fbx",
+    "duration_seconds": 0.4,
+    "channels": 16,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm08/Swarm08_Idle_Anim.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 16,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm08/Swarm08_MoveBWD_Anim.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 16,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm08/Swarm08_MoveFWD_Anim.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 16,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm08/Swarm08_MoveLFT_Anim.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 16,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm08/Swarm08_MoveRGT_Anim.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 16,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm09/Swarm09_Attack_Anim.fbx",
+    "duration_seconds": 0.5333333333333333,
+    "channels": 12,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm09/Swarm09_Die_Anim.fbx",
+    "duration_seconds": 0.6333333333333333,
+    "channels": 12,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm09/Swarm09_GetHit_Anim.fbx",
+    "duration_seconds": 0.4,
+    "channels": 12,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm09/Swarm09_Idle_Anim.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 12,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm09/Swarm09_MoveBWD_Anim.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 12,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm09/Swarm09_MoveFWD_Anim.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 12,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm09/Swarm09_MoveLFT_Anim.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 12,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "Swarm09/Swarm09_MoveRGT_Anim.fbx",
+    "duration_seconds": 0.6666666666666666,
+    "channels": 12,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_Attack01_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_Attack02_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_Defend_ANIM.fbx",
+    "duration_seconds": 0.5666666666666667,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_DefendHit_ANIM.fbx",
+    "duration_seconds": 0.23333333333333334,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_Die_ANIM.fbx",
+    "duration_seconds": 2.0,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_Dizzy_ANIM.fbx",
+    "duration_seconds": 1.3333333333333333,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_GetHit_ANIM.fbx",
+    "duration_seconds": 0.8333333333333334,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_IdleBattle_ANIM.fbx",
+    "duration_seconds": 0.8,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_IdleNormal_ANIM.fbx",
+    "duration_seconds": 1.6666666666666667,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_Run_ANIM.fbx",
+    "duration_seconds": 0.5333333333333333,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_SenseSomethingRT_ANIM.fbx",
+    "duration_seconds": 2.3333333333333335,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_SenseSomethingStart_ANIM.fbx",
+    "duration_seconds": 2.0,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_Taunt_ANIM.fbx",
+    "duration_seconds": 1.6666666666666667,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_Victory_ANIM.fbx",
+    "duration_seconds": 2.6666666666666665,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_Walk_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_WalkBack_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_WalkLeft_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  },
+  {
+    "file": "TurtleShell/TurtleShell_WalkRight_ANIM.fbx",
+    "duration_seconds": 1.0,
+    "channels": 30,
+    "all_channels_match_model_nodes": true
+  }
+]

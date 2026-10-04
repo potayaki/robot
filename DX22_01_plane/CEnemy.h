@@ -2,7 +2,7 @@
 /*
 キャラクターの敵のクラス
 */
-#include "TestCube.h"	
+//#include "TestCube.h"	
 #include"TestModel.h"
 #include "Object.h"
 class CEnemy :
@@ -11,7 +11,7 @@ class CEnemy :
 
     private:
         //敵の体
-		TestCube* m_body;
+		TestModel* m_body;
 
         int hp = 3;//体力
 

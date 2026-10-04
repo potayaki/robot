@@ -1,0 +1,50 @@
+[
+  {
+    "file": "Beholder.fbx",
+    "meshes": 1,
+    "materials": 1,
+    "animations": 0
+  },
+  {
+    "file": "Cactus.fbx",
+    "meshes": 1,
+    "materials": 1,
+    "animations": 0
+  },
+  {
+    "file": "ChestMonster.fbx",
+    "meshes": 1,
+    "materials": 1,
+    "animations": 0
+  },
+  {
+    "file": "Mushroom.fbx",
+    "meshes": 1,
+    "materials": 1,
+    "animations": 0
+  },
+  {
+    "file": "Slime.fbx",
+    "meshes": 1,
+    "materials": 1,
+    "animations": 0
+  },
+  {
+    "file": "Swarm08.fbx",
+    "meshes": 1,
+    "materials": 1,
+    "animations": 0
+  },
+  {
+    "file": "Swarm09.fbx",
+    "meshes": 1,
+    "materials": 1,
+    "animations": 0
+  },
+  {
+    "file": "TurtleShell.fbx",
+    "meshes": 1,
+    "materials": 1,
+    "animations": 0
+  }
+]
