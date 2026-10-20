@@ -59,6 +59,10 @@ void CTimer::Uninit() {
     for (Texture2D* d : m_IntDigits) { if (d) d->Destroy(); }
     for (Texture2D* d : m_DecDigits) { if (d) d->Destroy(); }
     if (m_DecimalPoint) m_DecimalPoint->Destroy();
+    // Gameの終了処理とデストラクタから二度呼ばれても、解放済みの数字を参照しない。
+    m_IntDigits.clear();
+    m_DecDigits.clear();
+    m_DecimalPoint = nullptr;
 }
 
 Object* CTimer::SetPosition(float x, float y, float z) {

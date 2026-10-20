@@ -10,8 +10,8 @@ private:
     float m_radius;         // 回転半径
     float m_speed;          // 回転スピード
 
-    float m_cooldownTime; // クールダウン時間
-    int m_damage;         // ダメージ量
+    float m_cooldownTime = 0.0f; // 未初期化の値で攻撃が止まらないようにする。
+    int m_damage = 1;
 
 public:
     COrbitalOrb();
@@ -24,6 +24,7 @@ public:
 
     // オーブとしての初期設定を行う関数
     void SetOrbitalParam(Object* player, float startAngle, float radius, float speed);
+    void SetDamage(int damage) { m_damage = damage; }
 
     // 当たり判定
     Collision::Sphere GetCollisionSphere() override;

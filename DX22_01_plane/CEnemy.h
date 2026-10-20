@@ -5,6 +5,8 @@
 //#include "TestCube.h"	
 #include"TestModel.h"
 #include "EnemyTarget.h"
+// 同じモデルを使っても、体格・移動・攻撃性能で異なる役割を持たせる。
+enum class SlimeVariant { Normal, Runner, Brute };
 class CEnemy :
     public EnemyTarget
 {
@@ -24,6 +26,10 @@ class CEnemy :
         int damage = 2;//プレイヤーに与えるダメージ量
 
         float m_AttackTimer = 0.0f; // 攻撃のクールダウンタイマー
+        SlimeVariant m_variant = SlimeVariant::Normal;
+        float m_size = 1.0f;
+        int m_experience = 1;
+        int m_moveFrame = 0;
 
         public:
 		CEnemy();
@@ -36,6 +42,7 @@ class CEnemy :
 
 		void Onland();
         void OnHit(int &damage) override;//弾に当たったときの処理
+        void SetVariant(SlimeVariant variant);
 
 		void SetPosition(float x, float y, float z) {
 			DirectX::SimpleMath::Vector3 p = { x,y,z };
@@ -43,7 +50,7 @@ class CEnemy :
 		}
 
        Collision::Sphere GetCollisionSphere() override {
-            return { m_Position, 10.0f }; // 敵の当たり判定の半径を10に設定
+            return { m_Position, 10.0f * m_size }; // 大型・小型の見た目に判定も合わせる。
        }
 
 

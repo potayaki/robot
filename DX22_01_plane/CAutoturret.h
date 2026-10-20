@@ -10,7 +10,8 @@ private:
     float m_radius = 500.0f; // 攻撃範囲の半径
     int damage = 1; // 攻撃のダメージ量
 
-    bool m_Active = false; // 自動砲台がアクティブかどうかのフラグ
+    // 有効/無効はObjectのm_Activeを使い、プールと寿命の判定を一致させる。
+    float m_attackInterval = 27.0f;
 
 public:
     CAutoturret();
@@ -26,6 +27,7 @@ public:
 
     // 攻撃のクールダウン時間を設定する関数
     void SetAttackCooldown(float cooldown) { m_attackCooldown = cooldown; }
+    void ConfigureUpgrade(int rank);
 
     // 当たり判定用の球を返す関数
     Collision::Sphere GetCollisionSphere() override {

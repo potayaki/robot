@@ -7,6 +7,7 @@
 #include"CMissile.h"
 #include"CAutoturret.h"
 #include"PoolManager.h"
+#include "imgui.h"
 #include<algorithm>
 #include<cmath>
 struct TargetInfo {
@@ -64,7 +65,7 @@ void CPlayer::Update() {
 
 
     if (m_hp <= 0) {
-        //TODO : 死亡処理
+        return;
     }
 
     m_velocity.y -= Gravity;
@@ -79,6 +80,7 @@ void CPlayer::Update() {
 
     isGrounded();
     Move();
+    UpdateAutoWeapons();
 
 
     m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z);
@@ -98,6 +100,9 @@ void CPlayer::Onland() {
 }
 
 void CPlayer::CreateOrbs(int count) {
+    // 強化時は配置を作り直し、以前のオーブを重複して残さない。
+    for (COrbitalOrb* orb : m_orbs) if (orb) orb->Destroy();
+    m_orbs.clear();
     float radius = 50.0f; // 回転半径
     float speed = 0.05f; // 回転スピード
 
@@ -111,6 +116,7 @@ void CPlayer::CreateOrbs(int count) {
         // オーブにプレイヤー情報と初期設定を渡す
         if (orb != nullptr) {
             orb->SetOrbitalParam(this, startAngle, radius, speed);
+            orb->SetDamage(1 + m_progression.Rank(UpgradeId::Orbit));
             m_orbs.push_back(orb); // リストに追加
         }
     }
@@ -152,8 +158,9 @@ void CPlayer::Move() {
     if (movedir.LengthSquared() > 0.0f) {
         movedir.Normalize();
 
-        m_Position.x += movedir.x * speed;
-        m_Position.z += movedir.z * speed;
+        const float moveSpeed = speed * (1.0f + 0.1f * m_progression.Rank(UpgradeId::MoveSpeed));
+        m_Position.x += movedir.x * moveSpeed;
+        m_Position.z += movedir.z * moveSpeed;
 
         m_Rotation.y = atan2f(movedir.x, movedir.z);
 
@@ -164,33 +171,17 @@ void CPlayer::Move() {
     }
 
 
-    if (Input::GetKeyPress(VK_LBUTTON)) {
+    // 詳細画面やデバッグUIの操作クリックを射撃として扱わない。
+    const bool usingMouseUI = ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse;
+    if (!usingMouseUI && Input::GetKeyPress(VK_LBUTTON)) {
         StartBullet();
     }
 
-    if (Input::GetKeyPress(VK_RBUTTON)) {
+    if (!usingMouseUI && Input::GetKeyPress(VK_RBUTTON)) {
         StartMissile();
     }
 
-    if (Input::GetKeyTrigger(VK_F)) {
-        using AutoturretManager = PoolManager<CAutoturret, 3>;
-
-        std::vector<AutoturretManager*> managers = Game::GetInstance()->GetObjects<AutoturretManager>();
-        if (!managers.empty()) {
-            CAutoturret* turret = managers[0]->Spawn();
-            if (turret != nullptr) {
-                // Spawn() 内で寿命やタイマーの初期化を行うか、ここで位置を設定
-                turret->SetPosition(m_Position.x, m_Position.y, m_Position.z);
-                turret->SetLife(100.0f); // 寿命のリセット
-            }
-        }
-    }
-
-    if (Input::GetKeyTrigger(VK_V)) {
-
-        CreateOrbs(3); // 例として3つのオーブを生成
-
-    }
+    // オーブと砲台は獲得した時に自動で動く。F/Vキーでの無制限生成は行わない。
 
 
 }
@@ -271,13 +262,23 @@ void CPlayer::StartBullet() {
 
     std::vector<BulletManager*> bulletManagers = Game::GetInstance()->GetObjects<BulletManager>();
     if (!bulletManagers.empty()) {
-        CBullet* bullet = bulletManagers[0]->Spawn();
-        if (bullet != nullptr) {
-            bullet->Shoot(bulletStart, bulletDirection);
+        // 中央の弾は従来通り照準を狙い、追加弾だけ左右へ広げる。
+        const int count = 1 + m_progression.Rank(UpgradeId::MultiShot);
+        for (int i = 0; i < count; ++i) {
+            const float offset = i == 0 ? 0.0f : (i % 2 ? 0.065f : -0.065f);
+            Vector3 shotDirection = Vector3::TransformNormal(bulletDirection, Matrix::CreateRotationY(offset));
+            CBullet* bullet = bulletManagers[0]->Spawn();
+            if (bullet != nullptr) {
+                bullet->SetDamage(1 + m_progression.Rank(UpgradeId::BulletPower));
+                // マルチショットの各弾が、それぞれの位置から誘導先を選ぶ。
+                bullet->Shoot(bulletStart, shotDirection, m_progression.Rank(UpgradeId::BulletHoming));
+            }
         }
     }
 
-    m_currentBulletTime = m_BulletTime;
+    // 更新で生じた1フレーム未満の余りを次へ持ち越す。
+    // 毎回切り上げると、高速装填Lv1（6→5.1フレーム）が強化前と同じ連射になる。
+    m_currentBulletTime += m_BulletTime;
 }
 
 
@@ -296,9 +297,7 @@ void CPlayer::StartMissile() {
 
         Camera* camera = Game::GetInstance()->GetCamera();
         Vector3 rayOrigin, rayDirection;
-        if (camera != nullptr) {
-            camera->GetMouseRay(rayOrigin, rayDirection);
-        }
+        if (camera == nullptr || !camera->GetMouseRay(rayOrigin, rayDirection)) return;
         std::vector<TargetInfo>Targets;
 
         for (auto& enemy : enemys) {
@@ -356,13 +355,14 @@ void CPlayer::StartMissile() {
                 if (missile != nullptr) {
                     // i をターゲットの数で割った余り（%）を使うことで、A→B→C→A→B... と順番に配る！
                     EnemyTarget* target = Targets[i % Targets.size()].enemy;
+                    missile->SetDamage(3 + 2 * m_progression.Rank(UpgradeId::MissilePower));
                     missile->Shoot(*this, *target, angles[i]);
                 }
             }
 
 
 
-            m_currentMissileTime = m_MissileTime; // ミサイルの発射後のクールダウン時間をリセット（2秒）
+            m_currentMissileTime += m_MissileTime; // 冷却強化の小数フレームも持ち越す。
 
 
         }

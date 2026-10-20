@@ -84,6 +84,18 @@
     <ClCompile Include="CEnemy.cpp">
       <Filter>ソース ファイル\Object</Filter>
     </ClCompile>
+    <ClCompile Include="EnemyTarget.cpp">
+      <Filter>ソース ファイル\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="SurvivorProgression.cpp">
+      <Filter>ソース ファイル\System</Filter>
+    </ClCompile>
+    <ClCompile Include="SurvivorCombat.cpp">
+      <Filter>ソース ファイル\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="SurvivorUI.cpp">
+      <Filter>ソース ファイル\Texture_UI</Filter>
+    </ClCompile>
     <ClCompile Include="CFlyingEnemy.cpp">
       <Filter>ソース ファイル\Object</Filter>
     </ClCompile>
@@ -287,6 +299,9 @@
     <ClInclude Include="CBullet.h">
       <Filter>ヘッダー ファイル\Object</Filter>
     </ClInclude>
+    <ClInclude Include="BulletHoming.h">
+      <Filter>ヘッダー ファイル\Object</Filter>
+    </ClInclude>
     <ClInclude Include="CEnemy.h">
       <Filter>ヘッダー ファイル\Object</Filter>
     </ClInclude>
@@ -295,6 +310,9 @@
     </ClInclude>
     <ClInclude Include="EnemyTarget.h">
       <Filter>ヘッダー ファイル\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="SurvivorProgression.h">
+      <Filter>ヘッダー ファイル\System</Filter>
     </ClInclude>
     <ClInclude Include="CMiniMap.h">
       <Filter>ヘッダー ファイル\Texture_UI</Filter>

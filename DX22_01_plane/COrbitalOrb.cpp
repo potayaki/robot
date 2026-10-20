@@ -20,6 +20,9 @@ void COrbitalOrb::Init() {
     m_body->Init();
     // プレイヤー(1.0f)より少し小さくする
     m_body->SetScale(0.5f, 0.5f, 0.5f);
+    // 獲得した武器を識別できるよう、青白いオーブとして描画する。
+    m_body->SetTexture("assets/texture/white.png");
+    m_body->SetMaterial(DirectX::SimpleMath::Color(0.2f, 0.8f, 1.0f, 1.0f));
 }
 
 void COrbitalOrb::SetOrbitalParam(Object* player, float startAngle, float radius, float speed) {
@@ -27,6 +30,10 @@ void COrbitalOrb::SetOrbitalParam(Object* player, float startAngle, float radius
     m_angle = startAngle;
     m_radius = radius;
     m_speed = speed;
+    // 報酬選択中はUpdateが止まるため、生成時点でも正しい周回位置を表示する。
+    m_Position = player->GetPosition() + DirectX::SimpleMath::Vector3(
+        radius * cosf(startAngle), 1.0f, radius * sinf(startAngle));
+    if (m_body) m_body->SetPosition(m_Position);
 }
 
 void COrbitalOrb::Update() {

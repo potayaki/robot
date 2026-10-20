@@ -150,6 +150,10 @@
     <ClCompile Include="CAutoturret.cpp" />
     <ClCompile Include="CBullet.cpp" />
     <ClCompile Include="CEnemy.cpp" />
+    <ClCompile Include="EnemyTarget.cpp" />
+    <ClCompile Include="SurvivorProgression.cpp" />
+    <ClCompile Include="SurvivorCombat.cpp" />
+    <ClCompile Include="SurvivorUI.cpp" />
     <ClCompile Include="CFlyingEnemy.cpp" />
     <ClCompile Include="CEnemySpawn.cpp" />
     <ClCompile Include="CMiniMap.cpp" />
@@ -207,9 +211,11 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CAutoturret.h" />
     <ClInclude Include="CBullet.h" />
+    <ClInclude Include="BulletHoming.h" />
     <ClInclude Include="CEnemy.h" />
     <ClInclude Include="CFlyingEnemy.h" />
     <ClInclude Include="EnemyTarget.h" />
+    <ClInclude Include="SurvivorProgression.h" />
     <ClInclude Include="CEnemySpawn.h" />
     <ClInclude Include="CMiniMap.h" />
     <ClInclude Include="CMissile.h" />

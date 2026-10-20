@@ -5,6 +5,7 @@
 #include"CParticle.h"
 #include"Ground.h"
 #include"PoolManager.h"
+#include "BulletHoming.h"
 #include<cmath>
 
 namespace {
@@ -59,6 +60,22 @@ void CBullet::Update() {
     //パーティクルの生成で1フレーム前の弾の位置を取得するために保存しておく
     DirectX::SimpleMath::Vector3 OldPosition = m_Position;
 
+    const auto enemies = Game::GetInstance()->GetObjects<EnemyTarget>();
+    if (m_homingRank > 0) {
+        // 固定ロックはしない。弾から最も近い生存中の敵を探し直すので、
+        // 外れた先に別の敵がいれば、その敵へ少しずつ軌道を曲げられる。
+        BulletHoming::Search<Vector3> search(m_velocity);
+        for (EnemyTarget* enemy : enemies) {
+            if (!enemy || enemy->IsDead() || !enemy->GetActive()) continue;
+            search.Consider(enemy->GetCollisionSphere().center - m_Position);
+        }
+        if (search.Found()) m_velocity = BulletHoming::Turn(m_velocity, search.Offset(), m_homingRank);
+        // 高さ方向の誘導にもモデルの先端を追従させる。
+        const float horizontal = std::sqrt(m_velocity.x * m_velocity.x + m_velocity.z * m_velocity.z);
+        SetRotation(Vector3(DirectX::XM_PIDIV2 + std::atan2(-m_velocity.y, horizontal),
+            std::atan2(m_velocity.x, m_velocity.z), 0.0f));
+    }
+
     m_Position += m_velocity; // 位置を更新
     m_life--; // 寿命を減らす
 
@@ -106,7 +123,7 @@ void CBullet::Update() {
     EnemyTarget* firstEnemy = nullptr;
     float enemyHitFraction = 2.0f;
     // 共通型で取得し、飛行ドローンにもスライムと同じ線分判定を適用する。
-    for (EnemyTarget* enemy : Game::GetInstance()->GetObjects<EnemyTarget>()) {
+    for (EnemyTarget* enemy : enemies) {
         if (enemy == nullptr || enemy->IsDead()) continue;
         float fraction = 0.0f;
         if (SegmentSphereHitFraction(bulletsegment, enemy->GetCollisionSphere(),
@@ -148,7 +165,9 @@ void CBullet::Uninit() {
 //--------------------
    //弾を発射する
    //--------------------
-void CBullet::Shoot(DirectX::SimpleMath::Vector3 player, DirectX::SimpleMath::Vector3 dir) {
+void CBullet::Shoot(DirectX::SimpleMath::Vector3 player, DirectX::SimpleMath::Vector3 dir, int homingRank) {
+    // プール再利用時に、以前の弾の誘導レベルを引き継がない。
+    m_homingRank = std::clamp(homingRank, 0, BulletHoming::MaxRank);
    
     DirectX::SimpleMath::Vector3 offset(0.0f, 0.0f, 0.0f); //弾の初期位置のオフセットを設定(モデル入れ替えの際に微調整)
     m_Position = player + offset; // 初期位置をセット

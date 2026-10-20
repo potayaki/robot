@@ -25,6 +25,7 @@ void CPresentBox::Init() {
 }
 
 void CPresentBox::Update() {
+    if (IsDead()) return;
     m_angle += 0.05f;
     std::vector<CPlayer*> players = Game::GetInstance()->GetObjects<CPlayer>();
 
@@ -37,8 +38,8 @@ void CPresentBox::Update() {
         if (diff.Length() < hitRange) {
             // プレイヤーと当たった場合の処理
             Destroy();// プレゼントボックスを非アクティブにする
-            // TODO : ここでプレイヤーにアイテムを与えるなどの処理を行う
-            //players[0]->heal(20); // 例: プレイヤーの体力を回復する
+            // レベルアップと共通の武器・スキル候補から一つを即時獲得する。
+            players[0]->GivePresentReward();
             return;
         }
         

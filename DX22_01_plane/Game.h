@@ -46,7 +46,7 @@ public:
 	Game(); // コンストラクタ
 	~Game(); // デストラクタ
 
-    float m_gameTime;
+    float m_gameTime = 0.0f;
 
 	static void Init(); // 初期化
 	static void Update(); // 更新

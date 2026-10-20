@@ -14,6 +14,7 @@ private:
     float Speed = 25.0f;
 	int m_life;//寿命
     int damage = 1; // 弾のダメージ量
+    int m_homingRank = 0; // 発射時の誘導レベル。0なら従来通り直進する。
     Vector3 a{0.0f, 0.0f, 0.0f}; // 弾の初期方向（例: 前方）
 
     bool isActive = true; // 弾がアクティブかどうかのフラグ
@@ -39,7 +40,7 @@ public:
 		Vector3 GetVelocity() { return m_velocity; };
 	
 	// 最初に発射方向と初期位置をする関数
-	void Shoot(DirectX::SimpleMath::Vector3 player, DirectX::SimpleMath::Vector3 dir);
+	void Shoot(DirectX::SimpleMath::Vector3 player, DirectX::SimpleMath::Vector3 dir, int homingRank = 0);
 
     //当たり判定用の球を返す関数
     Collision::Sphere GetCollisionSphere()override {
@@ -48,7 +49,9 @@ public:
 
     //当たり判定用の球を返す関数
     void SetColRadius(float radius) { m_colRadius = radius; }
+    // 発射時に現在の武器レベルの威力を引き継ぐ。
+    void SetDamage(int value) { damage = value; }
 
 };
-using BulletManager = PoolManager<CBullet, 30>; // 30個の弾を管理するプールマネージャ
+using BulletManager = PoolManager<CBullet, 96>; // マルチショットと高速装填の最大強化にも対応。
 

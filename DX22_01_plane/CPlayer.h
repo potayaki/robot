@@ -9,6 +9,8 @@
 #include<iostream>
 #include<vector>
 #include"COrbitalOrb.h"
+#include "SurvivorProgression.h"
+#include <string>
 class CPlayer : public Object
 {
 private:
@@ -32,6 +34,21 @@ private:
     int m_hp = 100;
 
     std::vector<COrbitalOrb*> m_orbs; // オーブのリスト
+    // 成長状態はプレイヤーごとに保持し、新しいゲームではLv1から始める。
+    SurvivorProgression m_progression;
+    int m_kills = 0;
+    int m_regenerationTimer = 0;
+    int m_turretTimer = 0;
+    int m_shockwaveTimer = 0;
+    int m_lightningTimer = 0;
+    int m_damageCooldown = 0;
+    int m_selectionDelay = 0;
+    bool m_showLoadout = false; // 詳細を読んでいる間はレベルアップと同様にゲームを停止。
+    float m_rewardNoticeTime = 0.0f;
+    std::string m_rewardNotice;
+    void ApplyUpgradeEffects(UpgradeId id, bool fromPresent);
+    void UpdateAutoWeapons();
+    void DeployTurret();
 	
 public:
 	CPlayer();
@@ -66,7 +83,14 @@ public:
 	//DirectX::SimpleMath::Vector3 GetPosition() { return m_Position; }
 
     int GetHp() { return m_hp; }
-    int GetMaxHp() { return 100; }
+    int GetMaxHp() { return 100 + 20 * m_progression.Rank(UpgradeId::Vitality); }
+    int GetKills() const { return m_kills; }
+    bool IsChoosingUpgrade() const { return m_progression.IsChoosing(); }
+    bool IsGameplayPaused() const { return IsChoosingUpgrade() || m_showLoadout; }
+    void OnEnemyDefeated(int experience);
+    void GivePresentReward();
+    void DrawSurvivorUI();
+    void Heal(int amount);
 
     float GetMissileTime() { return m_MissileTime; }
     float GetCurrentMissileTime() { return m_currentMissileTime; }
@@ -95,15 +119,7 @@ public:
         return { m_Position,10.0f };//半径10
     }
 
-    void TakeDamage(int damage) {
-        
-        m_hp -= damage;
-        if (m_hp < 0) {
-            m_hp = 0;
-        }
-        std::cout << "プレイヤーがダメージを受けた！ 残りHP: " << m_hp << std::endl;
-    
-    }
+    void TakeDamage(int damage);
 
 
 };

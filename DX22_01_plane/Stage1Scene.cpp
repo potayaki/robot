@@ -42,6 +42,7 @@ Stage1Scene::~Stage1Scene() {
 
 // 初期化
 void Stage1Scene::Init() {
+    Game::GetInstance()->m_gameTime = 0.0f; // 新しいプレイでは敵の出現段階もリセット。
 
     //プレゼントボックスの共有モデルの読み込み(複数生成してもOK)
     CPresentBox::LoadResource(); 
@@ -166,10 +167,9 @@ void Stage1Scene::Update() {
 
 // 終了処理
 void Stage1Scene::Uninit() {
-	// このシーンのオブジェクトを削除する
-	for (auto& o : m_MySceneObjects) {
-        o->Destroy();
-	}
+    // 撃破済みの敵の生ポインタは参照せず、Gameが所有する生存中・追加待ちの物を解放する。
+    Game::GetInstance()->DeleteAllObject();
+    m_MySceneObjects.clear();
     CPresentBox::UnloadResource(); // 共有モデルの解放
 }
 

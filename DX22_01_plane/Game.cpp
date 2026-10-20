@@ -4,20 +4,20 @@
 #include"input.h"
 #include"billboard.h"
 
-#ifdef _DEBUG
 #include"imgui.h"
 #include"imgui_impl_dx11.h"
 #include"imgui_impl_win32.h"
+#include "CPlayer.h"
+#include <filesystem>
 
-#include<chrono>
-
-#include"CPlayer.h"
+#ifdef _DEBUG
 #include"CPlayerUI.h"
 #include"PoolManager.h"
 #include"CParticle.h"
 #include"CEnemy.h"
 #include"CBullet.h"
 #include"CMissile.h"
+#include "CPresentBox.h"
 #endif
 Game* Game::m_instance;//ゲームインスタンス
 // コンストラクタ
@@ -39,19 +39,35 @@ void Game::Init() {
     Renderer::Init();
     Input::Create();
 
-#ifdef _DEBUG
-
-
-    //Imgui初期化
+    // 成長UIはゲーム本体の機能なので、ReleaseでもImGuiを初期化する。
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.FontGlobalScale = 1.5f; // フォントのスケールを倍に設定
+    io.FontGlobalScale = 1.0f;
+    // UTF-8の武器名を表示できるようWindowsの日本語フォントを読み込む。
+    char windowsDirectory[MAX_PATH]{};
+    GetWindowsDirectoryA(windowsDirectory, MAX_PATH);
+    const std::string fontPath = std::string(windowsDirectory) + "/Fonts/meiryo.ttc";
+    if (std::filesystem::exists(fontPath)) {
+        // 標準の日本語セットにない「填」なども、スキル説明から必要な文字を追加する。
+        // フォント構築は後のフレームなので、範囲の配列をstaticで保持する。
+        static ImVector<ImWchar> skillGlyphRanges;
+        ImFontGlyphRangesBuilder glyphs;
+        glyphs.AddRanges(io.Fonts->GetGlyphRangesJapanese());
+        for (int i = 0; i < static_cast<int>(UpgradeId::Count); ++i) {
+            const auto id = static_cast<UpgradeId>(i);
+            const auto& definition = GetUpgradeDefinition(id);
+            glyphs.AddText(reinterpret_cast<const char*>(definition.name));
+            glyphs.AddText(reinterpret_cast<const char*>(definition.description));
+            glyphs.AddText(GetUpgradeEffectText(id, definition.maxRank).c_str());
+        }
+        glyphs.BuildRanges(&skillGlyphRanges);
+        io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 18.0f, nullptr, skillGlyphRanges.Data);
+    }
     ImGui::StyleColorsDark(); // ダークモードに設定
     // Win32とDX11用の初期化（既存の機能からWindowとDeviceをもらう）
     ImGui_ImplWin32_Init(Application::GetWindow());
     ImGui_ImplDX11_Init(Renderer::GetDevice(), Renderer::GetDeviceContext());
-#endif // _DEBUG
 
     RECT clientRect{};
     GetClientRect(Application::GetWindow(), &clientRect);
@@ -82,31 +98,33 @@ void Game::Update() {
 
     //シーン更新
     Input::Update();
+    // 入力は毎フレーム取得し、選択画面を操作できる状態でワールドの更新だけ止める。
+    auto players = m_instance->GetObjects<CPlayer>();
+    CPlayer* player = players.empty() ? nullptr : players[0];
+    if (player && player->IsGameplayPaused()) doUpdate = false;
     //シーン更新
 
     if (doUpdate) {
         //シーン更新
         m_instance->m_scene->Update();
+        // シーンが切り替わった場合は、破棄済みのプレイヤーを参照しない。
+        players = m_instance->GetObjects<CPlayer>();
+        player = players.empty() ? nullptr : players[0];
         // カメラ更新
         m_instance->m_Camera.Update();
 
-        static auto prevTime = std::chrono::steady_clock::now();//前回の時間を保持する変数
-
-        auto currentTime = std::chrono::steady_clock::now();//現在の時間を取得
-
-        float deltaTime = std::chrono::duration<float>(currentTime - prevTime).count();//前回からの経過時間を計算
-
-        prevTime = currentTime;
-
-        m_instance->m_gameTime += deltaTime; // ゲーム内時間を更新
+        // 移動・武器・既存タイマーと同じ60フレーム基準。選択中の時間を後から加算しない。
+        m_instance->m_gameTime += 1.0f / 60.0f;
 
         // テストオブジェクト更新
         for (auto& a : m_instance->m_objects) {
-            a->Update();
+            if (!a->IsDead()) a->Update();
+            // 更新途中でレベルアップした場合も、それ以降の敵から被弾させない。
+            if (player && player->IsGameplayPaused()) break;
         }
 
         for (auto& a : m_instance->m_UIs) {
-            a->Update();
+            if (!a->IsDead() && !(player && player->IsGameplayPaused())) a->Update();
         }
     
     }
@@ -139,22 +157,6 @@ void Game::Update() {
     }
     m_instance->m_addUIs.clear();
 
-#ifdef _DEBUG
-    //TODO : ここにImguiの描画処理を追加する
-    std::vector<CPlayer*> GUIPlayer = GetInstance()->GetObjects<CPlayer>();
-
-    if (Input::GetKeyPress(VK_1)) {
-        // 現在のHPから1引いた値をセットする
-        GUIPlayer[0]->SetHP(100);
-    }
-
-    //Debug用のキー設定
-    if (Input::GetKeyPress(VK_2)) {
-        // 現在のHPから1引いた値をセットする
-        GUIPlayer[0]->SetHP(GUIPlayer[0]->GetHp() - 1);
-    }
-
-
     RECT rect;
     GetClientRect(Application::GetWindow(), &rect);
     ImGuiIO& io = ImGui::GetIO();
@@ -165,6 +167,10 @@ void Game::Update() {
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
+#ifdef _DEBUG
+    // 数字キー1～3は報酬選択に使用するため、以前のHPデバッグショートカットは廃止。
+    std::vector<CPlayer*> GUIPlayer = GetInstance()->GetObjects<CPlayer>();
+    if (!GUIPlayer.empty() && !GUIPlayer[0]->IsGameplayPaused()) {
     //Imguiのウィンドウを作成
     ImGui::Begin("Player Debug");
 
@@ -211,6 +217,13 @@ void Game::Update() {
         ImGui::Text("Missile Cooldown: %.2f / %.2f", GUIPlayer[0]->GetCurrentMissileTime(), GUIPlayer[0]->GetMissileTime());
 
         ImGui::Text("GameTime:%.2f", GetInstance()->m_gameTime);
+        // 成長UIと実際の箱の取得を、待ち時間なしで確認するためのデバッグ操作。
+        if (ImGui::Button("Test kill (+20 EXP)")) GUIPlayer[0]->OnEnemyDefeated(20);
+        if (ImGui::Button("Drop present here")) {
+            auto box = GetInstance()->AddObject<CPresentBox>();
+            box->SetPosition(GUIPlayer[0]->GetPosition());
+        }
+        if (ImGui::Button("Restore HP")) GUIPlayer[0]->SetHP(GUIPlayer[0]->GetMaxHp());
         
         //-------------------------------------------------------------------------------------------
         //Particleのオブジェクトプール表示
@@ -312,7 +325,10 @@ void Game::Update() {
 
     ImGui::End();
 
+    }
 #endif // _DEBUG
+    // 同じUIをDebug / Releaseの両方で使用する。
+    for (CPlayer* survivor : GetInstance()->GetObjects<CPlayer>()) survivor->DrawSurvivorUI();
    
 }
 
@@ -323,7 +339,7 @@ void Game::Draw() {
 
     // テストオブジェクト描画
     for (auto& a : m_instance->m_objects) {
-        a->Draw(&m_instance->m_Camera);
+        if (!a->IsDead()) a->Draw(&m_instance->m_Camera);
     }
     if (m_instance->m_scene) {
         m_instance->m_scene->Draw(&m_instance->m_Camera);
@@ -370,9 +386,9 @@ void Game::Draw() {
         Renderer::SetBlendState(1);    // 通常の半透明に戻す
         Renderer::SetWireFrame(false); // 塗りつぶしモードに戻す
     }
-    ImGui::Render();//DrawEndの前に呼ぶ
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 #endif // _DEBUG
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
     // 描画後処理
     Renderer::DrawEnd();
@@ -397,14 +413,10 @@ void Game::Uninit() {
         a->Uninit();
     }
     */
-#ifdef _DEBUG
-
-
     // ImGui終了処理
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
-#endif // _DEBUG
 
     Input::Release();
     // 描画終了処理
@@ -451,16 +463,18 @@ void Game::ChangeScene(SceneName sName) {
 
 
 void Game::DeleteAllObject() {
-
+    // 子UIを参照するオブジェクトがあるため、先に全Uninitを済ませてからメモリを解放する。
     for (auto& o : m_instance->m_objects) {
         o->Uninit();
     }
-    m_instance->m_objects.clear();
-    m_instance->m_objects.shrink_to_fit();
     for (auto& o : m_instance->m_UIs) {
         o->Uninit();
     }
+    for (auto& o : m_instance->m_addObjects) o->Uninit();
+    for (auto& o : m_instance->m_addUIs) o->Uninit();
+    m_instance->m_objects.clear();
     m_instance->m_UIs.clear();
-    m_instance->m_UIs.shrink_to_fit();
+    m_instance->m_addObjects.clear();
+    m_instance->m_addUIs.clear();
 
 }

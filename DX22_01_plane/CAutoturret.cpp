@@ -3,7 +3,7 @@
 #include<vector>
 #include"Game.h"
 CAutoturret::CAutoturret() {
-    Init();
+    m_model = nullptr; // プールがInitを呼ぶため、コンストラクタでは二重に読み込まない。
 }
 
 CAutoturret::~CAutoturret() {
@@ -50,11 +50,18 @@ void CAutoturret::Update() {
     if (minEnemy != nullptr && minDistance < m_radius && m_attackCooldown <= 0.0f) {
         //TODO : 攻撃内容
         minEnemy->OnHit(damage);
-        m_attackCooldown = 10.0f; // 攻撃後にクールダウンをリセット
+        m_attackCooldown = m_attackInterval;
     }
 
 
 
+}
+
+void CAutoturret::ConfigureUpgrade(int rank) {
+    // 設置済みの砲台にも、獲得したレベルの攻撃性能を反映する。
+    damage = 1 + (rank - 1) / 2;
+    m_radius = 400.0f + rank * 40.0f;
+    m_attackInterval = 30.0f - rank * 3.0f;
 }
 
 void CAutoturret::Draw(Camera* cam) {

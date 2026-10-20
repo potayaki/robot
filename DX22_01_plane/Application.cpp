@@ -2,14 +2,10 @@
 #include <thread>
 #include "Application.h"
 #include "Game.h"
-#ifdef _DEBUG
-
-
+// レベルアップUIは製品ビルドでも操作できるようにする。
 #include"imgui_impl_win32.h"
 #include"imgui.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-#endif // _DEBUG
 const auto ClassName = TEXT("2022 framework ひな型");     //ウィンドウクラス名
 const auto WindowName = TEXT("2023 framework ひな型");    //ウィンドウ名
 
@@ -227,12 +223,8 @@ LRESULT CALLBACK Application::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 {
     static bool isFullscreen = true;
     static bool isMessageBoxShowed = false;
-#ifdef _DEBUG
-
-
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
+    if (ImGui::GetCurrentContext() && ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
         return true;
-#endif // _DEBUG
 
     switch (uMsg)
     {

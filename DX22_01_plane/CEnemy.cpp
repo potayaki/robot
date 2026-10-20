@@ -33,6 +33,8 @@ void CEnemy::Init() {
 }
 
 void CEnemy::Update() {
+    if (IsDead()) return;
+    ++m_moveFrame;
     if (m_AttackTimer > 0.0f) {
         m_AttackTimer -= 1.0f;
     }
@@ -65,7 +67,9 @@ void CEnemy::Update() {
         if (dir.LengthSquared() > 0.0001f) {
             dir.Normalize();
 
-            m_Position += dir * m_Speed;
+            // 高速型は一定周期で短いダッシュを行う。
+            const float dash = m_variant == SlimeVariant::Runner && m_moveFrame % 150 < 25 ? 1.7f : 1.0f;
+            m_Position += dir * m_Speed * dash;
             m_Rotation.y = atan2f(dir.x, dir.z);
         }
 
@@ -84,27 +88,29 @@ void CEnemy::Update() {
 
     // 当たり判定の球は中心を半径分だけ地面から上げているため、モデルの底面が地面に合う位置へ下げる。
     m_body->SetPosition(m_Position.x,
-        m_Position.y - GetCollisionSphere().radius - SlimeModelBottomY,
+        m_Position.y - GetCollisionSphere().radius - SlimeModelBottomY * m_size,
         m_Position.z);
     m_body->SetRotation(DirectX::SimpleMath::Vector3(
         m_Rotation.x, m_Rotation.y + SlimeFacingOffset, m_Rotation.z));
 
-    if (hp <= 0) {
+}
 
-        int dropChance = rand() % 100; // 0から99までのランダムな数を生成
-
-        if (dropChance < m_Droppercent) {
-            // プレゼントボックスを生成
-
-            CPresentBox* presentBox = Game::GetInstance()->AddObject<CPresentBox>();
-            presentBox->SetPosition(m_Position.x, m_Position.y + 5.0f, m_Position.z); // 少し上に出す
-
-
-        }
-
-        Destroy(); // 体力が0以下になったらオブジェクトを破棄
-        return;
+void CEnemy::SetVariant(SlimeVariant variant) {
+    m_variant = variant;
+    // 小型は追い込み役、大型は高耐久・高報酬の敵として調整する。
+    if (variant == SlimeVariant::Runner) {
+        m_size = 0.7f; hp = 2; m_Speed = 0.95f; damage = 2; m_experience = 2;
+        m_Droppercent = 10;
     }
+    else if (variant == SlimeVariant::Brute) {
+        m_size = 1.8f; hp = 12; m_Speed = 0.3f; damage = 6; m_experience = 5;
+        m_Droppercent = 25;
+    }
+    else {
+        m_size = 1.0f; hp = 3; m_Speed = 0.5f; damage = 2; m_experience = 1;
+        m_Droppercent = 10;
+    }
+    if (m_body) m_body->SetScale(0.2f * m_size);
 }
 
 void CEnemy::Draw(Camera* cam) {
@@ -128,7 +134,8 @@ void CEnemy::Onland() {
 }
 
 void CEnemy::OnHit(int& damage) {
+    if (IsDead() || damage <= 0) return;
     // 共通の被弾処理ではダメージだけを扱い、爆発と画面揺れはミサイルの命中処理に任せる。
     hp -= damage; // 体力を減らす
-    std::cout << "Enemy hit! Remaining HP: " << hp << std::endl; // デバッグ用に体力を表示
+    if (hp <= 0) Defeat(m_experience, m_Droppercent);
 }

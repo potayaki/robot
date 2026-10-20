@@ -213,6 +213,9 @@ void CMissile::Uninit() {
 void CMissile::Shoot(Object& shooter, Object& target, float angleOffsetDebug) {
     // プールから再利用したときも、前回の命中状態を引き継がない。
     SetActive(true);
+    // 前回の着弾地点と今回の軌道をつながず、発射位置から当たり判定を開始する。
+    m_Position = shooter.GetPosition();
+    m_body->SetPosition(m_Position);
     m_target = &target;
     m_bezier.Create(shooter, target, angleOffsetDebug); //ベジエ曲線を作成
 

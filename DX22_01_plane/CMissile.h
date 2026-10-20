@@ -40,6 +40,8 @@ public:
     }
 
     void SetColRadius(float radius) { m_colRadius = radius; }
+    // プール再利用時も、発射したプレイヤーの現在の強化を反映する。
+    void SetDamage(int value) { damage = value; }
 
 };
 

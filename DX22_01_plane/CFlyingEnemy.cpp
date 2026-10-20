@@ -68,6 +68,7 @@ void CFlyingEnemy::Init() {
 }
 
 void CFlyingEnemy::Update() {
+    if (IsDead()) return;
     if (m_attackCooldown > 0) --m_attackCooldown;
     m_hoverPhase += 0.045f;
     m_rotorAngle += 0.45f;
@@ -163,13 +164,10 @@ void CFlyingEnemy::Uninit() {
 }
 
 void CFlyingEnemy::OnHit(int& damage) {
+    if (IsDead() || damage <= 0) return;
     // 被弾時はHPだけを減らし、ミサイル専用の爆発・画面揺れはCMissileに任せる。
     m_hp -= damage;
     if (m_hp > 0) return;
 
-    if (rand() % 100 < 10) {
-        CPresentBox* present = Game::GetInstance()->AddObject<CPresentBox>();
-        present->SetPosition(m_Position.x, m_Position.y, m_Position.z);
-    }
-    Destroy();
+    Defeat(2, 15); // 飛行型にも共通の経験値・地面へのプレゼント配置を適用する。
 }
