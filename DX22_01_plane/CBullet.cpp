@@ -1,81 +1,112 @@
 ﻿#include "CBullet.h"
-#include"Game.h"
-#include"EnemyTarget.h"
-#include"Collision.h"
-#include"CParticle.h"
-#include"Ground.h"
-#include"PoolManager.h"
+#include "Game.h"
+#include "EnemyTarget.h"
+#include "Collision.h"
+#include "CParticle.h"
+#include "Ground.h"
+#include "PoolManager.h"
 #include "BulletHoming.h"
-#include<cmath>
+#include <cmath>
 
-namespace {
-// 弾の1フレーム分の軌道と敵の球が最初に接する位置を、0～1の割合で求める。
-bool SegmentSphereHitFraction(const Collision::Segment& segment,
-    const Collision::Sphere& sphere, float bulletRadius, float& hitFraction) {
-    const Vector3 step = segment.end - segment.start;
-    const float stepLengthSq = step.LengthSquared();
-    if (stepLengthSq <= 0.000001f) return false;
+namespace
+{
+    // 弾の1フレーム分の軌道と敵の球が最初に接する位置を、0～1の割合で求める。
+    bool SegmentSphereHitFraction(const Collision::Segment& segment,
+                                  const Collision::Sphere& sphere,
+                                  float bulletRadius,
+                                  float& hitFraction)
+    {
+        const Vector3 step = segment.end - segment.start;
+        const float stepLengthSq = step.LengthSquared();
+        if (stepLengthSq <= 0.000001f)
+        {
+            return false;
+        }
 
-    const Vector3 fromCenter = segment.start - sphere.center;
-    const float combinedRadius = sphere.radius + bulletRadius;
-    const float c = fromCenter.LengthSquared() - combinedRadius * combinedRadius;
-    if (c <= 0.0f) {
-        hitFraction = 0.0f; // すでに球の内側から始まっている場合。
-        return true;
+        const Vector3 fromCenter = segment.start - sphere.center;
+        const float combinedRadius = sphere.radius + bulletRadius;
+        const float c = fromCenter.LengthSquared() - combinedRadius * combinedRadius;
+        if (c <= 0.0f)
+        {
+            hitFraction = 0.0f; // すでに球の内側から始まっている場合。
+            return true;
+        }
+
+        const float b = fromCenter.Dot(step);
+        // 線分と球の交点を求める二次方程式の判別式。負なら接触しない。
+        const float discriminant = b * b - stepLengthSq * c;
+        if (discriminant < 0.0f)
+        {
+            return false;
+        }
+
+        // 2つの交点のうち手前を使う。0なら始点、1なら今フレームの終点。
+        hitFraction = (-b - std::sqrt(discriminant)) / stepLengthSq;
+        return hitFraction >= 0.0f && hitFraction <= 1.0f;
     }
-
-    const float b = fromCenter.Dot(step);
-    const float discriminant = b * b - stepLengthSq * c;
-    if (discriminant < 0.0f) return false;
-
-    hitFraction = (-b - std::sqrt(discriminant)) / stepLengthSq;
-    return hitFraction >= 0.0f && hitFraction <= 1.0f;
-}
 }
 
-
-CBullet::CBullet() {
-
+CBullet::CBullet()
+{
 }
 
-CBullet::~CBullet() {
+CBullet::~CBullet()
+{
     // Uninit();   プール管理なので呼ばない
 }
 
-void CBullet::Init() {
+void CBullet::Init()
+{
     m_model = new TestModel();
     m_model->Init();
     //弾のモデルを読み込む
-    m_model->Load("assets/model/bullet/Bullett.fbx", "assets/model/bullet");//弾のモデルを読み込む
+    m_model->Load("assets/model/bullet/Bullett.fbx", "assets/model/bullet"); //弾のモデルを読み込む
     m_model->SetScale(0.8f, 4.0f, 0.8f); // 弾のサイズ
-
 }
 
-void CBullet::Update() {
-    // 寿命が尽きたらオブジェクトを削除するなどの処理を行う
-    if (m_life <= 0) {
+void CBullet::Update()
+{
+    // ----- 1. 寿命の確認 -----
+    // 弾は削除せず非アクティブにして、プールから次の発射時に再利用する。
+    if (m_life <= 0)
+    {
         SetActive(false);
         return;
     }
+
     //パーティクルの生成で1フレーム前の弾の位置を取得するために保存しておく
     DirectX::SimpleMath::Vector3 OldPosition = m_Position;
 
+    // ----- 2. 誘導先の検索と方向の更新 -----
+    // この敵リストは、後半の衝突判定でも共通で使用する。
     const auto enemies = Game::GetInstance()->GetObjects<EnemyTarget>();
-    if (m_homingRank > 0) {
+    if (m_homingRank > 0)
+    {
         // 固定ロックはしない。弾から最も近い生存中の敵を探し直すので、
         // 外れた先に別の敵がいれば、その敵へ少しずつ軌道を曲げられる。
         BulletHoming::Search<Vector3> search(m_velocity);
-        for (EnemyTarget* enemy : enemies) {
-            if (!enemy || enemy->IsDead() || !enemy->GetActive()) continue;
+        for (EnemyTarget* enemy : enemies)
+        {
+            if (!enemy || enemy->IsDead() || !enemy->GetActive())
+            {
+                continue;
+            }
             search.Consider(enemy->GetCollisionSphere().center - m_Position);
         }
-        if (search.Found()) m_velocity = BulletHoming::Turn(m_velocity, search.Offset(), m_homingRank);
+        if (search.Found())
+        {
+            m_velocity = BulletHoming::Turn(m_velocity, search.Offset(), m_homingRank);
+        }
+
         // 高さ方向の誘導にもモデルの先端を追従させる。
         const float horizontal = std::sqrt(m_velocity.x * m_velocity.x + m_velocity.z * m_velocity.z);
         SetRotation(Vector3(DirectX::XM_PIDIV2 + std::atan2(-m_velocity.y, horizontal),
-            std::atan2(m_velocity.x, m_velocity.z), 0.0f));
+                            std::atan2(m_velocity.x, m_velocity.z),
+                            0.0f));
     }
 
+    // ----- 3. 移動とモデルの更新 -----
+    // 誘導後の速度で動かす。誘導先が見つからない場合は、直前の向きでそのまま進む。
     m_Position += m_velocity; // 位置を更新
     m_life--; // 寿命を減らす
 
@@ -87,9 +118,11 @@ void CBullet::Update() {
     //パーティクル(弾の軌道)を生成
     //--------------------
     std::vector<ParticleManager*> pManagers = Game::GetInstance()->GetObjects<ParticleManager>();
-    if (!pManagers.empty()) {
+    if (!pManagers.empty())
+    {
         CParticle* trail = pManagers[0]->Spawn();
-        if (trail != nullptr) { // 取得できた時だけ設定
+        if (trail != nullptr)
+        { // 取得できた時だけ設定
             trail->SetType(Spark);
             trail->SetPosition(OldPosition);
             trail->SetVelocity(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f));
@@ -97,10 +130,10 @@ void CBullet::Update() {
             trail->SetScale(DirectX::SimpleMath::Vector3(2.5f, 2.5f, 2.5f));
             trail->SetColor(DirectX::SimpleMath::Color(1.0f, 0.0f, 0.0f, 1.0f));
         }
-
     }
 
-    //すり抜け防止のために、弾の前回位置と現在位置を結ぶ線分を作る
+    // ----- 4. 移動した区間全体で衝突を調べる -----
+    // 高速な弾は敵を1フレームで通り越すため、移動先の点だけでは判定しない。
     Collision::Segment bulletsegment;
     bulletsegment.start = OldPosition;
     bulletsegment.end = m_Position;
@@ -108,14 +141,16 @@ void CBullet::Update() {
     // 弾の半径を含め、今フレームの軌道が地面に最初に触れる位置を求める。
     float groundHitFraction = 2.0f; // 1より大きい値は「このフレームでは当たらない」。
     const std::vector<Ground*> grounds = Game::GetInstance()->GetObjects<Ground>();
-    if (!grounds.empty() && grounds[0] != nullptr) {
+    if (!grounds.empty() && grounds[0] != nullptr)
+    {
         const float groundCollisionY = grounds[0]->GetPosition().y + m_colRadius;
-        if (OldPosition.y <= groundCollisionY) {
+        if (OldPosition.y <= groundCollisionY)
+        {
             groundHitFraction = 0.0f;
         }
-        else if (m_Position.y <= groundCollisionY) {
-            groundHitFraction = (groundCollisionY - OldPosition.y) /
-                (m_Position.y - OldPosition.y);
+        else if (m_Position.y <= groundCollisionY)
+        {
+            groundHitFraction = (groundCollisionY - OldPosition.y) / (m_Position.y - OldPosition.y);
         }
     }
 
@@ -123,53 +158,65 @@ void CBullet::Update() {
     EnemyTarget* firstEnemy = nullptr;
     float enemyHitFraction = 2.0f;
     // 共通型で取得し、飛行ドローンにもスライムと同じ線分判定を適用する。
-    for (EnemyTarget* enemy : enemies) {
-        if (enemy == nullptr || enemy->IsDead()) continue;
+    for (EnemyTarget* enemy : enemies)
+    {
+        if (enemy == nullptr || enemy->IsDead())
+        {
+            continue;
+        }
         float fraction = 0.0f;
-        if (SegmentSphereHitFraction(bulletsegment, enemy->GetCollisionSphere(),
-                m_colRadius, fraction) && fraction < enemyHitFraction) {
+        if (SegmentSphereHitFraction(bulletsegment, enemy->GetCollisionSphere(), m_colRadius, fraction) &&
+            fraction < enemyHitFraction)
+        {
             firstEnemy = enemy;
             enemyHitFraction = fraction;
         }
     }
 
+    // ----- 5. 最初に接触した相手にだけ命中させる -----
     // 同じフレームで敵と地面の両方を通っても、手前にある方だけに命中させる。
-    if (firstEnemy != nullptr && enemyHitFraction <= groundHitFraction) {
+    if (firstEnemy != nullptr && enemyHitFraction <= groundHitFraction)
+    {
         firstEnemy->OnHit(damage);
         SetActive(false);
         return;
     }
-    if (groundHitFraction <= 1.0f) {
+    if (groundHitFraction <= 1.0f)
+    {
         SetActive(false);
         return;
     }
 }
 
-void CBullet::Draw(Camera* cam) {
-    if (m_model) {
+void CBullet::Draw(Camera* cam)
+{
+    if (m_model)
+    {
         m_model->Draw(cam);
     }
 }
 
-void CBullet::Uninit() {
+void CBullet::Uninit()
+{
 
-    if (m_model) {
+    if (m_model)
+    {
         m_model->Uninit();
         delete m_model;
         m_model = nullptr;
     }
-
-
 }
 
 //--------------------
-   //弾を発射する
-   //--------------------
-void CBullet::Shoot(DirectX::SimpleMath::Vector3 player, DirectX::SimpleMath::Vector3 dir, int homingRank) {
+//弾を発射する
+//--------------------
+void CBullet::Shoot(DirectX::SimpleMath::Vector3 player, DirectX::SimpleMath::Vector3 dir, int homingRank)
+{
     // プール再利用時に、以前の弾の誘導レベルを引き継がない。
     m_homingRank = std::clamp(homingRank, 0, BulletHoming::MaxRank);
-   
-    DirectX::SimpleMath::Vector3 offset(0.0f, 0.0f, 0.0f); //弾の初期位置のオフセットを設定(モデル入れ替えの際に微調整)
+
+    DirectX::SimpleMath::Vector3 offset(
+        0.0f, 0.0f, 0.0f); //弾の初期位置のオフセットを設定(モデル入れ替えの際に微調整)
     m_Position = player + offset; // 初期位置をセット
     m_velocity = dir * Speed; // 発射方向に速度を設定速度を掛け合わせる
 
