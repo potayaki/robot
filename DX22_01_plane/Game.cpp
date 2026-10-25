@@ -8,11 +8,12 @@
 #include"imgui_impl_dx11.h"
 #include"imgui_impl_win32.h"
 #include "CPlayer.h"
+#include "CAutoturret.h"
+#include "PoolManager.h"
 #include <filesystem>
 
 #ifdef _DEBUG
 #include"CPlayerUI.h"
-#include"PoolManager.h"
 #include"CParticle.h"
 #include"CEnemy.h"
 #include"CBullet.h"
@@ -87,24 +88,20 @@ void Game::Init() {
 }
 
 // 更新
-void Game::Update() {
+void Game::Update(double elapsedSeconds) {
 
     static int slowMoLevel = 1;
-    static int frameCount = 0;
-    frameCount++;
 
-    // 現在のフレームでゲーム内時間を進めるかどうか
-    bool doUpdate = (slowMoLevel == 1) || (frameCount % slowMoLevel == 0);
-
-    //シーン更新
-    Input::Update();
-    // 入力は毎フレーム取得し、選択画面を操作できる状態でワールドの更新だけ止める。
     auto players = m_instance->GetObjects<CPlayer>();
     CPlayer* player = players.empty() ? nullptr : players[0];
-    if (player && player->IsGameplayPaused()) doUpdate = false;
-    //シーン更新
+    const bool paused = player && player->IsGameplayPaused();
 
-    if (doUpdate) {
+    // スロー再生はフレームを間引かず、ゲーム内で進む秒数を小さくする。
+    // 一時停止中も毎フレーム計測し、再開時に停止時間を加算しない。
+    GameTime::BeginFrame(elapsedSeconds, 1.0f / slowMoLevel, paused);
+    Input::Update();
+
+    while (GameTime::NextStep()) {
         //シーン更新
         m_instance->m_scene->Update();
         // シーンが切り替わった場合は、破棄済みのプレイヤーを参照しない。
@@ -113,8 +110,8 @@ void Game::Update() {
         // カメラ更新
         m_instance->m_Camera.Update();
 
-        // 移動・武器・既存タイマーと同じ60フレーム基準。選択中の時間を後から加算しない。
-        m_instance->m_gameTime += 1.0f / 60.0f;
+        // 表示時間と敵の出現段階も、武器・移動と同じ経過秒数で進める。
+        m_instance->m_gameTime += GameTime::DeltaSeconds();
 
         // テストオブジェクト更新
         for (auto& a : m_instance->m_objects) {
@@ -126,36 +123,14 @@ void Game::Update() {
         for (auto& a : m_instance->m_UIs) {
             if (!a->IsDead() && !(player && player->IsGameplayPaused())) a->Update();
         }
-    
+
+        // 低FPSで複数回更新しても、押した瞬間の入力は1回だけ扱う。
+        Input::ConsumeTriggers();
+        FlushObjects();
+        if (player && player->IsGameplayPaused()) break;
     }
 
-    // 削除フラグ（IsDead）が立っているオブジェクトを一括削除
-    std::erase_if(m_instance->m_objects, [](const std::unique_ptr<Object>& obj) {
-        if (obj->IsDead()) {
-            obj->Uninit();
-            return true;
-        }
-        return false;
-    });
-
-    std::erase_if(m_instance->m_UIs, [](const std::unique_ptr<Object>& obj) {
-        if (obj->IsDead()) {
-            obj->Uninit();
-            return true;
-        }
-        return false;
-    });
-
-    //追加待ちオブジェクトの追加
-    for (auto& addObj : m_instance->m_addObjects) {
-        m_instance->m_objects.emplace_back(std::move(addObj));
-    }
-    m_instance->m_addObjects.clear();
-
-    for (auto& addObj : m_instance->m_addUIs) {
-        m_instance->m_UIs.emplace_back(std::move(addObj));
-    }
-    m_instance->m_addUIs.clear();
+    FlushObjects();
 
     RECT rect;
     GetClientRect(Application::GetWindow(), &rect);
@@ -214,7 +189,7 @@ void Game::Update() {
 
         ImGui::Text("Player HP: %d / %d", GUIPlayer[0]->GetHp(), GUIPlayer[0]->GetMaxHp());
 
-        ImGui::Text("Missile Cooldown: %.2f / %.2f", GUIPlayer[0]->GetCurrentMissileTime(), GUIPlayer[0]->GetMissileTime());
+        ImGui::Text("Missile Cooldown (sec): %.2f / %.2f", GUIPlayer[0]->GetCurrentMissileTime(), GUIPlayer[0]->GetMissileTime());
 
         ImGui::Text("GameTime:%.2f", GetInstance()->m_gameTime);
         // 成長UIと実際の箱の取得を、待ち時間なしで確認するためのデバッグ操作。
@@ -224,6 +199,18 @@ void Game::Update() {
             box->SetPosition(GUIPlayer[0]->GetPosition());
         }
         if (ImGui::Button("Restore HP")) GUIPlayer[0]->SetHP(GUIPlayer[0]->GetMaxHp());
+
+        // 武器の抽選を待たずに、砲台の攻撃方向とレーザー表示を確認するための操作。
+        if (ImGui::Button("Deploy test turret"))
+        {
+            auto managers = GetInstance()->GetObjects<PoolManager<CAutoturret, 3>>();
+            if (!managers.empty())
+            {
+                auto turret = managers[0]->Spawn();
+                turret->Spawn(GUIPlayer[0]->GetPosition() + DirectX::SimpleMath::Vector3(25, 0, 0));
+                turret->ConfigureUpgrade(1);
+            }
+        }
         
         //-------------------------------------------------------------------------------------------
         //Particleのオブジェクトプール表示
@@ -332,6 +319,38 @@ void Game::Update() {
    
 }
 
+void Game::FlushObjects()
+{
+    // 削除フラグ（IsDead）が立っているオブジェクトを一括削除
+    std::erase_if(m_instance->m_objects, [](const std::unique_ptr<Object>& obj) {
+        if (obj->IsDead()) {
+            obj->Uninit();
+            return true;
+        }
+        return false;
+    });
+
+    std::erase_if(m_instance->m_UIs, [](const std::unique_ptr<Object>& obj) {
+        if (obj->IsDead()) {
+            obj->Uninit();
+            return true;
+        }
+        return false;
+    });
+
+    //追加待ちオブジェクトの追加
+    for (auto& addObj : m_instance->m_addObjects) {
+        m_instance->m_objects.emplace_back(std::move(addObj));
+    }
+    m_instance->m_addObjects.clear();
+
+    for (auto& addObj : m_instance->m_addUIs) {
+        m_instance->m_UIs.emplace_back(std::move(addObj));
+    }
+    m_instance->m_addUIs.clear();
+
+}
+
 // 描画
 void Game::Draw() {
     // 描画前処理
@@ -343,6 +362,16 @@ void Game::Draw() {
     }
     if (m_instance->m_scene) {
         m_instance->m_scene->Draw(&m_instance->m_Camera);
+    }
+
+    // 不透明な地形・敵を描いた後で、砲台のレーザーを重ねる。
+    // 後から出現した敵に光線が不自然に上書きされることを防ぐ。
+    for (auto manager : m_instance->GetObjects<PoolManager<CAutoturret, 3>>())
+    {
+        for (auto turret : manager->GetPool())
+        {
+            turret->DrawLaser(&m_instance->m_Camera);
+        }
     }
 
     Renderer::SetDepthEnable(false);

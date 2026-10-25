@@ -1,6 +1,7 @@
 ﻿#include "CParticle.h"
 #include "Game.h"
 #include"Renderer.h"
+#include <cmath>
 
 // static変数の実体を定義
 TestCube* CParticle::m_body = nullptr;
@@ -15,7 +16,7 @@ Material* CParticle::m_sparkMaterial = nullptr;
 
 CParticle::CParticle() {
     if (m_type == Test) {
-        m_life = 60.0f;
+        m_life = 1.0f;
     }
 
     m_color = DirectX::SimpleMath::Color(1.0f, 1.0f, 1.0f, 1.0f );
@@ -33,28 +34,30 @@ void CParticle::Init() {
 }
 
 void CParticle::Update() {
+    const float deltaSeconds = (std::min)(GameTime::DeltaSeconds(), m_life);
 
     if (m_type == Test) {
         // 速度の分だけ移動
         
-        m_Position += m_velocity;
-        m_velocity.y -= 0.02f; // 重力
+        m_Position += m_velocity * deltaSeconds;
+        m_Position.y -= 0.5f * 72.0f * deltaSeconds * deltaSeconds;
+        m_velocity.y -= 72.0f * deltaSeconds; // 重力（距離/秒²）。
 
         // クルクル回転させる
-        m_Rotation.x += 0.1f;
-        m_Rotation.y += 0.1f;
+        m_Rotation.x += 6.0f * deltaSeconds;
+        m_Rotation.y += 6.0f * deltaSeconds;
         
 
     }
     else if (m_type == Spark) {
-        m_Scale.x *= 0.95f; // 徐々に小さくなる
-        m_Scale.y *= 0.95f;
-        m_Scale.z *= 0.95f;
+        // 旧「毎フレーム0.95倍」を秒に応じた指数減衰へ変換する。
+        const float shrink = std::pow(0.95f, deltaSeconds * 60.0f);
+        m_Scale *= shrink;
     }
 
 
     // 寿命を減らして、0になったら自分を消す
-    m_life -= 1.0f;
+    GameTime::CountDown(m_life, deltaSeconds);
     if (m_life <= 0.0f) {
         SetActive(false);
     }

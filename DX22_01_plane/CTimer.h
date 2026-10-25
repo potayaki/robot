@@ -18,8 +18,7 @@ private:
    std::vector<Texture2D*> m_DecDigits;  // 小数部の桁
     Texture2D* m_DecimalPoint = nullptr;  // 「.」用の画像
 
-    int m_FrameCount = 0; // 現在の秒
-    int m_Seconds = 0; // 経過秒数
+    double m_startTime = 0.0; // リセット時点のゲーム内秒数。
 
     float m_DigitWidth = 52.0f; // 1桁の表示幅
 

@@ -69,9 +69,10 @@ void CFlyingEnemy::Init() {
 
 void CFlyingEnemy::Update() {
     if (IsDead()) return;
-    if (m_attackCooldown > 0) --m_attackCooldown;
-    m_hoverPhase += 0.045f;
-    m_rotorAngle += 0.45f;
+    const float deltaSeconds = GameTime::DeltaSeconds();
+    GameTime::CountDown(m_attackCooldown, deltaSeconds);
+    m_hoverPhase += 2.7f * deltaSeconds; // 上下運動・回転翼も経過秒数に合わせる。
+    m_rotorAngle += 27.0f * deltaSeconds;
 
     auto players = Game::GetInstance()->GetObjects<CPlayer>();
     auto grounds = Game::GetInstance()->GetObjects<Ground>();
@@ -88,22 +89,24 @@ void CFlyingEnemy::Update() {
 
         // 普段はプレイヤーから少し離れてホバリングし、間欠的に急降下する。
         if (m_diveTimer == 0 && m_attackCooldown == 0 && horizontalDistance < 130.0f) {
-            m_diveTimer = 55;
-            m_attackCooldown = 180;
+            m_diveTimer = 55.0f / 60.0f;
+            m_attackCooldown = 3.0f;
         }
         if (m_diveTimer > 0) {
-            --m_diveTimer;
-            m_Position += toPlayer * 2.8f;
+            GameTime::CountDown(m_diveTimer, deltaSeconds);
+            m_Position += toPlayer * (168.0f * deltaSeconds);
             const float diveY = playerPos.y + 8.0f;
-            m_Position.y += std::clamp(diveY - m_Position.y, -2.5f, 2.5f);
+            m_Position.y += std::clamp(diveY - m_Position.y, -150.0f * deltaSeconds, 150.0f * deltaSeconds);
         }
         else {
-            if (horizontalDistance > 75.0f) m_Position += toPlayer * 1.4f;
-            if (horizontalDistance < 50.0f) m_Position -= toPlayer * 0.8f;
+            if (horizontalDistance > 75.0f) m_Position += toPlayer * (84.0f * deltaSeconds);
+            if (horizontalDistance < 50.0f) m_Position -= toPlayer * (48.0f * deltaSeconds);
             const float groundY = grounds.empty() ? -5.0f : grounds[0]->GetPosition().y;
             const float hoverY = (std::max)(groundY + 45.0f, playerPos.y + 35.0f)
                 + std::sin(m_hoverPhase) * 3.0f;
-            m_Position.y += (hoverY - m_Position.y) * 0.1f;
+            // 補間率も秒に換算し、低FPSでホバリングの追従が遅くならないようにする。
+            const float follow = 1.0f - std::pow(0.9f, deltaSeconds * 60.0f);
+            m_Position.y += (hoverY - m_Position.y) * follow;
         }
 
         // 急降下して触れた時だけダメージを与え、次の攻撃まで間隔を空ける。

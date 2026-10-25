@@ -24,7 +24,7 @@ namespace
         particle->SetVelocity(Vector3::Zero);
         particle->SetColor(color);
         particle->SetScale(size);
-        particle->SetLife(20.0f);
+        particle->SetLife(1.0f / 3.0f); // 約0.33秒の火花。
     }
 }
 
@@ -38,7 +38,7 @@ void CPlayer::OnEnemyDefeated(int experience)
     // 射撃中のクリックが、そのまま報酬選択に使われないよう短い待機を設ける。
     if (!wasChoosing && m_progression.IsChoosing())
     {
-        m_selectionDelay = 12;
+        m_selectionDelay = 0.2f;
     }
 }
 
@@ -57,8 +57,8 @@ void CPlayer::ApplyUpgradeEffects(UpgradeId id, bool fromPresent)
     // この関数が呼ばれる時点で、SurvivorProgression側のランク更新は完了している。
     // 通常弾・ミサイルの威力や誘導は発射時に読み取り、ここでは即時反映が必要な物を扱う。
     // 抽選側が確定したランクから性能を計算し、重複取得は同じ武器の強化として扱う。
-    m_BulletTime = 6.0f * std::pow(0.85f, m_progression.Rank(UpgradeId::RapidFire));
-    m_MissileTime = 120.0f * std::pow(0.85f, m_progression.Rank(UpgradeId::MissileReload));
+    m_BulletTime = 0.1f * std::pow(0.85f, m_progression.Rank(UpgradeId::RapidFire));
+    m_MissileTime = 2.0f * std::pow(0.85f, m_progression.Rank(UpgradeId::MissileReload));
     m_currentBulletTime = (std::min)(m_currentBulletTime, m_BulletTime);
     m_currentMissileTime = (std::min)(m_currentMissileTime, m_MissileTime);
 
@@ -129,7 +129,7 @@ void CPlayer::TakeDamage(int damage)
     m_hp = (std::max)(0, m_hp - actualDamage);
 
     // 敵が重なった時の同時多重ヒットを抑える。選択画面ではこの時間も進まない。
-    m_damageCooldown = 20;
+    m_damageCooldown = 1.0f / 3.0f; // 被弾後、約0.33秒間は無敵。
 }
 
 void CPlayer::DeployTurret()
@@ -147,32 +147,32 @@ void CPlayer::DeployTurret()
 
 void CPlayer::UpdateAutoWeapons()
 {
-    // ここで使うタイマーの単位はフレーム。60更新で1秒、180更新で3秒。
-    // Game側で一時停止中のUpdateを止めるので、閲覧・選択中は時間を消費しない。
+    // 全タイマーを秒で管理する。一時停止・スロー再生はGameTime側で反映済み。
+    const float deltaSeconds = GameTime::DeltaSeconds();
 
     // ----- 被弾後の無敵時間と自動回復 -----
-    if (m_damageCooldown > 0)
+    GameTime::CountDown(m_damageCooldown, deltaSeconds);
+    m_regenerationTimer += deltaSeconds;
+    if (m_regenerationTimer >= 3.0f)
     {
-        --m_damageCooldown;
-    }
-    if (++m_regenerationTimer >= 180)
-    {
-        m_regenerationTimer = 0;
+        m_regenerationTimer -= 3.0f; // 3秒を越えた端数を次回へ残す。
         Heal(2 * m_progression.Rank(UpgradeId::Regeneration));
     }
 
     // ----- 自動砲台 -----
     // 獲得した自動武器は入力なしで動作し、砲台は最大3基を循環して設置する。
     const int turretRank = m_progression.Rank(UpgradeId::Turret);
-    if (turretRank > 0 && --m_turretTimer <= 0)
+    GameTime::AdvanceCooldown(m_turretTimer, deltaSeconds);
+    if (turretRank > 0 && m_turretTimer <= 0)
     {
         DeployTurret();
-        m_turretTimer = 360 - 30 * (turretRank - 1);
+        m_turretTimer += 6.0f - 0.5f * (turretRank - 1);
     }
 
     // ----- 衝撃波：球状の範囲内にいる敵へまとめてダメージ -----
     const int shockRank = m_progression.Rank(UpgradeId::Shockwave);
-    if (shockRank > 0 && --m_shockwaveTimer <= 0)
+    GameTime::AdvanceCooldown(m_shockwaveTimer, deltaSeconds);
+    if (shockRank > 0 && m_shockwaveTimer <= 0)
     {
         const float radius = 80.0f + 12.0f * shockRank;
         int damage = 1 + shockRank;
@@ -200,12 +200,13 @@ void CPlayer::UpdateAutoWeapons()
                     Color(0.3f, 0.7f, 1.0f, 1.0f),
                     10.0f);
         }
-        m_shockwaveTimer = 180 - 12 * shockRank;
+        m_shockwaveTimer += 3.0f - 0.2f * shockRank;
     }
 
     // ----- 連鎖電撃：直前に命中した敵を起点に、次の敵を探す -----
     const int lightningRank = m_progression.Rank(UpgradeId::Lightning);
-    if (lightningRank > 0 && --m_lightningTimer <= 0)
+    GameTime::AdvanceCooldown(m_lightningTimer, deltaSeconds);
+    if (lightningRank > 0 && m_lightningTimer <= 0)
     {
         auto enemies = Game::GetInstance()->GetObjects<EnemyTarget>();
         std::vector<EnemyTarget*> struck; // 今回の電撃で命中済みの敵。同じ敵への重複を防ぐ。
@@ -253,6 +254,6 @@ void CPlayer::UpdateAutoWeapons()
         }
 
         // 敵が射程にいない場合は短時間で再検索する。
-        m_lightningTimer = struck.empty() ? 15 : 150 - 10 * lightningRank;
+        m_lightningTimer += struck.empty() ? 0.25f : 2.5f - lightningRank / 6.0f;
     }
 }

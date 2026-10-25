@@ -70,7 +70,7 @@ private:
 	XINPUT_STATE controllerState;
 	XINPUT_STATE controllerState_old;
 
-	int VibrationTime; //振動継続時間をカウントする変数
+	float VibrationTime; //振動継続時間をカウントする変数
 
     static POINT m_MousePosition; //マウスの座標を保存する変数
 
@@ -81,7 +81,8 @@ public:
 	//Input(); //コンストラクタ
 	//~Input(); //デストラクタ
 	static void Create(); //作成
-	static void Update(); //更新
+	static void Update();
+    static void ConsumeTriggers(); // 同じ描画フレーム内の2回目以降は押下イベントを繰り返さない。 //更新
 	static void Release(); //解放
 
 	//キー入力
@@ -105,7 +106,7 @@ public:
 	//振動(コントローラー)
 	//flame：振動を継続する時間(単位：フレーム)
 	//power：振動の強さ(0～1)
-	static void SetVibration(int frame = 1, float powor = 1);
+	static void SetVibration(float seconds = 1.0f / 60.0f, float powor = 1);
 
     //マウスの座標を取得する関数
     static DirectX::XMFLOAT2 GetMousePosition();

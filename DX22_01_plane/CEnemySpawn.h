@@ -3,10 +3,10 @@
 class CEnemySpawn :  public Object
 {
 private:
-    int FrameCount = 0; // 現在のフレーム数
+    float m_spawnElapsed = 0.0f; // 前回の生成からの経過秒数。
 public:
 
-    int m_SpawnInterval = 120; // 敵を出現させる間隔（フレーム数）
+    float m_SpawnInterval = 2.0f; // 敵を出現させる間隔（秒）。
 
     float m_RadiusMin = 500.0f; // 出現する円の最小半径
     float m_RadiusMax = 1000.0f; // 出現する円の最大半径

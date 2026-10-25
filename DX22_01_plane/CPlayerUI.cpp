@@ -67,7 +67,7 @@ void CPlayerUI::Update() {
         m_hpRate = (float)player->GetHp() / (float)player->GetMaxHp();
 
         // ② ミサイルの割合を計算
-        // m_currentMissileTime は「撃てるまでの残り時間(120→0)」なので、
+        // m_currentMissileTime は「撃てるまでの残り秒数(2.0→0)」なので、
         // 0の時にゲージ満タン(1.0)になるように逆算する
         float maxTime = player->GetMissileTime();
         float curTime = player->GetCurrentMissileTime();

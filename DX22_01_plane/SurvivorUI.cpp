@@ -130,11 +130,11 @@ void CPlayer::DrawSurvivorUI()
         ImGui::Text(Text(u8"通常弾：左クリック / ダメージ%d / %d発 / 平均発射間隔%.3f秒"),
                     1 + m_progression.Rank(UpgradeId::BulletPower),
                     1 + m_progression.Rank(UpgradeId::MultiShot),
-                    m_BulletTime / 60.0f);
+                    m_BulletTime);
         ImGui::Text(Text(u8"ミサイル：右クリック / ダメージ%d / %d発 / 平均発射間隔%.2f秒"),
                     3 + 2 * m_progression.Rank(UpgradeId::MissilePower),
                     curRocket,
-                    m_MissileTime / 60.0f);
+                    m_MissileTime);
         if (ownedCount == 0)
         {
             ImGui::Spacing();
@@ -177,7 +177,7 @@ void CPlayer::DrawSurvivorUI()
     {
         if (!IsGameplayPaused())
         {
-            m_rewardNoticeTime -= ImGui::GetIO().DeltaTime;
+            GameTime::CountDown(m_rewardNoticeTime, GameTime::UnscaledDeltaSeconds());
         }
         ImGui::SetNextWindowPos(ImVec2(display.x * 0.5f, display.y - 70), 0, ImVec2(0.5f, 1));
         ImGui::Begin("RewardNotice", nullptr, HudFlags);
@@ -193,7 +193,8 @@ void CPlayer::DrawSurvivorUI()
     }
     if (m_selectionDelay > 0)
     {
-        --m_selectionDelay;
+        // 選択待ちはゲーム停止中も実時間で減らし、0秒で入力を解禁する。
+        GameTime::CountDown(m_selectionDelay, GameTime::UnscaledDeltaSeconds());
     }
     if (!ImGui::IsPopupOpen("SurvivorLevelUp"))
     {
@@ -268,7 +269,7 @@ void CPlayer::DrawSurvivorUI()
             if (m_progression.Select(selected, granted))
             {
                 ApplyUpgradeEffects(granted, false);
-                m_selectionDelay = 12;
+                m_selectionDelay = 0.2f;
 
                 // まとめて複数レベル上がった場合は閉じず、次の候補を同じ画面で表示する。
                 if (!IsChoosingUpgrade())

@@ -58,7 +58,7 @@ void CMissile::Update() {
 
     DirectX::SimpleMath::Vector3 oldPosition = m_Position;
 
-    float tick = 1.0f / 60.0f;//60FPSで更新するための時間を計算
+    const float tick = GameTime::DeltaSeconds(); // 実測した秒数だけ軌道を進める。
     m_bezier.Update(tick);
 
     //ミサイルの位置をベジエ曲線に沿って更新
@@ -85,7 +85,9 @@ void CMissile::Update() {
     //現在の位置と未来の位置から方向ベクトルを計算
     DirectX::SimpleMath::Vector3 direction;
     direction = futurePos - currentPos;
-    direction.Normalize();
+    // 軌道の終点では未来位置と一致するため、直前の移動方向を使う。
+    if (direction.LengthSquared() < 0.000001f) direction = m_Position - oldPosition;
+    if (direction.LengthSquared() > 0.000001f) direction.Normalize();
 
     float Yaw = atan2f(direction.x, direction.z); // Y軸周りの回転角度
 
@@ -102,12 +104,10 @@ void CMissile::Update() {
     for (auto& enemy : enemies) {
         if (enemy == nullptr || enemy->IsDead()) continue;
 
-        DirectX::SimpleMath::Vector3 diff = enemy->GetPosition() - m_Position;
-        float distance = diff.LengthSquared(); // 敵との距離を計算（距離の二乗を使用）
-
         float CheckRange = 100.0f; // 当たり判定の範囲
 
-        if (distance < (CheckRange * CheckRange)) {//CheckRange内当たり判定
+        // 経過時間が長い場合も、終点だけでなく移動区間全体を候補判定する。
+        if (Collision::DistancePointToSegment(enemy->GetPosition(), MissileSegment) < CheckRange) {
 
             // 「Distance」で、ミサイルと敵の距離を測る
             float dist = Collision::DistancePointToSegment(enemy->GetPosition(), MissileSegment);
@@ -134,7 +134,7 @@ void CMissile::Update() {
                     constexpr float maxShakeDistance = 3000.0f;
                     if (distance < maxShakeDistance) {
                         float shakePower = 10.0f * (1.0f - distance / maxShakeDistance);
-                        Game::GetInstance()->GetCamera()->SetShake(20.0f, shakePower);
+                        Game::GetInstance()->GetCamera()->SetShake(1.0f / 3.0f, shakePower);
                     }
                 }
                 
@@ -158,8 +158,8 @@ void CMissile::Update() {
 
                             p->SetVelocity(DirectX::SimpleMath::Vector3(vx, vy, vz));
 
-                            // 寿命もバラバラにする（30〜60フレーム）
-                            p->SetLife(30.0f + (rand() % 30));
+                            // 寿命もバラバラにする（0.5〜1秒）
+                            p->SetLife(0.5f + (rand() % 30) / 60.0f);
                         }
                     }
                     */

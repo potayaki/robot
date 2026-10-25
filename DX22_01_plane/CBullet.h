@@ -12,8 +12,9 @@ class CBullet : public Object
 private:
     TestModel* m_model; //弾のモデル
     Vector3 m_velocity; //弾の方向
-    float Speed = 25.0f;
-    int m_life; //寿命
+    float Speed = 1500.0f; // 弾速（距離/秒）。旧25/フレームと同じ速さ。
+    float m_life = 0.0f; // 残りの寿命（秒）。
+    float m_trailTimer = 0.0f; // 軌跡の生成間隔も秒で管理する。
     int damage = 1; // 弾のダメージ量
     int m_homingRank = 0; // 発射時の誘導レベル。0なら従来通り直進する。
     Vector3 a{0.0f, 0.0f, 0.0f}; // 弾の初期方向（例: 前方）

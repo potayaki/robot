@@ -1,17 +1,37 @@
 ﻿#pragma once
 #include "Object.h"
-#include"TestModel.h"
+#include "TestModel.h"
+#include "VertexBuffer.h"
+#include "Texture.h"
+
 class CAutoturret : public Object
 {
 private:
     TestModel* m_model; // 自動砲台のモデル
-    float m_life = 100.0f; // 自動砲台の寿命
-    float m_attackCooldown = 10.0f; // 攻撃のクールダウン時間
+    float m_life = 100.0f / 6.0f; // 自動砲台の寿命
+    float m_attackCooldown = 1.0f / 6.0f; // 攻撃のクールダウン時間
     float m_radius = 500.0f; // 攻撃範囲の半径
     int damage = 1; // 攻撃のダメージ量
 
     // 有効/無効はObjectのm_Activeを使い、プールと寿命の判定を一致させる。
-    float m_attackInterval = 27.0f;
+    float m_attackInterval = 0.45f; // 秒。
+
+    // 攻撃時の2点だけを保存する。敵が消えても、破棄された敵のポインタは参照しない。
+    static constexpr float LaserDurationSeconds = 0.2f; // 実測時間で0.2秒表示。
+    DirectX::SimpleMath::Vector3 m_laserStart{};
+    DirectX::SimpleMath::Vector3 m_laserEnd{};
+    float m_laserTime = 0.0f;
+
+    // 細い芯と、その周囲の淡い光の2枚の板でレーザーを表現する。
+    // 初期化時に作成し、攻撃や描画のたびにGPUのバッファを作り直さない。
+    Shader m_laserShader;
+    Texture m_laserTexture;
+    VertexBuffer<VERTEX_3D> m_laserBuffer;
+    std::vector<VERTEX_3D> m_laserVertices;
+    Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_laserRasterizer;
+    bool m_laserReady = false;
+
+    void InitLaser();
 
 public:
     CAutoturret();
@@ -20,28 +40,41 @@ public:
     void Init() override; // 初期化処理
     void Update() override; // 更新処理
     void Draw(Camera* cam) override; // 描画処理
+    void DrawLaser(Camera* cam); // 地形・敵の描画後に呼び、光線だけを重ねる。
     void Uninit() override; // 終了処理(モデルの破棄)
 
-    // 寿命を設定する関数
-    void SetLife(float life) { m_life = life; }
+    // 寿命を秒で設定する関数
+    void SetLife(float life)
+    {
+        m_life = life;
+    }
 
-    // 攻撃のクールダウン時間を設定する関数
-    void SetAttackCooldown(float cooldown) { m_attackCooldown = cooldown; }
+    // 攻撃のクールダウンを秒で設定する関数
+    void SetAttackCooldown(float cooldown)
+    {
+        m_attackCooldown = cooldown;
+    }
+
     void ConfigureUpgrade(int rank);
 
     // 当たり判定用の球を返す関数
-    Collision::Sphere GetCollisionSphere() override {
-        return { m_Position, 5.0f }; // 自動砲台の当たり判定の半径を5に設定
+    Collision::Sphere GetCollisionSphere() override
+    {
+        return {m_Position, 5.0f}; // 自動砲台の当たり判定の半径を5に設定
     }
 
-    void Spawn(const DirectX::SimpleMath::Vector3& position) {
+    void Spawn(const DirectX::SimpleMath::Vector3& position)
+    {
         m_Position = position;
         m_Active = true; // 自動砲台をアクティブにする
-        m_life = 100.0f; // 寿命をリセット
-        m_attackCooldown = 10.0f; // クールダウンをリセット
+        m_life = 100.0f / 6.0f; // 寿命をリセット
+        m_attackCooldown = 1.0f / 6.0f; // クールダウンをリセット
 
+        // プールから再設置した砲台に、前回の場所のレーザーを残さない。
+        m_laserTime = 0;
+        if (m_model)
+        {
+            m_model->SetPosition(m_Position);
+        }
     }
-
-
 };
-

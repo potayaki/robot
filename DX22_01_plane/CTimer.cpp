@@ -10,6 +10,7 @@ CTimer::CTimer() {}
 CTimer::~CTimer() { Uninit(); }
 
 void CTimer::Init() {
+    m_startTime = Game::GetInstance()->m_gameTime;
     // 整数部の桁を作成
     m_IntDigits.resize(Int_Digit_Count);
     for (int i = 0; i < Int_Digit_Count; i++) {
@@ -40,19 +41,14 @@ void CTimer::Init() {
 }
 
 void CTimer::Update() {
-    m_FrameCount++;
-    if (m_FrameCount >= 60) // 60FPS想定で1秒（CPlayerのクールダウンと同じ考え方）
-    {
-        m_FrameCount = 0;
-        m_Seconds++;
-    }
-
-    UpdateDigitDisplay(); // 小数部は毎フレーム動くので、ここは毎フレーム呼ぶ
+    UpdateDigitDisplay(); // 武器や敵の出現に使っているゲーム内秒数を表示する。
 }
 
 void CTimer::Draw(Camera* cam) {
 
-    // Game::Draw()が自動的に描画してくれる。
+    // 更新途中にレベルアップで停止しても、表示だけは現在のゲーム内時刻にそろえる。
+    UpdateDigitDisplay();
+    // 数字の画像自体は、後続のTexture2Dが描画する。
 }
 
 void CTimer::Uninit() {
@@ -72,8 +68,7 @@ Object* CTimer::SetPosition(float x, float y, float z) {
 }
 
 void CTimer::ResetTimer() {
-    m_Seconds = 0;
-    m_FrameCount = 0;
+    m_startTime = Game::GetInstance()->m_gameTime;
     UpdateDigitDisplay();
 }
 
@@ -96,16 +91,16 @@ void CTimer::RelayoutDigits() {
 }
 
 void CTimer::UpdateDigitDisplay() {
-    // ① 整数部：m_Secondsを1桁ずつ取り出す
-    int intValue = m_Seconds;
+    // 実測時間を蓄積した共通の時計を使い、別のフレームカウンターは持たない。
+    const double elapsedSeconds = Game::GetInstance()->m_gameTime - m_startTime;
+    int intValue = static_cast<int>(elapsedSeconds);
     for (int i = Int_Digit_Count - 1; i >= 0; i--) {
         SetDigitUV(m_IntDigits[i], intValue % 10);
         intValue /= 10;
     }
 
-    // ② 小数部：60フレーム中の何フレーム目かを0〜9に変換する
-    //    (frame=0→0, frame=6→1, ... frame=59→9)
-    int decValue = (m_FrameCount * 10) / 60;
+    // 小数第1位は経過秒数から直接取り出す。
+    int decValue = static_cast<int>(elapsedSeconds * 10.0) % 10;
     for (int i = Dec_Digit_Count - 1; i >= 0; i--) {
         SetDigitUV(m_DecDigits[i], decValue % 10);
         decValue /= 10;

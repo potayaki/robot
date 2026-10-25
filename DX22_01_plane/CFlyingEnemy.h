@@ -14,8 +14,8 @@ private:
     std::unique_ptr<TestModel> m_model;
     std::array<std::unique_ptr<TestCube>, PartCount> m_parts;
     int m_hp = 4;
-    int m_diveTimer = 0;
-    int m_attackCooldown = 100;
+    float m_diveTimer = 0.0f; // 急降下の残り秒数。
+    float m_attackCooldown = 5.0f / 3.0f; // 次の急降下までの秒数。
     float m_hoverPhase = 0.0f;
     float m_rotorAngle = 0.0f;
 

@@ -26,7 +26,7 @@ void CPresentBox::Init() {
 
 void CPresentBox::Update() {
     if (IsDead()) return;
-    m_angle += 0.05f;
+    m_angle += 3.0f * GameTime::DeltaSeconds(); // ラジアン/秒。
     std::vector<CPlayer*> players = Game::GetInstance()->GetObjects<CPlayer>();
 
     if (!players.empty() && players[0] != nullptr) {

@@ -139,7 +139,7 @@ std::string GetUpgradeEffectText(UpgradeId id, int rank)
     };
 
     // 武器の計算式と同じ値を表示し、「Lv」だけでは分からない実際の効果を補足する。
-    // 発射間隔などのフレーム数は、60で割って秒に直して表示する。
+    // 発射間隔はゲーム側と同じ秒単位の式で表示する。
     switch (id)
     {
     case UpgradeId::BulletPower:
@@ -147,7 +147,7 @@ std::string GetUpgradeEffectText(UpgradeId id, int rank)
         break;
 
     case UpgradeId::RapidFire:
-        format(u8"通常弾の平均発射間隔：%.3f秒", 6.0f * std::pow(0.85f, rank) / 60.0f);
+        format(u8"通常弾の平均発射間隔：%.3f秒", 0.1f * std::pow(0.85f, rank));
         break;
 
     case UpgradeId::MultiShot:
@@ -163,7 +163,7 @@ std::string GetUpgradeEffectText(UpgradeId id, int rank)
         break;
 
     case UpgradeId::MissileReload:
-        format(u8"ミサイルの平均発射間隔：%.2f秒", 120.0f * std::pow(0.85f, rank) / 60.0f);
+        format(u8"ミサイルの平均発射間隔：%.2f秒", 2.0f * std::pow(0.85f, rank));
         break;
 
     case UpgradeId::Orbit:
@@ -172,21 +172,21 @@ std::string GetUpgradeEffectText(UpgradeId id, int rank)
 
     case UpgradeId::Turret:
         format(u8"設置間隔%.1f秒 / 最大3基 / ダメージ%d / 射程%d / 攻撃間隔%.2f秒",
-               (360 - 30 * (rank - 1)) / 60.0f,
+               6.0f - 0.5f * (rank - 1),
                1 + (rank - 1) / 2,
                400 + 40 * rank,
-               (30 - 3 * rank) / 60.0f);
+               0.5f - 0.05f * rank);
         break;
 
     case UpgradeId::Shockwave:
-        format(u8"半径%d / ダメージ%d / 発動間隔%.1f秒", 80 + 12 * rank, 1 + rank, (180 - 12 * rank) / 60.0f);
+        format(u8"半径%d / ダメージ%d / 発動間隔%.1f秒", 80 + 12 * rank, 1 + rank, 3.0f - 0.2f * rank);
         break;
 
     case UpgradeId::Lightning:
         format(u8"最大%d体へ連鎖 / ダメージ%d / 射程350 / 発動間隔%.2f秒",
                2 + rank,
                1 + rank,
-               (150 - 10 * rank) / 60.0f);
+               2.5f - rank / 6.0f);
         break;
 
     case UpgradeId::MoveSpeed:
@@ -210,9 +210,8 @@ std::string GetUpgradeEffectText(UpgradeId id, int rank)
         break;
 
     case UpgradeId::BulletHoming:
-        format(u8"最大旋回：%.0f度/秒（%.1f度/フレーム）/ 探索半径：%.0f / 弾速・寿命は変化なし",
+        format(u8"最大旋回：%.0f度/秒 / 探索半径：%.0f / 弾速・寿命は変化なし",
                BulletHoming::DegreesPerSecond(rank),
-               BulletHoming::DegreesPerSecond(rank) / 60.0f,
                BulletHoming::SearchRadius);
         break;
 

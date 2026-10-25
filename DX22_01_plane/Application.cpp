@@ -151,69 +151,49 @@ void Application::UninitApp()
 //-----------------------------------------------------------------------------
 void Application::MainLoop()
 {
-    MSG msg = {};
-
-    // ゲームオブジェクト
-   
-
-    // ゲーム初期化処理
+    MSG msg{};
     Game::Init();
-    
-    // FPS計測用変数
-   int fpsCounter = 0;
-   long long oldTick = GetTickCount64(); // 前回計測時の時間
-   long long nowTick = oldTick; // 今回計測時の時間
 
-   // FPS固定用変数
-   LARGE_INTEGER liWork; // workがつく変数は作業用変数
-   long long frequency;// どれくらい細かく時間をカウントできるか
-   QueryPerformanceFrequency(&liWork);
-   frequency = liWork.QuadPart;
-   // 時間（単位：カウント）取得
-   QueryPerformanceCounter(&liWork);
-   long long oldCount = liWork.QuadPart;// 前回計測時の時間
-   long long nowCount = oldCount;// 今回計測時の時間
+    LARGE_INTEGER frequency{};
+    LARGE_INTEGER previous{};
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&previous);
 
-
-   // ゲームループ
-   while (1)
-   {
-       // 新たにメッセージがあれば
-       if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-       {
-           // ウィンドウプロシージャにメッセージを送る
-           TranslateMessage(&msg);
-           DispatchMessage(&msg);
-
-           // 「WM_QUIT」メッセージを受け取ったらループを抜ける
-           if (msg.message == WM_QUIT) {
-               break;
-           }
-       }
-        else
-       {
-           QueryPerformanceCounter(&liWork);// 現在時間を取得
-           nowCount = liWork.QuadPart;
-           // 1/60秒が経過したか？
-           if (nowCount >= oldCount + frequency /60) {
-
-               // ゲーム更新
-               Game::Update();
-
-               // ゲーム描画
-               Game::Draw();
-
-               fpsCounter++; // ゲーム処理を実行したら＋１する
-               oldCount = nowCount;
-           }
-
-            
-
+    while (true)
+    {
+        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+        {
+            if (msg.message == WM_QUIT) break;
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+            continue;
         }
+
+        LARGE_INTEGER current{};
+        QueryPerformanceCounter(&current);
+
+        // 最小化中も基準時刻を更新し、復帰時に停止時間をまとめて進めない。
+        if (IsIconic(m_hWnd))
+        {
+            previous = current;
+            Sleep(10);
+            continue;
+        }
+
+        // 前回の更新開始から今回の更新開始までを、高精度カウンターで秒に換算する。
+        // 待機時間だけでなく、前フレームの更新・描画にかかった時間も含む。
+        const double elapsedSeconds =
+            static_cast<double>(current.QuadPart - previous.QuadPart) / frequency.QuadPart;
+
+        // 描画の上限は従来どおり60fps。ゲームの時間には固定値ではなく実測値を渡す。
+        if (elapsedSeconds < 1.0 / 60.0) continue;
+        previous = current;
+
+        Game::Update(elapsedSeconds);
+        Game::Draw();
     }
 
-   // ゲーム終了処理
-   Game::Uninit();
+    Game::Uninit();
 }
 
 //-----------------------------------------------------------------------------

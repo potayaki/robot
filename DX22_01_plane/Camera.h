@@ -28,7 +28,7 @@ private:
 	DirectX::SimpleMath::Vector3 offset = DirectX::SimpleMath::Vector3(0.0f, 30.0f, -150.0f);
 
     //カメラの揺れ表現
-    float m_ShakeTime = 0.0f;
+    float m_ShakeTime = 0.0f; // 揺れの残り時間（秒）。
     float m_ShakePower = 0.0f;
 
 public:
@@ -55,7 +55,7 @@ public:
         return m_CameraDirection;
     }
 
-    //カメラシェイク開始
+    //カメラシェイク開始。timeは持続秒数。
     void SetShake(float time, float power) {
         m_ShakeTime = time;
         m_ShakePower = power;

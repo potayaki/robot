@@ -7,7 +7,7 @@ void ExplosionManager::Init() {
         m_pool[i] = new billboard();
         m_pool[i]->SetTextureGroup("explosion"); //：爆発グループに属することを教える
         m_pool[i]->Init();
-        m_pool[i]->SetAnim(0.005f, false); 
+        m_pool[i]->SetAnim(1.0f / 60.0f, false); // 旧60fps時の1コマ分の表示時間を維持。
         m_pool[i]->SetSpriteSheet(4, 4, 16);
         m_active[i] = false;
     }

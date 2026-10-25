@@ -39,6 +39,8 @@ private:
     int m_currentFrame;  // 現在表示している画像の番号
     float m_animTimer;   // 時間計測用タイマー
     float m_animSpeed;   // 何秒で次の画像に変えるか
+    bool m_finished = false; // 最終コマの表示時間まで終わったか。
+    void UpdateSpriteUV();
     bool m_loop;         // ループ再生するかどうか
 
     int m_SplitX = 0;// 画像を分割するX方向の数
@@ -63,19 +65,22 @@ public:
 
     void Play(DirectX::SimpleMath::Vector3 pos) {
         m_Position = pos;
-        m_currentFrame = -1;
-        m_animTimer = 999.0f;
+        m_currentFrame = 0;
+        m_animTimer = 0.0f;
+        m_finished = false;
+        UpdateSpriteUV(); // 再利用した瞬間から最初のコマを表示する。
     }
 
     bool IsFinished()const {
         // ループ再生ではなく、かつ現在のコマが最大枚数に達していたら終了
-        return (!m_loop && m_currentFrame >= m_maxFrames - 1);
+        return m_finished;
     }
 
     void SetSpriteSheet(int splitX, int splitY,int maxFrame) {
         m_SplitX = splitX;
         m_SplitY = splitY;
         m_maxFrames = maxFrame;
+        UpdateSpriteUV();
     }
 
     void SetTextureGroup(const std::string& groupKey) { m_groupKey = groupKey; }

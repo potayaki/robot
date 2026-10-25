@@ -8,7 +8,7 @@ COrbitalOrb::COrbitalOrb() {
     m_parentPlayer = nullptr;
     m_angle = 0.0f;
     m_radius = 5.0f;
-    m_speed = 0.05f; // 毎フレームの回転スピード
+    m_speed = 3.0f; // 回転スピード（ラジアン/秒）。
 }
 
 COrbitalOrb::~COrbitalOrb() {
@@ -44,7 +44,7 @@ void COrbitalOrb::Update() {
     }
 
     // 角度の更新（ラジアン）
-    m_angle += m_speed;
+    m_angle += m_speed * GameTime::DeltaSeconds();
     if (m_angle > DirectX::XM_2PI) {
         m_angle -= DirectX::XM_2PI;
     }
@@ -66,9 +66,7 @@ void COrbitalOrb::Update() {
     // 敵との当たり判定
     //--------------------
     // クールダウンを減らす
-    if (m_cooldownTime > 0.0f) {
-        m_cooldownTime -= 1.0f; // 1フレームごとに減らす
-    }
+    GameTime::AdvanceCooldown(m_cooldownTime, GameTime::DeltaSeconds());
 
     // クールダウンが0の時だけ攻撃判定を行う
     if (m_cooldownTime <= 0.0f) {
@@ -76,6 +74,7 @@ void COrbitalOrb::Update() {
         // オーブの接触判定もスライムとドローンで共通にする。
         std::vector<EnemyTarget*> enemies = Game::GetInstance()->GetObjects<EnemyTarget>();
 
+        bool hitEnemy = false;
         for (EnemyTarget* enemy : enemies) {
             // 敵が死んでいる、または非アクティブなら判定しない
             if (enemy == nullptr || enemy->IsDead() || !enemy->GetActive()) {
@@ -95,13 +94,17 @@ void COrbitalOrb::Update() {
             if (distanceSq <= (hitRange * hitRange)) {
 
                 enemy->OnHit(m_damage);
-                // 連続ヒットを防ぐため、クールダウンを設定（例：30フレーム = 0.5秒間は判定を消す）
-                m_cooldownTime = 30.0f;
+                hitEnemy = true;
 
                 
                 // 貫通して複数に当たる仕様なら break は書かない
                 //break;
             }
+        }
+        // 重なっている敵全体への1回の攻撃として、端数秒を残して次の間隔を加える。
+        if (hitEnemy)
+        {
+            m_cooldownTime += 0.5f;
         }
     }
 }

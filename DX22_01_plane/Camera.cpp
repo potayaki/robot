@@ -29,10 +29,10 @@ void Camera::Update() {
 
     //デバック用のカメラ操作
 	if (Input::GetKeyPress(VK_K)) {
-		m_CameraDirection += 0.02f;
+		m_CameraDirection += 1.2f * GameTime::DeltaSeconds();
 	}
 	if (Input::GetKeyPress(VK_L)) {
-		m_CameraDirection -= 0.02f;
+		m_CameraDirection -= 1.2f * GameTime::DeltaSeconds();
 	}
 
     
@@ -50,7 +50,7 @@ void Camera::Update() {
 
     //TODO : 画面端のどのくらいの幅で回転するか
     const int edgeWidth = 100;//端の判定幅
-    const float RotationSpeed = 0.02f;//回転速度
+    const float RotationSpeed = 1.2f * GameTime::DeltaSeconds(); // ラジアン/秒から今回の回転量へ。
 
     //カメラの右回転
     if (MousePos.x >= Width - edgeWidth) {
@@ -111,7 +111,7 @@ void Camera::Update() {
         m_Target.z += rz;
 
         // タイマーを減らす
-        m_ShakeTime -= 1.0f;
+        GameTime::CountDown(m_ShakeTime, GameTime::DeltaSeconds());
 
     }
 

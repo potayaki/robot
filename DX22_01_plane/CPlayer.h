@@ -19,12 +19,12 @@ private:
     const int maxRocket = 20; //最大ミサイル数
     TestCube* m_body; //body
 
-    // 通常弾の発射間隔と残り待ち時間。単位は秒ではなくフレーム（60で1秒）。
-    float m_BulletTime = 60 * 0.1;
+    // 発射間隔と残り待ち時間は秒。実測したdeltaSecondsを引いて更新する。
+    float m_BulletTime = 0.1f;
     float m_currentBulletTime = 0.0f; // 0以下なら発射可能。小数部分も保持する。
 
-    // ミサイルも同じフレーム単位で管理する。
-    float m_MissileTime = 60 * 2;
+    // ミサイルは初期状態で2秒おきに発射できる。
+    float m_MissileTime = 2.0f;
     float m_currentMissileTime = 0.0f;
 
     //Tarret
@@ -40,15 +40,15 @@ private:
     SurvivorProgression m_progression;
     int m_kills = 0;
 
-    // 自動武器・回復・無敵時間の更新用タイマー。ゲーム停止中は進めない。
-    int m_regenerationTimer = 0;
-    int m_turretTimer = 0;
-    int m_shockwaveTimer = 0;
-    int m_lightningTimer = 0;
-    int m_damageCooldown = 0;
+    // 自動武器・回復・無敵時間の残り秒数。ゲーム停止中は進めない。
+    float m_regenerationTimer = 0.0f;
+    float m_turretTimer = 0.0f;
+    float m_shockwaveTimer = 0.0f;
+    float m_lightningTimer = 0.0f;
+    float m_damageCooldown = 0.0f;
 
     // 選択直前の射撃入力が、報酬の選択へそのまま使われることを防ぐ待ち時間。
-    int m_selectionDelay = 0;
+    float m_selectionDelay = 0.0f;
     bool m_showLoadout = false; // 詳細を読んでいる間はレベルアップと同様にゲームを停止。
 
     // 通知だけは描画の経過時間を使うため、こちらの単位は秒。

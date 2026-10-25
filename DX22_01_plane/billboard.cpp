@@ -88,10 +88,12 @@ void billboard::Init() {
 //アニメーションの設定
 //--------------
 void billboard::SetAnim(float animSpeed, bool loop) {
-    m_animSpeed = animSpeed;
+    m_animSpeed = (std::max)(0.0001f, animSpeed); // 1コマの表示秒数。0除算を防ぐ。
     m_loop = loop;
     m_currentFrame = 0;
     m_animTimer = 0.0f;
+    m_finished = false;
+    UpdateSpriteUV();
 }
 
 
@@ -137,53 +139,47 @@ void billboard::ReleaseTextures(const std::string& groupKey) {
 //--------------
 //更新処理
 //--------------
-void billboard::Update() {
-    // 簡易的なタイマー（60FPS想定なら 1.0f/60.0f を足す）
-    m_animTimer += (1.0f / 60.0f);
+void billboard::Update()
+{
+    if (m_finished || m_maxFrames <= 0) return;
 
-    // 指定した時間を超えたら次の画像へ切り替え
-    if (m_animTimer >= m_animSpeed) {
-        m_animTimer = 0.0f;
-        m_currentFrame++;
+    // 経過秒数から進めるコマ数を求め、コマの途中の端数も次へ残す。
+    // 低FPSでも「1回のUpdateで1コマまで」という制限を設けない。
+    m_animTimer += GameTime::DeltaSeconds();
+    const int framesToAdvance = static_cast<int>(m_animTimer / m_animSpeed);
+    if (framesToAdvance <= 0) return;
+    m_animTimer -= framesToAdvance * m_animSpeed;
+    m_currentFrame += framesToAdvance;
 
-        //スプライトシートの場合
-        if (m_SplitX > 1 || m_SplitY > 1) {
-            // 1コマあたりの縦横のサイズ（割合）
-            float u_step = 1.0f / m_SplitX;
-            float v_step = 1.0f / m_SplitY;
-
-            // 現在のコマ番号（0〜15）から、縦横の位置を割り出す
-            int x_idx = m_currentFrame % m_SplitX;
-            int y_idx = m_currentFrame / m_SplitX;
-
-            // 切り抜く左上の座標
-            float u = x_idx * u_step;
-            float v = y_idx * v_step;
-
-            // 4つの頂点のUV座標を書き換える
-            // 頂点左上
-            m_Vertices[0].uv = DirectX::SimpleMath::Vector2(u, v);                   // 左上
-            m_Vertices[1].uv = DirectX::SimpleMath::Vector2(u + u_step, v);          // 右上
-            m_Vertices[2].uv = DirectX::SimpleMath::Vector2(u, v + v_step);          // 左下
-            m_Vertices[3].uv = DirectX::SimpleMath::Vector2(u + u_step, v + v_step); // 右下
-
-            // 書き換えた頂点データをGPUに送る
-            m_VertexBuffer.Modify(m_Vertices);
-
-            // 最後の画像まで表示し終わったら
-            if (m_currentFrame >= m_maxFrames) {
-                if (m_loop) {
-                    m_currentFrame = 0; // ループして最初に戻る
-                }
-                else {
-
-                    m_currentFrame = m_maxFrames - 1; // 最後の画像で止める
-
-                    //SetActive(false);
-                }
-            }
+    if (m_currentFrame >= m_maxFrames)
+    {
+        if (m_loop)
+        {
+            m_currentFrame %= m_maxFrames;
+        }
+        else
+        {
+            m_currentFrame = m_maxFrames - 1;
+            m_finished = true; // 最終コマの表示時間も経過してから終了する。
         }
     }
+    UpdateSpriteUV();
+}
+
+void billboard::UpdateSpriteUV()
+{
+    if (m_SplitX <= 0 || m_SplitY <= 0 || m_Vertices.size() < 4) return;
+
+    const float width = 1.0f / m_SplitX;
+    const float height = 1.0f / m_SplitY;
+    const float u = (m_currentFrame % m_SplitX) * width;
+    const float v = (m_currentFrame / m_SplitX) * height;
+
+    m_Vertices[0].uv = DirectX::SimpleMath::Vector2(u, v);
+    m_Vertices[1].uv = DirectX::SimpleMath::Vector2(u + width, v);
+    m_Vertices[2].uv = DirectX::SimpleMath::Vector2(u, v + height);
+    m_Vertices[3].uv = DirectX::SimpleMath::Vector2(u + width, v + height);
+    m_VertexBuffer.Modify(m_Vertices);
 }
 
 //--------------

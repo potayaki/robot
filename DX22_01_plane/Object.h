@@ -6,6 +6,7 @@
 描画・更新・破棄などの基本インターフェースを提供する。
 */
 #include "Camera.h"
+#include "GameTime.h"
 #include "Shader.h"
 #include"Collision.h"
 class Object {

@@ -19,6 +19,7 @@ enum SceneName {
 class Game
 {
 private:
+    static void FlushObjects(); // 更新終了後に、削除・追加待ちのオブジェクトを反映する。
 	static Game* m_instance;//ゲームインスタンス
 	Scene* m_scene;//シーン
 	// カメラ
@@ -46,10 +47,10 @@ public:
 	Game(); // コンストラクタ
 	~Game(); // デストラクタ
 
-    float m_gameTime = 0.0f;
+    double m_gameTime = 0.0; // 一時停止を除いた実測の経過秒数。
 
 	static void Init(); // 初期化
-	static void Update(); // 更新
+	static void Update(double elapsedSeconds); // 更新
 	static void Draw(); // 描画
 	static void Uninit(); // 終了処理
 

@@ -73,14 +73,14 @@ namespace BulletHoming
     };
 
     template <class Vector>
-    Vector Turn(const Vector& velocity, const Vector& offset, int rank)
+    Vector Turn(const Vector& velocity, const Vector& offset, int rank, float deltaSeconds)
     {
         // 速度から「速さ」と「向き」を分離し、向きだけを変更する。
         const float speed = velocity.Length();
         const float distance = offset.Length();
 
         // 長さ0のベクトルは正規化できない。誘導不可の場合は元の速度を返す。
-        if (rank <= 0 || speed < 0.000001f || distance < 0.000001f || velocity.Dot(offset) <= 0.0f)
+        if (deltaSeconds <= 0.0f || !std::isfinite(deltaSeconds) || rank <= 0 || speed < 0.000001f || distance < 0.000001f || velocity.Dot(offset) <= 0.0f)
         {
             return velocity;
         }
@@ -93,9 +93,9 @@ namespace BulletHoming
         const float dot = std::clamp(forward.Dot(target), 0.0f, 1.0f);
         constexpr float Pi = 3.14159265358979323846f;
 
-        // 既存の移動・寿命と同じ60更新/秒。一定角度以上は曲げず、必中にしない。
-        // 度/秒 → ラジアン/秒 → ラジアン/フレームの順に単位を変換する。
-        const float step = DegreesPerSecond(rank) * Pi / 180.0f / 60.0f;
+        // 1秒あたりの旋回上限に実際の経過秒数を掛ける。
+        // FPSによって誘導力が変わらず、停止中（0秒）は向きも変わらない。
+        const float step = DegreesPerSecond(rank) * Pi / 180.0f * deltaSeconds;
 
         // すでに目標の向きが旋回上限内なら、その向きに合わせて行き過ぎを防ぐ。
         if (std::acos(dot) <= step)

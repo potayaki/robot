@@ -20,10 +20,10 @@ void CEnemySpawn::Update() {
     if (players.empty() || players[0]->GetHp() <= 0) return;
     // 生存時間に応じて出現間隔を短くする。選択画面で止めた時間は加算されない。
     const int wave = static_cast<int>(Game::GetInstance()->m_gameTime / 45.0f);
-    const int interval = (std::max)(45, m_SpawnInterval - wave * 10);
-    FrameCount++;
-    if (FrameCount >= interval) {
-        FrameCount = 0;
+    const float interval = (std::max)(0.75f, m_SpawnInterval - wave / 6.0f);
+    m_spawnElapsed += GameTime::DeltaSeconds();
+    if (m_spawnElapsed >= interval) {
+        m_spawnElapsed -= interval; // 間隔を越えた端数も次回へ持ち越す。
 
         // 飛行型も含めた敵の総数を制限し、機体パーツの描画負荷が増え続けないようにする。
         int livingEnemies = 0;

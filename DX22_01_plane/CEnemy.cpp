@@ -5,6 +5,7 @@
 #include"CPresentBox.h"
 //ランダム
 #include<cstdlib>
+#include <cmath>
 namespace {
     constexpr float SlimeFacingOffset = DirectX::XM_PI; // モデルの正面はゲームの+Zと逆向き
     // FBXを0.2倍・X軸-30ラジアンにしたとき、モデルの最下点は原点より約0.5下にある。
@@ -34,10 +35,10 @@ void CEnemy::Init() {
 
 void CEnemy::Update() {
     if (IsDead()) return;
-    ++m_moveFrame;
-    if (m_AttackTimer > 0.0f) {
-        m_AttackTimer -= 1.0f;
-    }
+    const float deltaSeconds = GameTime::DeltaSeconds();
+    // 攻撃待ちとダッシュの周期を、フレーム数ではなく秒で進める。
+    m_moveTime = std::fmod(m_moveTime + deltaSeconds, 2.5f);
+    GameTime::AdvanceCooldown(m_AttackTimer, deltaSeconds);
     //地面との当たり判定-----------------------------------------------------------------------
     std::vector<Ground*>grounds = Game::GetInstance()->GetObjects<Ground>();
     if (!grounds.empty()) {//groundsの中が空っぽかそうか１つ以上作られたか
@@ -68,8 +69,8 @@ void CEnemy::Update() {
             dir.Normalize();
 
             // 高速型は一定周期で短いダッシュを行う。
-            const float dash = m_variant == SlimeVariant::Runner && m_moveFrame % 150 < 25 ? 1.7f : 1.0f;
-            m_Position += dir * m_Speed * dash;
+            const float dash = m_variant == SlimeVariant::Runner && m_moveTime < 25.0f / 60.0f ? 1.7f : 1.0f;
+            m_Position += dir * m_Speed * dash * deltaSeconds;
             m_Rotation.y = atan2f(dir.x, dir.z);
         }
 
@@ -79,7 +80,7 @@ void CEnemy::Update() {
         if (distance < hitRange && m_AttackTimer <= 0.0f) {
             // プレイヤーと敵が接触した場合の処理
             player[0]->TakeDamage(damage); // プレイヤーにダメージを与える
-            m_AttackTimer = 60.0f; // 攻撃のクールダウンを設定
+            m_AttackTimer += 1.0f; // 接触攻撃は1秒間隔。
         }
 
     }
@@ -99,15 +100,15 @@ void CEnemy::SetVariant(SlimeVariant variant) {
     m_variant = variant;
     // 小型は追い込み役、大型は高耐久・高報酬の敵として調整する。
     if (variant == SlimeVariant::Runner) {
-        m_size = 0.7f; hp = 2; m_Speed = 0.95f; damage = 2; m_experience = 2;
+        m_size = 0.7f; hp = 2; m_Speed = 57.0f; damage = 2; m_experience = 2;
         m_Droppercent = 10;
     }
     else if (variant == SlimeVariant::Brute) {
-        m_size = 1.8f; hp = 12; m_Speed = 0.3f; damage = 6; m_experience = 5;
+        m_size = 1.8f; hp = 12; m_Speed = 18.0f; damage = 6; m_experience = 5;
         m_Droppercent = 25;
     }
     else {
-        m_size = 1.0f; hp = 3; m_Speed = 0.5f; damage = 2; m_experience = 1;
+        m_size = 1.0f; hp = 3; m_Speed = 30.0f; damage = 2; m_experience = 1;
         m_Droppercent = 10;
     }
     if (m_body) m_body->SetScale(0.2f * m_size);

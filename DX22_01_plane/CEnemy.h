@@ -17,7 +17,7 @@ class CEnemy :
 
         int hp = 3;//体力
 
-        float m_Speed = 0.5f;//Playerは1.0f
+        float m_Speed = 30.0f; // 移動速度（距離/秒）。プレイヤーは60。
 
 		bool IsGrounded = false;//着いていた
 
@@ -29,7 +29,7 @@ class CEnemy :
         SlimeVariant m_variant = SlimeVariant::Normal;
         float m_size = 1.0f;
         int m_experience = 1;
-        int m_moveFrame = 0;
+        float m_moveTime = 0.0f; // ダッシュ周期内の経過秒数。
 
         public:
 		CEnemy();

@@ -18,9 +18,9 @@ struct TargetInfo {
 using namespace DirectX::SimpleMath;
 
 namespace {
-    const float Gravity = 0.008f;
-    const float speed = 1.0f;
-    const float JumpPower = 0.5f;
+    const float Gravity = 28.8f; // 旧0.008/フレームを加速度（距離/秒²）へ換算。
+    const float speed = 60.0f; // 移動速度（距離/秒）。
+    const float JumpPower = 30.0f; // ジャンプの初速（距離/秒）。
 
     // カメラからの照準線が敵の球に入る最初の距離を求める。
     bool RaySphereHitDistance(const Vector3& origin, const Vector3& direction,
@@ -68,14 +68,13 @@ void CPlayer::Update() {
         return;
     }
 
-    m_velocity.y -= Gravity;
-    m_Position += m_velocity;
-    if (m_currentBulletTime > 0) {
-        m_currentBulletTime--;
-    }
-    if (m_currentMissileTime > 0) {
-        m_currentMissileTime--;
-    }
+    const float deltaSeconds = GameTime::DeltaSeconds();
+    // 重力は加速度、速度は1秒あたりの移動量として積分する。
+    m_Position += m_velocity * deltaSeconds;
+    m_Position.y -= 0.5f * Gravity * deltaSeconds * deltaSeconds;
+    m_velocity.y -= Gravity * deltaSeconds;
+    GameTime::AdvanceCooldown(m_currentBulletTime, deltaSeconds);
+    GameTime::AdvanceCooldown(m_currentMissileTime, deltaSeconds);
 
 
     isGrounded();
@@ -104,7 +103,7 @@ void CPlayer::CreateOrbs(int count) {
     for (COrbitalOrb* orb : m_orbs) if (orb) orb->Destroy();
     m_orbs.clear();
     float radius = 50.0f; // 回転半径
-    float speed = 0.05f; // 回転スピード
+    float speed = 3.0f; // 回転スピード（ラジアン/秒）。
 
     for (int i = 0; i < count; ++i) {
         // 360度（XM_2PI）を個数で割って、等間隔に配置する
@@ -159,8 +158,8 @@ void CPlayer::Move() {
         movedir.Normalize();
 
         const float moveSpeed = speed * (1.0f + 0.1f * m_progression.Rank(UpgradeId::MoveSpeed));
-        m_Position.x += movedir.x * moveSpeed;
-        m_Position.z += movedir.z * moveSpeed;
+        m_Position.x += movedir.x * moveSpeed * GameTime::DeltaSeconds();
+        m_Position.z += movedir.z * moveSpeed * GameTime::DeltaSeconds();
 
         m_Rotation.y = atan2f(movedir.x, movedir.z);
 
@@ -276,8 +275,7 @@ void CPlayer::StartBullet() {
         }
     }
 
-    // 更新で生じた1フレーム未満の余りを次へ持ち越す。
-    // 毎回切り上げると、高速装填Lv1（6→5.1フレーム）が強化前と同じ連射になる。
+    // 発射可能になった瞬間を越えた秒数も次へ持ち越し、連射間隔の丸め誤差を防ぐ。
     m_currentBulletTime += m_BulletTime;
 }
 
@@ -362,7 +360,7 @@ void CPlayer::StartMissile() {
 
 
 
-            m_currentMissileTime += m_MissileTime; // 冷却強化の小数フレームも持ち越す。
+            m_currentMissileTime += m_MissileTime; // 冷却強化の端数秒も持ち越す。
 
 
         }

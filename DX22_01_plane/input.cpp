@@ -1,5 +1,6 @@
 ﻿#include "input.h"
 #include"Application.h"
+#include "GameTime.h"
 
 Input* Input::m_Instance = {};
 
@@ -31,7 +32,7 @@ void Input::Update() {
 
 	//振動継続時間をカウント
 	if (m_Instance->VibrationTime > 0) {
-		m_Instance->VibrationTime--;
+		GameTime::CountDown(m_Instance->VibrationTime, GameTime::UnscaledDeltaSeconds());
 		if (m_Instance->VibrationTime == 0) { //振動継続時間が経った時に振動を止める
 			XINPUT_VIBRATION vibration;
 			ZeroMemory(&vibration, sizeof(XINPUT_VIBRATION));
@@ -43,6 +44,16 @@ void Input::Update() {
 }
 
 
+
+void Input::ConsumeTriggers()
+{
+    // 押し続けている状態は維持し、「押した／離した瞬間」だけを消費する。
+    for (int i = 0; i < 256; ++i)
+    {
+        m_Instance->keyState_old[i] = m_Instance->keyState[i];
+    }
+    m_Instance->controllerState_old = m_Instance->controllerState;
+}
 
 void Input::Release() {
 	//振動を終了させる
@@ -120,7 +131,7 @@ bool Input::GetButtonRelease(WORD btn) //リリース
 }
 
 //振動
-void Input::SetVibration(int frame, float powor) {
+void Input::SetVibration(float seconds, float powor) {
 	// XINPUT_VIBRATION構造体のインスタンスを作成
 	XINPUT_VIBRATION vibration;
 	ZeroMemory(&vibration, sizeof(XINPUT_VIBRATION));
@@ -131,7 +142,7 @@ void Input::SetVibration(int frame, float powor) {
 	XInputSetState(0, &vibration);
 
 	//振動継続時間を代入
-	m_Instance->VibrationTime = frame;
+	m_Instance->VibrationTime = seconds; // 振動の持続時間は秒で指定する。
 }
 
 DirectX::XMFLOAT2 Input::GetMousePosition() {

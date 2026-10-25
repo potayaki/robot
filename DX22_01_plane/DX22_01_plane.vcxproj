@@ -228,6 +228,7 @@
     <ClInclude Include="CTimer.h" />
     <ClInclude Include="ExplosionManager.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="GameTime.h" />
     <ClInclude Include="GolfBall.h" />
     <ClInclude Include="Ground.h" />
     <ClInclude Include="imconfig.h" />

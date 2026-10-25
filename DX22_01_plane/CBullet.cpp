@@ -74,6 +74,9 @@ void CBullet::Update()
         return;
     }
 
+    // 寿命が切れる最後の更新では、残っている時間の分だけ移動する。
+    const float deltaSeconds = (std::min)(GameTime::DeltaSeconds(), m_life);
+
     //パーティクルの生成で1フレーム前の弾の位置を取得するために保存しておく
     DirectX::SimpleMath::Vector3 OldPosition = m_Position;
 
@@ -95,7 +98,7 @@ void CBullet::Update()
         }
         if (search.Found())
         {
-            m_velocity = BulletHoming::Turn(m_velocity, search.Offset(), m_homingRank);
+            m_velocity = BulletHoming::Turn(m_velocity, search.Offset(), m_homingRank, deltaSeconds);
         }
 
         // 高さ方向の誘導にもモデルの先端を追従させる。
@@ -107,8 +110,8 @@ void CBullet::Update()
 
     // ----- 3. 移動とモデルの更新 -----
     // 誘導後の速度で動かす。誘導先が見つからない場合は、直前の向きでそのまま進む。
-    m_Position += m_velocity; // 位置を更新
-    m_life--; // 寿命を減らす
+    m_Position += m_velocity * deltaSeconds; // 距離/秒 × 経過秒数。
+    GameTime::CountDown(m_life, deltaSeconds);
 
     // モデルの位置を更新
     m_model->SetPosition(m_Position);
@@ -118,15 +121,21 @@ void CBullet::Update()
     //パーティクル(弾の軌道)を生成
     //--------------------
     std::vector<ParticleManager*> pManagers = Game::GetInstance()->GetObjects<ParticleManager>();
-    if (!pManagers.empty())
+    m_trailTimer += deltaSeconds;
+    constexpr float trailInterval = 1.0f / 60.0f; // 毎秒60個。FPSが変わっても密度を保つ。
+    while (m_trailTimer >= trailInterval)
     {
+        m_trailTimer -= trailInterval;
+        if (pManagers.empty()) continue;
         CParticle* trail = pManagers[0]->Spawn();
         if (trail != nullptr)
         { // 取得できた時だけ設定
             trail->SetType(Spark);
-            trail->SetPosition(OldPosition);
+            // 低FPSで複数生成するときも、移動した区間に等間隔で並べる。
+            const float fraction = 1.0f - m_trailTimer / deltaSeconds;
+            trail->SetPosition(Vector3::Lerp(OldPosition, m_Position, fraction));
             trail->SetVelocity(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f));
-            trail->SetLife(20);
+            trail->SetLife(1.0f / 3.0f);
             trail->SetScale(DirectX::SimpleMath::Vector3(2.5f, 2.5f, 2.5f));
             trail->SetColor(DirectX::SimpleMath::Color(1.0f, 0.0f, 0.0f, 1.0f));
         }
@@ -181,7 +190,7 @@ void CBullet::Update()
         SetActive(false);
         return;
     }
-    if (groundHitFraction <= 1.0f)
+    if (groundHitFraction <= 1.0f || m_life <= 0.0f)
     {
         SetActive(false);
         return;
@@ -226,5 +235,6 @@ void CBullet::Shoot(DirectX::SimpleMath::Vector3 player, DirectX::SimpleMath::Ve
     // 弾の回転を設定（X軸を90度回転させ、Y軸は発射方向に合わせる）
     SetRotation(Vector3(DirectX::XMConvertToRadians(90.0f), yaw, 0.0f));
 
-    m_life = 60 * 2; //弾の寿命（フレーム数、ここでは2秒間）を設定
+    m_life = 2.0f; // 残り秒数から実測の経過時間を引くので、FPSによらず2秒で消える。
+    m_trailTimer = 0.0f;
 }

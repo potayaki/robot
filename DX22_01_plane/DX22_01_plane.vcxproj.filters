@@ -272,6 +272,9 @@
     <ClInclude Include="Application.h">
       <Filter>ヘッダー ファイル\System</Filter>
     </ClInclude>
+    <ClInclude Include="GameTime.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
     <ClInclude Include="Game.h">
       <Filter>ヘッダー ファイル\System</Filter>
     </ClInclude>

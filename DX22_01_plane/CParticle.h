@@ -31,8 +31,8 @@ private:
     static Material* m_sparkMaterial;
 
     DirectX::SimpleMath::Vector3 m_velocity; // 飛んでいく方向とスピード
-    float m_life;                            // 寿命（何フレームで消えるか）
-    ParticleType m_type; // パーティクルの種類
+    float m_life = 1.0f; // 残りの寿命（秒）。
+    ParticleType m_type = Test; // パーティクルの種類
 
     DirectX::SimpleMath::Color m_color; // パーティクルの色
 
@@ -47,7 +47,7 @@ public:
     void Draw(Camera* cam) override;
     void Uninit() override;
 
-    // 初速と寿命をセットする関数
+    // 初速は距離/秒、寿命は秒で指定する。
     void SetVelocity(DirectX::SimpleMath::Vector3 vel) { m_velocity = vel; }
     void SetLife(float life) { m_life = life; }
 
