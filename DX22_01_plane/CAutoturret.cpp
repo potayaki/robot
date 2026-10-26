@@ -6,10 +6,7 @@
 
 using namespace DirectX::SimpleMath;
 
-CAutoturret::CAutoturret()
-{
-    m_model = nullptr; // プールがInitを呼ぶため、コンストラクタでは二重に読み込まない。
-}
+CAutoturret::CAutoturret() = default;
 
 CAutoturret::~CAutoturret()
 {
@@ -18,17 +15,15 @@ CAutoturret::~CAutoturret()
 
 void CAutoturret::Init()
 {
-    m_model = new TestModel();
-    m_model->Init();
-    m_model->SetScale(3.0f); // 自動砲台のスケールを設定
-    m_model->Load("assets/model/bullet/Bullett.fbx", "assets/model/bullet");
-
+    m_eye.Init(); // 弾のモデルを使わず、専用の眼球を生成する。
     InitLaser();
 }
 
 void CAutoturret::Update()
 {
     const float deltaSeconds = GameTime::DeltaSeconds();
+    // 残光が消えるフレームでは、消えた後に残っている秒数だけ回転に使う。
+    const float turnSeconds = (std::max)(0.0f, deltaSeconds - m_laserTime);
     // レーザー・砲台の寿命・攻撃間隔は、すべて同じ経過秒数で減らす。
     GameTime::CountDown(m_laserTime, deltaSeconds);
     GameTime::CountDown(m_life, deltaSeconds);
@@ -40,8 +35,6 @@ void CAutoturret::Update()
         return;
     }
 
-    m_model->SetPosition(m_Position);
-
     // 自動砲台もドローンを攻撃対象として認識する。
     std::vector<EnemyTarget*> enemies = Game::GetInstance()->GetObjects<EnemyTarget>();
     EnemyTarget* minEnemy = nullptr;
@@ -49,7 +42,7 @@ void CAutoturret::Update()
 
     for (EnemyTarget* enemy : enemies)
     {
-        if (enemy == nullptr || enemy->IsDead())
+        if (enemy == nullptr || enemy->IsDead() || !enemy->GetActive())
         {
             continue;
         }
@@ -64,12 +57,24 @@ void CAutoturret::Update()
 
     GameTime::AdvanceCooldown(m_attackCooldown, deltaSeconds);
 
-    if (minEnemy != nullptr && minDistance < m_radius && m_attackCooldown <= 0.0f)
+    // ビームが消えている間は次の標的へ目を向ける。
+    // 発射後の残光中は視線を固定し、瞳だけが別の敵へ向くことを防ぐ。
+    const Vector3 eyeCenter = GetEyeCenter();
+    bool aimedAtTarget = false;
+    if (minEnemy != nullptr && minDistance < m_radius && m_laserTime <= 0.0f)
+    {
+        const Vector3 targetDirection = minEnemy->GetCollisionSphere().center - eyeCenter;
+        aimedAtTarget = EyeTurretShape::TurnTowards(m_eyeRotation, targetDirection, turnSeconds);
+    }
+
+    // 照準が合うまで待つ。発射時だけ敵の向きへ瞬間移動させない。
+    if (aimedAtTarget && m_attackCooldown <= 0.0f)
     {
         // ダメージを与える前に実際の攻撃先を記録する。
         // 表示中は敵を追いかけず、今回撃った方向に短い残光を残す。
-        m_laserStart = m_Position + Vector3(0.0f, 8.0f, 0.0f);
         m_laserEnd = minEnemy->GetCollisionSphere().center;
+        const Vector3 lookDirection = EyeTurretShape::LookDirection(m_eyeRotation);
+        m_laserStart = EyeTurretShape::BeamStart(eyeCenter, m_laserEnd, lookDirection);
         m_laserTime = LaserDurationSeconds;
 
         minEnemy->OnHit(damage);
@@ -87,7 +92,7 @@ void CAutoturret::ConfigureUpgrade(int rank)
 
 void CAutoturret::Draw(Camera* cam)
 {
-    m_model->Draw(cam);
+    m_eye.Draw(cam, GetEyeCenter(), m_eyeRotation);
     // レーザーはGame::Drawの後半で描く。ここでは不透明な砲台本体だけを描画する。
 }
 
@@ -226,10 +231,5 @@ void CAutoturret::Uninit()
     m_laserShader = Shader{};
     m_laserVertices.clear();
 
-    if (m_model)
-    {
-        m_model->Uninit();
-        delete m_model;
-        m_model = nullptr;
-    }
+    m_eye.Uninit();
 }

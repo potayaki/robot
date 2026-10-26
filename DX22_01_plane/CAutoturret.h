@@ -1,17 +1,18 @@
 ﻿#pragma once
 #include "Object.h"
-#include "TestModel.h"
+#include "EyeTurretModel.h"
 #include "VertexBuffer.h"
 #include "Texture.h"
 
 class CAutoturret : public Object
 {
 private:
-    TestModel* m_model; // 自動砲台のモデル
-    float m_life = 100.0f / 6.0f; // 自動砲台の寿命
+    EyeTurretModel m_eye; // 白目・虹彩・瞳を持つ立体の目。
+    DirectX::SimpleMath::Quaternion m_eyeRotation{}; // 毎フレームの姿勢を保存し、滑らかに回す。
+    float m_life = 100.0f / 6.0f;         // 自動砲台の寿命
     float m_attackCooldown = 1.0f / 6.0f; // 攻撃のクールダウン時間
-    float m_radius = 500.0f; // 攻撃範囲の半径
-    int damage = 1; // 攻撃のダメージ量
+    float m_radius = 500.0f;              // 攻撃範囲の半径
+    int damage = 1;                       // 攻撃のダメージ量
 
     // 有効/無効はObjectのm_Activeを使い、プールと寿命の判定を一致させる。
     float m_attackInterval = 0.45f; // 秒。
@@ -33,15 +34,20 @@ private:
 
     void InitLaser();
 
+    DirectX::SimpleMath::Vector3 GetEyeCenter() const
+    {
+        return m_Position + DirectX::SimpleMath::Vector3(0.0f, EyeTurretShape::Height, 0.0f);
+    }
+
 public:
     CAutoturret();
     ~CAutoturret();
 
-    void Init() override; // 初期化処理
-    void Update() override; // 更新処理
+    void Init() override;            // 初期化処理
+    void Update() override;          // 更新処理
     void Draw(Camera* cam) override; // 描画処理
-    void DrawLaser(Camera* cam); // 地形・敵の描画後に呼び、光線だけを重ねる。
-    void Uninit() override; // 終了処理(モデルの破棄)
+    void DrawLaser(Camera* cam);     // 地形・敵の描画後に呼び、光線だけを重ねる。
+    void Uninit() override;          // 終了処理(モデルの破棄)
 
     // 寿命を秒で設定する関数
     void SetLife(float life)
@@ -60,21 +66,18 @@ public:
     // 当たり判定用の球を返す関数
     Collision::Sphere GetCollisionSphere() override
     {
-        return {m_Position, 5.0f}; // 自動砲台の当たり判定の半径を5に設定
+        return {GetEyeCenter(), EyeTurretShape::Radius}; // 表示とデバッグ用の球を同じ位置・寸法にする。
     }
 
     void Spawn(const DirectX::SimpleMath::Vector3& position)
     {
         m_Position = position;
-        m_Active = true; // 自動砲台をアクティブにする
-        m_life = 100.0f / 6.0f; // 寿命をリセット
+        m_Active = true;                // 自動砲台をアクティブにする
+        m_life = 100.0f / 6.0f;         // 寿命をリセット
         m_attackCooldown = 1.0f / 6.0f; // クールダウンをリセット
 
         // プールから再設置した砲台に、前回の場所のレーザーを残さない。
         m_laserTime = 0;
-        if (m_model)
-        {
-            m_model->SetPosition(m_Position);
-        }
+        m_eyeRotation = DirectX::SimpleMath::Quaternion{}; // 再設置時は正面から照準を開始する。
     }
 };

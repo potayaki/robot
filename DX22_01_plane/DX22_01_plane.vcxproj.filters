@@ -216,6 +216,9 @@
     <ClCompile Include="ExplosionManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="EyeTurretModel.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
     <ClCompile Include="CAutoturret.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -404,6 +407,12 @@
     <ClInclude Include="ExplosionManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="EyeTurretModel.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="EyeTurretShape.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
     <ClInclude Include="CAutoturret.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -412,6 +421,12 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="shader\eyeTurretVS.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="shader\eyeTurretPS.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </FxCompile>
     <FxCompile Include="shader\common.hlsl">
       <Filter>リソース ファイル</Filter>
     </FxCompile>

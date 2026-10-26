@@ -148,6 +148,7 @@
     <ClCompile Include="billboard.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CAutoturret.cpp" />
+    <ClCompile Include="EyeTurretModel.cpp" />
     <ClCompile Include="CBullet.cpp" />
     <ClCompile Include="CEnemy.cpp" />
     <ClCompile Include="EnemyTarget.cpp" />
@@ -210,6 +211,8 @@
     <ClInclude Include="billboard.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CAutoturret.h" />
+    <ClInclude Include="EyeTurretModel.h" />
+    <ClInclude Include="EyeTurretShape.h" />
     <ClInclude Include="CBullet.h" />
     <ClInclude Include="BulletHoming.h" />
     <ClInclude Include="CEnemy.h" />
@@ -262,6 +265,14 @@
     <ClInclude Include="VertexBuffer.h" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="shader\eyeTurretVS.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="shader\eyeTurretPS.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+    </FxCompile>
     <FxCompile Include="shader\common.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
