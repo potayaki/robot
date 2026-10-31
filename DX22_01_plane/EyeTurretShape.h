@@ -15,6 +15,21 @@ namespace EyeTurretShape
     constexpr float Height = 18.0f; // 設置位置から浮かせる高さ。
     constexpr float TurnSpeedRadiansPerSecond = 6.2831853f; // 360度/秒。背後には約0.5秒で振り向く。
 
+    inline Vector3 CompanionAnchor(const Vector3& playerPosition, float playerYaw)
+    {
+        // プレイヤーの右後方・少し上。瞳の中心はさらにHeightだけ上に描画する。
+        const Vector3 forward(std::sin(playerYaw), 0, std::cos(playerYaw));
+        const Vector3 right(std::cos(playerYaw), 0, -std::sin(playerYaw));
+        return playerPosition - forward * 35.0f + right * 28.0f + Vector3(0, 8, 0);
+    }
+
+    inline Vector3 FollowPosition(const Vector3& current, const Vector3& target, float seconds)
+    {
+        // 秒数から補間率を求め、FPSに依存せず少し遅れて滑らかについてくる。
+        const float amount = 1.0f - std::exp(-7.0f * (std::max)(0.0f, seconds));
+        return Vector3::Lerp(current, target, amount);
+    }
+
     inline Vector3 DirectionTo(const Vector3& center, const Vector3& target, const Vector3& fallback)
     {
         Vector3 direction = target - center;

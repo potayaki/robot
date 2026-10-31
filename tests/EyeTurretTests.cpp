@@ -85,6 +85,26 @@ namespace
 int main()
 {
     TestSmoothRotation();
+    // 右後ろの追従位置はプレイヤーの向きと一緒に回り、上下移動にも追従する。
+    const Vector3 player(10, 20, 30);
+    assert((EyeTurretShape::CompanionAnchor(player, 0) - player - Vector3(28, 8, -35)).Length() < 0.0001f);
+    assert((EyeTurretShape::CompanionAnchor(player, DirectX::XM_PIDIV2) - player - Vector3(-35, 8, -28)).Length() < 0.0001f);
+    const Vector3 anchor = EyeTurretShape::CompanionAnchor(player, 0);
+    assert(EyeTurretShape::FollowPosition(player, anchor, 0) == player);
+    Vector3 reference;
+    for (int fps : {30, 60, 144})
+    {
+        Vector3 follower = player;
+        for (int frame = 0; frame < fps; ++frame)
+        {
+            const float before = (anchor - follower).Length();
+            follower = EyeTurretShape::FollowPosition(follower, anchor, 1.0f / fps);
+            assert((anchor - follower).Length() <= before + 0.0001f);
+        }
+        assert((anchor - follower).Length() < 0.05f);
+        if (fps == 30) reference = follower;
+        else assert((follower - reference).Length() < 0.0001f);
+    }
     const Vector3 center(15, 23, -45);
     // 地上・空中・背後・真上・真下の敵すべてで、瞳の正面とビームを一致させる。
     for (const Vector3 offset :

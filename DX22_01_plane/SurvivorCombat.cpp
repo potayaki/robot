@@ -80,18 +80,10 @@ void CPlayer::ApplyUpgradeEffects(UpgradeId id, bool fromPresent)
         CreateOrbs(1 + m_progression.Rank(id));
     }
 
-    // すでに出ている砲台にも強化を反映する。次の更新で新しい砲台を設置できるようにする。
+    // 初回だけ召喚し、取得済みなら同じ相棒の性能を更新する。
     if (id == UpgradeId::Turret)
     {
-        auto managers = Game::GetInstance()->GetObjects<PoolManager<CAutoturret, 3>>();
-        if (!managers.empty())
-        {
-            for (auto turret : managers[0]->GetPool())
-            {
-                turret->ConfigureUpgrade(m_progression.Rank(id));
-            }
-        }
-        m_turretTimer = 0;
+        DeployTurret();
     }
 
     // 初回取得時に長く待たされないよう、範囲攻撃の発動待ち時間をリセットする。
@@ -151,16 +143,25 @@ void CPlayer::TakeDamage(int damage)
     m_damageCooldown = 1.0f / 3.0f; // 被弾後、約0.33秒間は無敵。
 }
 
+Vector3 CPlayer::GetTurretFollowPosition() const
+{
+    return EyeTurretShape::CompanionAnchor(m_Position, m_Rotation.y);
+}
+
 void CPlayer::DeployTurret()
 {
     // プールから取得して再利用するため、戦闘中に砲台のモデルを読み直さずに済む。
-    auto managers = Game::GetInstance()->GetObjects<PoolManager<CAutoturret, 3>>();
-    if (managers.empty())
+    auto managers = Game::GetInstance()->GetObjects<AutoTurretManager>();
+    if (managers.empty() || managers[0]->GetPool().empty())
     {
         return;
     }
-    auto turret = managers[0]->Spawn();
-    turret->Spawn(m_Position);
+    // 毎回Spawnすると位置・視線・攻撃待ち時間が初期化されるため、未出現時だけ呼ぶ。
+    auto turret = managers[0]->GetPool().front();
+    if (!turret->GetActive())
+    {
+        turret->Spawn(GetTurretFollowPosition());
+    }
     turret->ConfigureUpgrade(m_progression.Rank(UpgradeId::Turret));
 }
 
@@ -179,13 +180,11 @@ void CPlayer::UpdateAutoWeapons()
     }
 
     // ----- 自動砲台 -----
-    // 獲得した自動武器は入力なしで動作し、砲台は最大3基を循環して設置する。
+    // 死亡後にデバッグで復活した場合も、取得済みなら1体だけ復帰させる。
     const int turretRank = m_progression.Rank(UpgradeId::Turret);
-    GameTime::AdvanceCooldown(m_turretTimer, deltaSeconds);
-    if (turretRank > 0 && m_turretTimer <= 0)
+    if (turretRank > 0)
     {
         DeployTurret();
-        m_turretTimer += 6.0f - 0.5f * (turretRank - 1);
     }
 
     // ----- 衝撃波：球状の範囲内にいる敵へまとめてダメージ -----

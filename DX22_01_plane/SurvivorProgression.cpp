@@ -56,7 +56,7 @@ namespace
         {
             UpgradeId::Turret,
             u8"自動砲台",
-            u8"自動武器。一定間隔で砲台を設置。強化で射程・威力・連射を改善。",
+            u8"自動武器。後方をついてくる目型の相棒を1体召喚。強化ごとに攻撃力・連射速度・射程が上昇。",
             5
         },
         {
@@ -126,6 +126,12 @@ const UpgradeDefinition& GetUpgradeDefinition(UpgradeId id)
     return index < Definitions.size() ? Definitions[index] : Recovery;
 }
 
+TurretStats GetTurretStats(int rank)
+{
+    rank = std::clamp(rank, 1, 5);
+    return {rank, 400.0f + 40.0f * rank, 0.5f - 0.05f * rank};
+}
+
 std::string GetUpgradeEffectText(UpgradeId id, int rank)
 {
     rank = std::clamp(rank, 0, GetUpgradeDefinition(id).maxRank);
@@ -171,12 +177,12 @@ std::string GetUpgradeEffectText(UpgradeId id, int rank)
         break;
 
     case UpgradeId::Turret:
-        format(u8"設置間隔%.1f秒 / 最大3基 / ダメージ%d / 射程%d / 攻撃間隔%.2f秒",
-               6.0f - 0.5f * (rank - 1),
-               1 + (rank - 1) / 2,
-               400 + 40 * rank,
-               0.5f - 0.05f * rank);
+    {
+        const auto stats = GetTurretStats(rank);
+        format(u8"追従する相棒1体 / ダメージ%d / 射程%.0f / 攻撃間隔%.2f秒",
+               stats.damage, stats.range, stats.attackInterval);
         break;
+    }
 
     case UpgradeId::Shockwave:
         format(u8"半径%d / ダメージ%d / 発動間隔%.1f秒", 80 + 12 * rank, 1 + rank, 3.0f - 0.2f * rank);

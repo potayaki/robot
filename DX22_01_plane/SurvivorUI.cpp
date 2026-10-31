@@ -4,6 +4,7 @@
 #ifdef _DEBUG
 #include "Game.h"
 #include "CEnemySpawn.h"
+#include "CAutoturret.h"
 #endif
 
 namespace
@@ -65,15 +66,23 @@ void CPlayer::DrawSurvivorDebugUI()
                     (std::max)(0.0f, m_currentBulletTime), m_BulletTime);
         ImGui::Text(Text(u8"ミサイル：残り %.2f 秒 / 間隔 %.2f 秒"),
                     (std::max)(0.0f, m_currentMissileTime), m_MissileTime);
-        ImGui::Text(Text(u8"砲台 %.2f 秒 / 衝撃波 %.2f 秒 / 電撃 %.2f 秒"),
-                    (std::max)(0.0f, m_turretTimer), (std::max)(0.0f, m_shockwaveTimer),
+        ImGui::Text(Text(u8"衝撃波 %.2f 秒 / 電撃 %.2f 秒"),
+                    (std::max)(0.0f, m_shockwaveTimer),
                     (std::max)(0.0f, m_lightningTimer));
+        for (auto manager : Game::GetInstance()->GetObjects<AutoTurretManager>())
+        {
+            ImGui::Text(Text(u8"相棒 %d / 1体 / 攻撃待ち %.2f 秒"), manager->GetActiveCount(),
+                        manager->GetPool().front()->GetAttackCooldown());
+        }
         if (ImGui::Button(Text(u8"攻撃待ち時間をリセット")))
         {
             // 未取得の自動武器は発動しない。取得済みの武器を次の更新で確認できる。
             m_currentBulletTime = 0;
             m_currentMissileTime = 0;
-            m_turretTimer = 0;
+            for (auto manager : Game::GetInstance()->GetObjects<AutoTurretManager>())
+            {
+                manager->GetPool().front()->SetAttackCooldown(0.0f);
+            }
             m_shockwaveTimer = 0;
             m_lightningTimer = 0;
         }

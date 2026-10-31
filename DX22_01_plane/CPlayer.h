@@ -27,8 +27,6 @@ private:
     float m_MissileTime = 2.0f;
     float m_currentMissileTime = 0.0f;
 
-    //Tarret
-    int m_MaxTurret = 3; //最大設置数
     DirectX::SimpleMath::Vector3 m_velocity = {0, 0, 0};
     bool IsGrounded = false; //地面についているか
 
@@ -42,7 +40,6 @@ private:
 
     // 自動武器・回復・無敵時間の残り秒数。ゲーム停止中は進めない。
     float m_regenerationTimer = 0.0f;
-    float m_turretTimer = 0.0f;
     float m_shockwaveTimer = 0.0f;
     float m_lightningTimer = 0.0f;
     float m_damageCooldown = 0.0f;
@@ -150,6 +147,7 @@ public:
     void OnEnemyDefeated(int experience);
     void GivePresentReward();
     void DrawSurvivorUI();
+    DirectX::SimpleMath::Vector3 GetTurretFollowPosition() const;
 #ifdef _DEBUG
     void DrawSurvivorDebugUI();
     bool DebugGiveUpgrade(UpgradeId id);

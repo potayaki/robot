@@ -4,6 +4,21 @@
 #include <set>
 
 int main() {
+    // 全レベルで攻撃力・射程が上昇し、攻撃間隔が短縮される。表示文も単体追従仕様。
+    auto previousTurret = GetTurretStats(1);
+    for (int rank = 1; rank <= 5; ++rank) {
+        const auto stats = GetTurretStats(rank);
+        assert(stats.damage == rank);
+        assert(stats.attackInterval > 0.2f);
+        if (rank > 1) {
+            assert(stats.damage > previousTurret.damage && stats.range > previousTurret.range);
+            assert(stats.attackInterval < previousTurret.attackInterval);
+        }
+        const auto description = GetUpgradeEffectText(UpgradeId::Turret, rank);
+        assert(description.find(reinterpret_cast<const char*>(u8"相棒1体")) != std::string::npos);
+        assert(description.find(reinterpret_cast<const char*>(u8"設置間隔")) == std::string::npos);
+        previousTurret = stats;
+    }
 #ifdef _DEBUG
     // デバッグ取得は任意のスキルを選べるが、通常の上限と選択待ち回数を守る。
     SurvivorProgression debugGrowth(19);

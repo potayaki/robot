@@ -3,6 +3,7 @@
 #include <vector>
 #include "Game.h"
 #include "Renderer.h"
+#include "CPlayer.h"
 
 using namespace DirectX::SimpleMath;
 
@@ -24,15 +25,26 @@ void CAutoturret::Update()
     const float deltaSeconds = GameTime::DeltaSeconds();
     // 残光が消えるフレームでは、消えた後に残っている秒数だけ回転に使う。
     const float turnSeconds = (std::max)(0.0f, deltaSeconds - m_laserTime);
-    // レーザー・砲台の寿命・攻撃間隔は、すべて同じ経過秒数で減らす。
+    // 相棒には寿命を設けない。プレイヤーがいない間や死亡中は非表示にする。
     GameTime::CountDown(m_laserTime, deltaSeconds);
-    GameTime::CountDown(m_life, deltaSeconds);
-    if (m_life <= 0.0f)
+    const auto players = Game::GetInstance()->GetObjects<CPlayer>();
+    if (players.empty() || players[0]->GetHp() <= 0)
     {
         m_laserTime = 0;
         m_Active = false;
 
         return;
+    }
+
+    const Vector3 oldPosition = m_Position;
+    m_Position = EyeTurretShape::FollowPosition(m_Position, players[0]->GetTurretFollowPosition(), deltaSeconds);
+    if (m_laserTime > 0.0f)
+    {
+        // 短い残光も目と一緒に移動させ、追従中に瞳と光線が離れないようにする。
+        // 残光は表示のみで、追加のダメージ判定は行わない。
+        const Vector3 movement = m_Position - oldPosition;
+        m_laserStart += movement;
+        m_laserEnd += movement;
     }
 
     // 自動砲台もドローンを攻撃対象として認識する。
@@ -46,7 +58,7 @@ void CAutoturret::Update()
         {
             continue;
         }
-        float distance = (enemy->GetPosition() - m_Position).Length();
+        float distance = (enemy->GetCollisionSphere().center - GetEyeCenter()).Length();
 
         if (distance < minDistance)
         {
@@ -84,10 +96,12 @@ void CAutoturret::Update()
 
 void CAutoturret::ConfigureUpgrade(int rank)
 {
-    // 設置済みの砲台にも、獲得したレベルの攻撃性能を反映する。
-    damage = 1 + (rank - 1) / 2;
-    m_radius = 400.0f + rank * 40.0f;
-    m_attackInterval = 0.5f - rank * 0.05f;
+    // 既存の1体を強化し、毎レベル攻撃力・射程・連射速度を上げる。
+    const auto stats = GetTurretStats(rank);
+    damage = stats.damage;
+    m_radius = stats.range;
+    m_attackInterval = stats.attackInterval;
+    m_attackCooldown = (std::min)(m_attackCooldown, m_attackInterval);
 }
 
 void CAutoturret::Draw(Camera* cam)

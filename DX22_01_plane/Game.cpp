@@ -201,15 +201,10 @@ void Game::Update(double elapsedSeconds) {
         if (ImGui::Button("Restore HP")) GUIPlayer[0]->SetHP(GUIPlayer[0]->GetMaxHp());
 
         // 武器の抽選を待たずに、砲台の攻撃方向とレーザー表示を確認するための操作。
-        if (ImGui::Button("Deploy test turret"))
+        if (ImGui::Button("Get / upgrade companion"))
         {
-            auto managers = GetInstance()->GetObjects<PoolManager<CAutoturret, 3>>();
-            if (!managers.empty())
-            {
-                auto turret = managers[0]->Spawn();
-                turret->Spawn(GUIPlayer[0]->GetPosition() + DirectX::SimpleMath::Vector3(25, 0, 0));
-                turret->ConfigureUpgrade(1);
-            }
+            // デバッグでも通常の取得処理を通し、別の砲台を増やさない。
+            GUIPlayer[0]->DebugGiveUpgrade(UpgradeId::Turret);
         }
         
         //-------------------------------------------------------------------------------------------
@@ -370,7 +365,7 @@ void Game::Draw() {
 
     // 不透明な地形・敵を描いた後で、砲台のレーザーを重ねる。
     // 後から出現した敵に光線が不自然に上書きされることを防ぐ。
-    for (auto manager : m_instance->GetObjects<PoolManager<CAutoturret, 3>>())
+    for (auto manager : m_instance->GetObjects<AutoTurretManager>())
     {
         for (auto turret : manager->GetPool())
         {

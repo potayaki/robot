@@ -38,6 +38,14 @@ struct UpgradeDefinition
 };
 
 const UpgradeDefinition& GetUpgradeDefinition(UpgradeId id);
+// 相棒砲台の実性能と説明文が同じ値を参照する。
+struct TurretStats
+{
+    int damage;
+    float range;
+    float attackInterval;
+};
+TurretStats GetTurretStats(int rank);
 // 所持一覧と報酬候補の両方に、指定レベルの具体的な性能を表示する。
 std::string GetUpgradeEffectText(UpgradeId id, int rank);
 

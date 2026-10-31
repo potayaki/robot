@@ -3,13 +3,13 @@
 #include "EyeTurretModel.h"
 #include "VertexBuffer.h"
 #include "Texture.h"
+#include "PoolManager.h"
 
 class CAutoturret : public Object
 {
 private:
     EyeTurretModel m_eye; // 白目・虹彩・瞳を持つ立体の目。
     DirectX::SimpleMath::Quaternion m_eyeRotation{}; // 毎フレームの姿勢を保存し、滑らかに回す。
-    float m_life = 100.0f / 6.0f;         // 自動砲台の寿命
     float m_attackCooldown = 1.0f / 6.0f; // 攻撃のクールダウン時間
     float m_radius = 500.0f;              // 攻撃範囲の半径
     int damage = 1;                       // 攻撃のダメージ量
@@ -49,10 +49,9 @@ public:
     void DrawLaser(Camera* cam);     // 地形・敵の描画後に呼び、光線だけを重ねる。
     void Uninit() override;          // 終了処理(モデルの破棄)
 
-    // 寿命を秒で設定する関数
-    void SetLife(float life)
+    float GetAttackCooldown() const
     {
-        m_life = life;
+        return (std::max)(0.0f, m_attackCooldown);
     }
 
     // 攻撃のクールダウンを秒で設定する関数
@@ -73,7 +72,6 @@ public:
     {
         m_Position = position;
         m_Active = true;                // 自動砲台をアクティブにする
-        m_life = 100.0f / 6.0f;         // 寿命をリセット
         m_attackCooldown = 1.0f / 6.0f; // クールダウンをリセット
 
         // プールから再設置した砲台に、前回の場所のレーザーを残さない。
@@ -81,3 +79,6 @@ public:
         m_eyeRotation = DirectX::SimpleMath::Quaternion{}; // 再設置時は正面から照準を開始する。
     }
 };
+
+// 生成・更新・描画のすべてで上限1体の同じプールを使う。
+using AutoTurretManager = PoolManager<CAutoturret, 1>;
