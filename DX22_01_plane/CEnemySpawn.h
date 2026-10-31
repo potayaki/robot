@@ -6,6 +6,10 @@ private:
     float m_spawnElapsed = 0.0f; // 前回の生成からの経過秒数。
 public:
 
+#ifdef _DEBUG
+    bool m_debugSpawnEnabled = true; // 敵を増やさずに武器の動作を観察するための切り替え。
+#endif
+
     float m_SpawnInterval = 2.0f; // 敵を出現させる間隔（秒）。
 
     float m_RadiusMin = 500.0f; // 出現する円の最小半径

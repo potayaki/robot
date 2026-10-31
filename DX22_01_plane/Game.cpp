@@ -314,6 +314,10 @@ void Game::Update(double elapsedSeconds) {
 
     }
 #endif // _DEBUG
+    // 停止中にも操作できるデバッグ画面。通常の報酬画面とは別に描画する。
+#ifdef _DEBUG
+    for (CPlayer* survivor : GetInstance()->GetObjects<CPlayer>()) survivor->DrawSurvivorDebugUI();
+#endif
     // 同じUIをDebug / Releaseの両方で使用する。
     for (CPlayer* survivor : GetInstance()->GetObjects<CPlayer>()) survivor->DrawSurvivorUI();
    

@@ -1,18 +1,26 @@
 ﻿#include "Bezier.h"
 
-void Bezier::Create(Object& Player, Object& Enemy,float angleOffsetDebug) {
-    m_Positions.clear();
+#include <algorithm>
 
-    auto StartPos = Player.GetPosition();
-    auto EndPos = Enemy.GetPosition();
+void Bezier::Create(Object &Player, Object &Enemy, float angleOffsetDebug)
+{
+    Create(Player.GetPosition(), Enemy.GetPosition(), angleOffsetDebug);
+}
+
+void Bezier::Create(const DirectX::SimpleMath::Vector3 &StartPos, const DirectX::SimpleMath::Vector3 &EndPos,
+                    float angleOffsetDebug)
+{
+    m_Positions.clear();
 
     DirectX::SimpleMath::Vector3 dir = EndPos - StartPos;
     dir.y = 0.0f; // 水平方向のみにする
     float dist = dir.Length();
-    if (dist > 0.0001f) {// 長さが十分にある場合のみ正規化
+    if (dist > 0.0001f)
+    { // 長さが十分にある場合のみ正規化
         dir.Normalize();
     }
-    else {
+    else
+    {
         dir = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 1.0f); // デフォルトの方向
     }
 
@@ -23,32 +31,54 @@ void Bezier::Create(Object& Player, Object& Enemy,float angleOffsetDebug) {
 
     //制御点の設定
     DirectX::SimpleMath::Vector3 controlPoint = StartPos + offsetDir * (dist * 0.5f);
-    controlPoint.y += 100.0f; // 高さを上げる
+    // 近い敵には低い軌道で飛ばし、固定の高さまで遠回りするのを防ぐ。
+    // 空中の敵も始点と終点の中間の高さを基準にする。
+    const float distance = (EndPos - StartPos).Length();
+    controlPoint.y = (StartPos.y + EndPos.y) * 0.5f + (std::min)(100.0f, distance * 0.35f);
 
     m_Positions.push_back(StartPos);
     m_Positions.push_back(controlPoint);
     m_Positions.push_back(EndPos);
 
+    // 山なり・左右に広がる軌道も含め、曲線を64分割して飛行距離を見積もる。
+    // 一律1秒で進めるのではなく、「経路の長さ / 基準速度」を所要時間にする。
+    constexpr int segments = 64;
+    float pathLength = 0.0f;
+    DirectX::SimpleMath::Vector3 previous = StartPos;
+    for (int i = 1; i <= segments; ++i)
+    {
+        const DirectX::SimpleMath::Vector3 position = GetCulvePosition(static_cast<float>(i) / segments);
+        pathLength += (position - previous).Length();
+        previous = position;
+    }
+
+    // 同じ位置で発射されても0除算しない。追尾中は所要時間を再設定せず、進行を保つ。
+    m_flightDurationSeconds = (std::max)(0.001f, pathLength / FlightSpeed);
+
     m_Time = 0.0f;
     mActive = true;
-
 }
 
-void Bezier::Update(float tick) {
-    if (!mActive) return;
+void Bezier::Update(float tick)
+{
+    if (!mActive || tick <= 0.0f)
+    {
+        return;
+    }
 
-    m_Time += tick * mSpeed;
+    // tickは実測秒数。近距離ほど早く、遠距離ほど時間をかけて終点へ進む。
+    m_Time += tick / m_flightDurationSeconds;
 
-    if (m_Time >= 1.0f) {
+    if (m_Time >= 1.0f)
+    {
 
         m_Time = 1.0f;
         mActive = false;
-
     }
-
 }
 
-DirectX::XMFLOAT3 Bezier::GetCulvePosition(float t) {
+DirectX::XMFLOAT3 Bezier::GetCulvePosition(float t)
+{
     //POWは使わず乗算で軽くする
 
     // ベジェ曲線計算
@@ -63,7 +93,6 @@ DirectX::XMFLOAT3 Bezier::GetCulvePosition(float t) {
     outpos.x = mt2 * m_Positions[0].x + 2.0f * mt * t * m_Positions[1].x + t2 * m_Positions[2].x;
     outpos.y = mt2 * m_Positions[0].y + 2.0f * mt * t * m_Positions[1].y + t2 * m_Positions[2].y;
     outpos.z = mt2 * m_Positions[0].z + 2.0f * mt * t * m_Positions[1].z + t2 * m_Positions[2].z;
-
 
     return outpos;
 }

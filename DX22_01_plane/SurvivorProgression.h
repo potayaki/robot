@@ -103,4 +103,9 @@ public:
 
     // プレゼントは選択待ち回数を減らさず、その場でランダムな報酬を1つ与える。
     UpgradeId GrantPresent();
+
+#ifdef _DEBUG
+    // 抽選を待たずに指定スキルを1段階取得する。経験値・選択待ち回数は消費しない。
+    bool DebugGrantUpgrade(UpgradeId id);
+#endif
 };

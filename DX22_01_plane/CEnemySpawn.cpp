@@ -16,6 +16,9 @@ void CEnemySpawn::Init() {
 }
 
 void CEnemySpawn::Update() {
+#ifdef _DEBUG
+    if (!m_debugSpawnEnabled) return; // 停止中の経過時間をためず、再開時の連続生成を防ぐ。
+#endif
     auto players = Game::GetInstance()->GetObjects<CPlayer>();
     if (players.empty() || players[0]->GetHp() <= 0) return;
     // 生存時間に応じて出現間隔を短くする。選択画面で止めた時間は加算されない。

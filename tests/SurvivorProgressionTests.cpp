@@ -4,6 +4,32 @@
 #include <set>
 
 int main() {
+#ifdef _DEBUG
+    // デバッグ取得は任意のスキルを選べるが、通常の上限と選択待ち回数を守る。
+    SurvivorProgression debugGrowth(19);
+    assert(!debugGrowth.DebugGrantUpgrade(UpgradeId::Count));
+    assert(!debugGrowth.DebugGrantUpgrade(UpgradeId::Heal));
+    assert(!debugGrowth.DebugGrantUpgrade(static_cast<UpgradeId>(-1)));
+    debugGrowth.AddExperience(6);
+    const int experienceBefore = debugGrowth.Experience();
+    for (int i = 0; i < static_cast<int>(UpgradeId::Count); ++i) {
+        const auto id = static_cast<UpgradeId>(i);
+        const int maxRank = GetUpgradeDefinition(id).maxRank;
+        for (int rank = 1; rank <= maxRank; ++rank) {
+            assert(debugGrowth.DebugGrantUpgrade(id));
+            assert(debugGrowth.Rank(id) == rank);
+        }
+        assert(!debugGrowth.DebugGrantUpgrade(id));
+        assert(debugGrowth.Rank(id) == maxRank);
+        assert(debugGrowth.Level() == 2 && debugGrowth.PendingChoices() == 1);
+        assert(debugGrowth.Experience() == experienceBefore);
+        for (const auto choice : debugGrowth.Choices()) {
+            assert(choice == UpgradeId::Heal ||
+                   debugGrowth.Rank(choice) < GetUpgradeDefinition(choice).maxRank);
+        }
+    }
+    assert(debugGrowth.Choices().size() == 1 && debugGrowth.Choices()[0] == UpgradeId::Heal);
+#endif
     SurvivorProgression growth(7);
     UpgradeId reward = UpgradeId::Heal;
     assert(!growth.Select(0, reward));

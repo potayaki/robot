@@ -322,6 +322,26 @@ bool SurvivorProgression::Select(size_t index, UpgradeId& granted)
     return true;
 }
 
+#ifdef _DEBUG
+bool SurvivorProgression::DebugGrantUpgrade(UpgradeId id)
+{
+    // Healや不正なIDはランク配列に入れない。最大レベルを超える取得も拒否する。
+    const auto index = static_cast<size_t>(id);
+    if (index >= m_ranks.size() || Rank(id) >= GetUpgradeDefinition(id).maxRank)
+    {
+        return false;
+    }
+
+    Grant(id);
+    // 選択待ちがある場合、最大になったスキルを報酬候補に残さない。
+    if (IsChoosing())
+    {
+        RefreshChoices();
+    }
+    return true;
+}
+#endif
+
 UpgradeId SurvivorProgression::GrantPresent()
 {
     // レベルアップと同じ候補から、均等な確率で1つ選んで即時取得する。

@@ -110,6 +110,19 @@ void CPlayer::ApplyUpgradeEffects(UpgradeId id, bool fromPresent)
     m_rewardNoticeTime = 4.0f;
 }
 
+#ifdef _DEBUG
+bool CPlayer::DebugGiveUpgrade(UpgradeId id)
+{
+    if (m_hp <= 0 || !m_progression.DebugGrantUpgrade(id))
+    {
+        return false;
+    }
+    // ランクだけ変えず、オーブ生成・砲台性能・最大HPなども通常取得と同じ経路で反映する。
+    ApplyUpgradeEffects(id, false);
+    return true;
+}
+#endif
+
 void CPlayer::Heal(int amount)
 {
     if (m_hp > 0 && amount > 0)
@@ -120,6 +133,12 @@ void CPlayer::Heal(int amount)
 
 void CPlayer::TakeDamage(int damage)
 {
+#ifdef _DEBUG
+    if (m_debugInvincible)
+    {
+        return; // テスト中はダメージを受けない。既存の被弾後無敵時間とは別に扱う。
+    }
+#endif
     // 一時停止中や無敵時間中は、HPにも無敵時間にも変更を加えない。
     if (m_hp <= 0 || damage <= 0 || m_damageCooldown > 0 || IsGameplayPaused())
     {

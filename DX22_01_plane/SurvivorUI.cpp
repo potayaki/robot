@@ -1,6 +1,10 @@
 ﻿#include "CPlayer.h"
 #include "imgui.h"
 #include <algorithm>
+#ifdef _DEBUG
+#include "Game.h"
+#include "CEnemySpawn.h"
+#endif
 
 namespace
 {
@@ -16,6 +20,122 @@ namespace
                                           ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoInputs |
                                           ImGuiWindowFlags_AlwaysAutoResize;
 }
+
+#ifdef _DEBUG
+void CPlayer::DrawSurvivorDebugUI()
+{
+    const auto display = ImGui::GetIO().DisplaySize;
+    ImGui::SetNextWindowPos(ImVec2(12, 245), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(480, (std::max)(240.0f, display.y - 265)), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Skill Debug"))
+    {
+        ImGui::End();
+        return;
+    }
+
+    // ウィンドウ全体をスクロールできるため、画面の高さが小さくても全スキルを選べる。
+    ImGui::TextUnformatted(Text(u8"スキル名をクリックで取得 / 1段階強化"));
+    ImGui::Checkbox(Text(u8"ゲーム一時停止"), &m_debugPaused);
+    ImGui::SameLine();
+    ImGui::Checkbox(Text(u8"無敵"), &m_debugInvincible);
+    if (ImGui::SliderInt("HP", &m_hp, 0, GetMaxHp()))
+    {
+        m_hp = std::clamp(m_hp, 0, GetMaxHp());
+    }
+
+    if (ImGui::CollapsingHeader(Text(u8"経験値・攻撃・敵の確認")))
+    {
+        ImGui::Text("Lv.%d / EXP %.1f / %.0f / KILLS %d", m_progression.Level(),
+                    m_progression.Experience() / 100.0f,
+                    m_progression.RequiredExperience() / 100.0f, m_kills);
+        ImGui::SliderInt(Text(u8"追加経験値"), &m_debugExperience, 1, 100, "%d", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::BeginDisabled(m_hp <= 0 || IsChoosingUpgrade());
+        if (ImGui::Button(Text(u8"経験値を追加")))
+        {
+            // 撃破数やプレゼントの確定ドロップ条件を変えず、経験値だけ追加する。
+            m_progression.AddExperience(m_debugExperience);
+            if (IsChoosingUpgrade())
+            {
+                m_selectionDelay = 0.2f;
+            }
+        }
+        ImGui::EndDisabled();
+
+        ImGui::Text(Text(u8"通常弾：残り %.2f 秒 / 間隔 %.3f 秒"),
+                    (std::max)(0.0f, m_currentBulletTime), m_BulletTime);
+        ImGui::Text(Text(u8"ミサイル：残り %.2f 秒 / 間隔 %.2f 秒"),
+                    (std::max)(0.0f, m_currentMissileTime), m_MissileTime);
+        ImGui::Text(Text(u8"砲台 %.2f 秒 / 衝撃波 %.2f 秒 / 電撃 %.2f 秒"),
+                    (std::max)(0.0f, m_turretTimer), (std::max)(0.0f, m_shockwaveTimer),
+                    (std::max)(0.0f, m_lightningTimer));
+        if (ImGui::Button(Text(u8"攻撃待ち時間をリセット")))
+        {
+            // 未取得の自動武器は発動しない。取得済みの武器を次の更新で確認できる。
+            m_currentBulletTime = 0;
+            m_currentMissileTime = 0;
+            m_turretTimer = 0;
+            m_shockwaveTimer = 0;
+            m_lightningTimer = 0;
+        }
+
+        for (auto spawner : Game::GetInstance()->GetObjects<CEnemySpawn>())
+        {
+            ImGui::PushID(spawner);
+            ImGui::Checkbox(Text(u8"敵の自動出現"), &spawner->m_debugSpawnEnabled);
+            // 上限を下げても現在の敵は削除せず、次回以降の自動出現を制限する。
+            ImGui::SliderInt(Text(u8"敵の出現上限"), &spawner->m_MaxEnemyCount, 1, 60,
+                             "%d", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SliderFloat(Text(u8"基本出現間隔（秒）"), &spawner->m_SpawnInterval, 0.75f, 10.0f,
+                               "%.2f", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::TextWrapped("%s", Text(u8"出現間隔は時間経過でも短縮されます。既存の敵は動き続けます。"));
+            ImGui::PopID();
+        }
+    }
+
+    ImGui::Separator();
+    ImGui::TextDisabled("%s", Text(u8"マウスを重ねると説明と現在の効果を表示"));
+    if (m_hp <= 0)
+    {
+        ImGui::TextUnformatted(Text(u8"HPを上げるとスキルを取得できます。"));
+    }
+    for (int i = 0; i < static_cast<int>(UpgradeId::Count); ++i)
+    {
+        const auto id = static_cast<UpgradeId>(i);
+        const auto& definition = GetUpgradeDefinition(id);
+        const int rank = m_progression.Rank(id);
+        const bool maxed = rank >= definition.maxRank;
+        ImGui::PushID(i);
+        ImGui::BeginDisabled(maxed || m_hp <= 0 || IsChoosingUpgrade());
+        if (ImGui::Button(Text(definition.name), ImVec2(210, 30)))
+        {
+            DebugGiveUpgrade(id);
+        }
+        ImGui::EndDisabled();
+        // 最大レベルでボタンが無効でも、説明は読めるようにする。
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        {
+            ImGui::BeginTooltip();
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 24.0f);
+            ImGui::TextWrapped("%s", Text(definition.description));
+            if (rank > 0)
+            {
+                ImGui::TextWrapped(Text(u8"現在：%s"), GetUpgradeEffectText(id, rank).c_str());
+            }
+            if (!maxed)
+            {
+                ImGui::TextWrapped(Text(u8"次のレベル：%s"), GetUpgradeEffectText(id, rank + 1).c_str());
+            }
+            ImGui::PopTextWrapPos();
+            ImGui::EndTooltip();
+        }
+        ImGui::SameLine();
+        ImGui::Text("Lv.%d / %d%s", m_progression.Rank(id), definition.maxRank,
+                    m_progression.Rank(id) >= definition.maxRank ? "  MAX" : "");
+        ImGui::PopID();
+    }
+    ImGui::End();
+}
+#endif
 
 void CPlayer::DrawSurvivorUI()
 {

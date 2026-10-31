@@ -55,6 +55,13 @@ private:
     float m_rewardNoticeTime = 0.0f;
     std::string m_rewardNotice;
 
+#ifdef _DEBUG
+    // プレイヤー作成時に初期化し、Releaseにはデバッグ用状態を持ち込まない。
+    bool m_debugPaused = false;
+    bool m_debugInvincible = false;
+    int m_debugExperience = 5;
+#endif
+
     // 実装はSurvivorCombat.cpp。報酬の確定と、実際の戦闘への反映を分けている。
     void ApplyUpgradeEffects(UpgradeId id, bool fromPresent);
     void UpdateAutoWeapons();
@@ -130,6 +137,12 @@ public:
 
     bool IsGameplayPaused() const
     {
+#ifdef _DEBUG
+        if (m_debugPaused)
+        {
+            return true;
+        }
+#endif
         return IsChoosingUpgrade() || m_showLoadout;
     }
 
@@ -137,6 +150,10 @@ public:
     void OnEnemyDefeated(int experience);
     void GivePresentReward();
     void DrawSurvivorUI();
+#ifdef _DEBUG
+    void DrawSurvivorDebugUI();
+    bool DebugGiveUpgrade(UpgradeId id);
+#endif
     void Heal(int amount);
 
     float GetMissileTime()
