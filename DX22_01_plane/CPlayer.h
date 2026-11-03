@@ -10,6 +10,7 @@
 #include <vector>
 #include "COrbitalOrb.h"
 #include "SurvivorProgression.h"
+#include "PlayerRobotModel.h"
 #include <string>
 
 class CPlayer : public Object
@@ -17,7 +18,8 @@ class CPlayer : public Object
 private:
     int curRocket = 1; //現在のミサイルの最大数
     const int maxRocket = 20; //最大ミサイル数
-    TestCube* m_body; //body
+    PlayerRobotModel* m_body; // 骨格アニメーション付きの6本脚ロボット。
+    RobotMotion m_robotMotion = RobotMotion::Idle;
 
     // 発射間隔と残り待ち時間は秒。実測したdeltaSecondsを引いて更新する。
     float m_BulletTime = 0.1f;
@@ -57,6 +59,7 @@ private:
     bool m_debugPaused = false;
     bool m_debugInvincible = false;
     int m_debugExperience = 5;
+    int m_debugRobotMotion = 0; // 0=入力に合わせる、1以降=その場でアニメーションを確認。
 #endif
 
     // 実装はSurvivorCombat.cpp。報酬の確定と、実際の戦闘への反映を分けている。

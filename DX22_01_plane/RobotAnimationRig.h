@@ -1,0 +1,59 @@
+﻿#pragma once
+#include <assimp/types.h>
+#include <array>
+#include <string>
+#include <vector>
+
+enum class RobotMotion { Idle, Forward, Backward, Left, Right, Count };
+
+// このメカは全頂点が1本の骨に固定されている。各頂点の骨番号をGPUに渡すことで、
+// 毎フレームCPUで全頂点を変形せずに骨格アニメーションを再生できる。
+// GPUに依存しないため、実際のFBXを使った再生・FPS・切り替えの検証にも使用する。
+class RobotAnimationRig
+{
+public:
+    struct Vertex { aiVector3D position, normal, uv; unsigned node = 0; };
+    struct Part
+    {
+        std::vector<Vertex> vertices; // 三角形リスト。座標は対応する骨のローカル座標。
+    };
+    struct Pose
+    {
+        aiVector3D scale{1, 1, 1};
+        aiQuaternion rotation;
+        aiVector3D position;
+    };
+
+private:
+    struct Node { std::string name; int parent = -1; Pose bind; };
+    template<typename T> struct Key { double time; T value; };
+    struct Channel
+    {
+        std::vector<Key<aiVector3D>> positions, scales;
+        std::vector<Key<aiQuaternion>> rotations;
+    };
+    struct Clip
+    {
+        double duration = 1, ticksPerSecond = 30;
+        std::vector<Channel> channels;
+    };
+    std::vector<Node> m_nodes;
+    std::vector<Part> m_parts;
+    std::array<Clip, static_cast<size_t>(RobotMotion::Count)> m_clips;
+    std::vector<Pose> m_pose, m_blendFrom;
+    std::vector<aiMatrix4x4> m_globals;
+    aiMatrix4x4 m_inverseRoot;
+    RobotMotion m_motion = RobotMotion::Idle;
+    double m_time = 0;
+    float m_blendTime = 0.15f;
+    int FindNode(const std::string& name) const;
+    void Evaluate();
+
+public:
+    bool Load(const std::string& directory, std::string& error);
+    void Update(RobotMotion motion, float deltaSeconds, float playbackRate = 1.0f);
+    const std::vector<Part>& GetParts() const { return m_parts; }
+    const std::vector<aiMatrix4x4>& GetMatrices() const { return m_globals; }
+    RobotMotion GetMotion() const { return m_motion; }
+    double GetTime() const { return m_time; }
+};

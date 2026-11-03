@@ -47,6 +47,14 @@ void CPlayer::DrawSurvivorDebugUI()
 
     for (auto battle : Game::GetInstance()->GetObjects<CBossBattle>()) battle->DrawDebugUI();
 
+    if (ImGui::CollapsingHeader(Text(u8"ロボットのアニメーション")))
+    {
+        // 見た目だけの確認。移動位置や攻撃判定は変えず、実測した秒数で再生する。
+        ImGui::Combo("Animation preview", &m_debugRobotMotion,
+                     "Automatic\0Idle\0Forward\0Backward\0Left\0Right\0");
+        ImGui::TextWrapped("%s", Text(u8"Automaticで通常操作に戻ります。一時停止中は再生も止まります。"));
+    }
+
     if (ImGui::CollapsingHeader(Text(u8"経験値・攻撃・敵の確認")))
     {
         ImGui::Text("Lv.%d / EXP %.1f / %.0f / KILLS %d", m_progression.Level(),

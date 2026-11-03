@@ -12,14 +12,17 @@ using namespace DirectX::SimpleMath;
 
 namespace {
     // モデルを追加するときは、このフォルダに Drone.fbx と参照画像を置く。
-    // 画像が読み込めない場合だけ、下の代替テクスチャに画像のパスを指定する。
+    // Swarm09のFBXは作者の環境のAlbedo.pngを参照しているため、同梱画像を明示する。
     constexpr char DroneModelFile[] = "assets/model/drone/Drone.fbx";
     constexpr char DroneTextureDirectory[] = "assets/model/drone";
-    constexpr char DroneOverrideTexture[] = "";
+    constexpr char DroneOverrideTexture[] = "assets/model/drone/albedo.tga";
 
     // モデルによって寸法・原点・正面軸が異なるため、ここで見た目だけ調整する。
     // 当たり判定は CFlyingEnemy.h の GetCollisionSphere() にある。
-    constexpr float DroneModelScale = 1.0f;
+    // Swarm09の元の幅は約139。0.2倍で約28となり、半径12の判定に近い体格になる。
+    constexpr float DroneModelScale = 0.2f;
+    // 読み込んだ頂点の範囲の中心。原点が体から離れているため、回転前に中心を補正する。
+    const Vector3 DroneModelLocalCenter(0.0f, -2.9281f, -66.2454f);
     constexpr float DroneModelOffsetY = 0.0f;
     constexpr float DroneModelPitchOffset = 0.0f;
     constexpr float DroneModelYawOffset = 0.0f;
@@ -119,9 +122,13 @@ void CFlyingEnemy::Update() {
 
     // FBX と簡易ドローンのどちらでも、同じ飛行位置とプレイヤー方向を反映する。
     if (m_model) {
-        m_model->SetPosition(m_Position.x, m_Position.y + DroneModelOffsetY, m_Position.z);
-        m_model->SetRotation(Vector3(DroneModelPitchOffset,
-            m_Rotation.y + DroneModelYawOffset, DroneModelRollOffset));
+        const Vector3 rotation(DroneModelPitchOffset,
+            m_Rotation.y + DroneModelYawOffset, DroneModelRollOffset);
+        const Matrix rotationMatrix = Matrix::CreateFromYawPitchRoll(rotation.y, rotation.x, rotation.z);
+        // 中心のずれにも同じ拡大率・回転を適用し、向きが変わっても体と判定が離れないようにする。
+        const Vector3 centerOffset = Vector3::TransformNormal(DroneModelLocalCenter * DroneModelScale, rotationMatrix);
+        m_model->SetPosition(m_Position + Vector3(0, DroneModelOffsetY, 0) - centerOffset);
+        m_model->SetRotation(rotation);
         return;
     }
 

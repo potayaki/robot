@@ -52,9 +52,8 @@ CPlayer::~CPlayer() {
 
 void CPlayer::Init() {
 
-    m_body = new TestCube;
+    m_body = new PlayerRobotModel;
     m_body->Init();
-    m_body->SetScale(1.0f, 1.0f, 1.0f);
 
 
 
@@ -79,9 +78,20 @@ void CPlayer::Update() {
 
 
     isGrounded();
+    const Vector3 previousPosition = m_Position;
     Move();
     UpdateAutoWeapons();
 
+    // 壁で止まったときは足踏みしない。ジャンプ中は待機姿勢とし、地上の歩行と区別する。
+    Vector3 movement = m_Position - previousPosition;
+    movement.y = 0;
+    const bool walking = IsGrounded && movement.LengthSquared() > 0.000001f;
+    const float animationRate = walking ? 1.0f + 0.1f * m_progression.Rank(UpgradeId::MoveSpeed) : 1.0f;
+    RobotMotion displayMotion = walking ? m_robotMotion : RobotMotion::Idle;
+#ifdef _DEBUG
+    if (m_debugRobotMotion > 0) displayMotion = static_cast<RobotMotion>(m_debugRobotMotion - 1);
+#endif
+    m_body->Advance(displayMotion, deltaSeconds, animationRate);
 
     m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z);
     m_body->SetRotation(m_Rotation);
@@ -143,6 +153,14 @@ void CPlayer::Move() {
     float rightX = -cosf(angle);
     float rightZ = sinf(angle);
 
+    // 後退・横移動中もカメラ前方を向く。向きと歩行方向を分けて各方向の素材を使う。
+    m_Rotation.y = std::atan2(fwdX, fwdZ);
+    const int forwardInput = static_cast<int>(Input::GetKeyPress(VK_W)) - static_cast<int>(Input::GetKeyPress(VK_S));
+    const int sideInput = static_cast<int>(Input::GetKeyPress(VK_D)) - static_cast<int>(Input::GetKeyPress(VK_A));
+    m_robotMotion = RobotMotion::Idle;
+    if (forwardInput != 0) m_robotMotion = forwardInput > 0 ? RobotMotion::Forward : RobotMotion::Backward;
+    else if (sideInput != 0) m_robotMotion = sideInput > 0 ? RobotMotion::Right : RobotMotion::Left;
+
     float moveX = 0.0f;
     float moveZ = 0.0f;
 
@@ -162,7 +180,6 @@ void CPlayer::Move() {
         m_Position.x += movedir.x * moveSpeed * GameTime::DeltaSeconds();
         m_Position.z += movedir.z * moveSpeed * GameTime::DeltaSeconds();
 
-        m_Rotation.y = atan2f(movedir.x, movedir.z);
 
     }
 
