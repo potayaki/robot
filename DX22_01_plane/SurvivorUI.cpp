@@ -5,6 +5,7 @@
 #include "Game.h"
 #include "CEnemySpawn.h"
 #include "CAutoturret.h"
+#include "CBossBattle.h"
 #endif
 
 namespace
@@ -43,6 +44,8 @@ void CPlayer::DrawSurvivorDebugUI()
     {
         m_hp = std::clamp(m_hp, 0, GetMaxHp());
     }
+
+    for (auto battle : Game::GetInstance()->GetObjects<CBossBattle>()) battle->DrawDebugUI();
 
     if (ImGui::CollapsingHeader(Text(u8"経験値・攻撃・敵の確認")))
     {

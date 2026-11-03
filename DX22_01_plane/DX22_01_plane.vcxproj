@@ -148,6 +148,8 @@
     <ClCompile Include="billboard.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CAutoturret.cpp" />
+    <ClCompile Include="CBossBattle.cpp" />
+    <ClCompile Include="CBossEnemy.cpp" />
     <ClCompile Include="EyeTurretModel.cpp" />
     <ClCompile Include="CBullet.cpp" />
     <ClCompile Include="CEnemy.cpp" />
@@ -211,6 +213,9 @@
     <ClInclude Include="billboard.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CAutoturret.h" />
+    <ClInclude Include="CBossBattle.h" />
+    <ClInclude Include="CBossEnemy.h" />
+    <ClInclude Include="BossBattleRules.h" />
     <ClInclude Include="EyeTurretModel.h" />
     <ClInclude Include="EyeTurretShape.h" />
     <ClInclude Include="CBullet.h" />

@@ -23,6 +23,7 @@
 #include"CPresentBox.h"
 #include"ExplosionManager.h"
 #include"CAutoturret.h"
+#include "CBossBattle.h"
 using namespace DirectX::SimpleMath;
 
 #define CrosshairSize 64.0f  // クロスヘアのサイズ
@@ -46,6 +47,9 @@ void Stage1Scene::Init() {
 
     //プレゼントボックスの共有モデルの読み込み(複数生成してもOK)
     CPresentBox::LoadResource(); 
+
+    // プレイヤー・武器・スポナーより先に更新し、ボス開始フレームの雑魚を退場させる。
+    m_MySceneObjects.push_back(Game::GetInstance()->AddObject<CBossBattle>());
 
     //--------------------
     //プレイヤーの生成

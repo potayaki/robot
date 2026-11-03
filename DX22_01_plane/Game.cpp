@@ -9,6 +9,7 @@
 #include"imgui_impl_win32.h"
 #include "CPlayer.h"
 #include "CAutoturret.h"
+#include "CBossBattle.h"
 #include "PoolManager.h"
 #include <filesystem>
 
@@ -245,6 +246,12 @@ void Game::Update(double elapsedSeconds) {
         //---------------------------------------------------------------------------------------
         //  敵をスポーンさせるボタン
         //---------------------------------------------------------------------------------------
+        bool bossBattleActive = false;
+        for (auto battle : GetInstance()->GetObjects<CBossBattle>())
+        {
+            bossBattleActive = bossBattleActive || battle->IsBattleActive();
+        }
+        ImGui::BeginDisabled(bossBattleActive); // 一騎打ち中はDebugからも雑魚を追加しない。
         if (ImGui::Button("madadekiteinai Spawn Enemy")) {
             int offsetX = 150;
             int offsetZ = 50;
@@ -254,6 +261,7 @@ void Game::Update(double elapsedSeconds) {
             enemy->SetPosition(randomX, -3.0f, randomZ);
             enemy->SetScale(1.0f, 1.0f, 1.0f);
         }
+        ImGui::EndDisabled();
         //-------------------------------------------------------------------------------------------
         //  スローモーションスライダー
         //-------------------------------------------------------------------------------------------
@@ -315,6 +323,7 @@ void Game::Update(double elapsedSeconds) {
 #endif
     // 同じUIをDebug / Releaseの両方で使用する。
     for (CPlayer* survivor : GetInstance()->GetObjects<CPlayer>()) survivor->DrawSurvivorUI();
+    for (auto battle : GetInstance()->GetObjects<CBossBattle>()) battle->DrawUI();
    
 }
 
@@ -372,6 +381,9 @@ void Game::Draw() {
             turret->DrawLaser(&m_instance->m_Camera);
         }
     }
+
+    // 透明なバリアは地形と敵を描き終えてから重ねる。
+    for (auto battle : m_instance->GetObjects<CBossBattle>()) battle->DrawBarrier(&m_instance->m_Camera);
 
     Renderer::SetDepthEnable(false);
 

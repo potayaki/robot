@@ -6,6 +6,7 @@
 #include"CBullet.h"
 #include"CMissile.h"
 #include"CAutoturret.h"
+#include "CBossBattle.h"
 #include"PoolManager.h"
 #include "imgui.h"
 #include<algorithm>
@@ -170,6 +171,12 @@ void CPlayer::Move() {
     }
 
 
+    // 射撃位置を決める前に体全体をバリアの内側へ戻す。ジャンプ中も同じ境界を使う。
+    for (auto battle : Game::GetInstance()->GetObjects<CBossBattle>())
+    {
+        m_Position = battle->ConstrainPosition(m_Position, GetCollisionSphere().radius);
+    }
+
     // 詳細画面やデバッグUIの操作クリックを射撃として扱わない。
     const bool usingMouseUI = ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse;
     if (!usingMouseUI && Input::GetKeyPress(VK_LBUTTON)) {
@@ -307,7 +314,10 @@ void CPlayer::StartMissile() {
             //マウスの方向と敵方向の角度の内積計算
             float dot = rayDirection.Dot(toEnemy);
 
-            if (dot > 0.99f) {//TODO : 判定以上の場合ロックオン対象になる
+            // 大型ボスは画面上の体と中心が離れるため、照準線が体の球に入る場合も対象にする。
+            // 通常の小さい敵には従来の角度によるロックオン補助も残す。
+            float hitDistance = 0.0f;
+            if (dot > 0.99f || RaySphereHitDistance(rayOrigin, rayDirection, enemy->GetCollisionSphere(), hitDistance)) {
                 Targets.push_back({ enemy,dot });
             }
         }

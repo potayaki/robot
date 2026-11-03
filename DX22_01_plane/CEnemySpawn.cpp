@@ -2,6 +2,7 @@
 #include"CEnemy.h"
 #include "CFlyingEnemy.h"
 #include "EnemyTarget.h"
+#include "CBossBattle.h"
 #include"CPlayer.h"
 #include"Game.h"
 #include <algorithm>
@@ -16,6 +17,15 @@ void CEnemySpawn::Init() {
 }
 
 void CEnemySpawn::Update() {
+    // ボス戦中の待ち時間をためない。解除後は通常の間隔を待ってから雑魚を出す。
+    for (auto battle : Game::GetInstance()->GetObjects<CBossBattle>())
+    {
+        if (battle->IsBattleActive())
+        {
+            m_spawnElapsed = 0;
+            return;
+        }
+    }
 #ifdef _DEBUG
     if (!m_debugSpawnEnabled) return; // 停止中の経過時間をためず、再開時の連続生成を防ぐ。
 #endif
