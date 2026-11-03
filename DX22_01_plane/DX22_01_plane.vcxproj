@@ -166,6 +166,8 @@
     <ClCompile Include="CParticle.cpp" />
     <ClCompile Include="CPlayer.cpp" />
     <ClCompile Include="RobotAnimationRig.cpp" />
+    <ClCompile Include="RobotDebris.cpp" />
+    <ClCompile Include="CollisionDebugDraw.cpp" />
     <ClCompile Include="PlayerRobotModel.cpp" />
     <ClCompile Include="CPlayerUI.cpp" />
     <ClCompile Include="CPresentBox.cpp" />
@@ -234,6 +236,8 @@
     <ClInclude Include="CParticle.h" />
     <ClInclude Include="CPlayer.h" />
     <ClInclude Include="RobotAnimationRig.h" />
+    <ClInclude Include="RobotDebris.h" />
+    <ClInclude Include="CollisionDebugDraw.h" />
     <ClInclude Include="PlayerRobotModel.h" />
     <ClInclude Include="CPlayerUI.h" />
     <ClInclude Include="CPresentBox.h" />
@@ -326,6 +330,8 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemGroup>
     <None Include="shader\playerRobotVS.hlsl" />
+    <None Include="shader\debugCollisionVS.hlsl" />
+    <None Include="shader\debugCollisionPS.hlsl" />
   </ItemGroup>
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

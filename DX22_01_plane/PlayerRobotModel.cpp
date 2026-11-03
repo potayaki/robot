@@ -17,6 +17,25 @@ namespace
                       m.a3, m.b3, m.c3, m.d3,
                       m.a4, m.b4, m.c4, m.d4);
     }
+
+    aiMatrix4x4 ToAssimp(const Matrix& m)
+    {
+        return aiMatrix4x4(m._11, m._21, m._31, m._41,
+                           m._12, m._22, m._32, m._42,
+                           m._13, m._23, m._33, m._43,
+                           m._14, m._24, m._34, m._44);
+    }
+}
+
+PlayerRobotModel::SkinnedVertex PlayerRobotModel::MakeVertex(const RobotAnimationRig::Vertex& source)
+{
+    SkinnedVertex vertex{};
+    vertex.vertex.position = Vector3(source.position.x, source.position.y, source.position.z);
+    vertex.vertex.normal = Vector3(source.normal.x, source.normal.y, source.normal.z);
+    vertex.vertex.uv = Vector2(source.uv.x, source.uv.y);
+    vertex.vertex.color = Color(1, 1, 1, 1);
+    vertex.bone = source.node;
+    return vertex;
 }
 
 void PlayerRobotModel::Init()
@@ -37,13 +56,7 @@ void PlayerRobotModel::Init()
     {
         for (const auto& source : part.vertices)
         {
-            SkinnedVertex destination{};
-            destination.vertex.position = Vector3(source.position.x, source.position.y, source.position.z);
-            destination.vertex.normal = Vector3(source.normal.x, source.normal.y, source.normal.z);
-            destination.vertex.uv = Vector2(source.uv.x, source.uv.y);
-            destination.vertex.color = Color(1, 1, 1, 1);
-            destination.bone = source.node;
-            vertices.push_back(destination);
+            vertices.push_back(MakeVertex(source));
         }
     }
     m_vertices.Create(vertices);
@@ -65,18 +78,58 @@ void PlayerRobotModel::Init()
     m_ready = true;
 }
 
-void PlayerRobotModel::Advance(RobotMotion motion, float deltaSeconds, float playbackRate)
+void PlayerRobotModel::Advance(RobotMotion motion, float deltaSeconds, float playbackRate,
+                               float upperBodyYaw, float upperBodyPitch)
 {
-    if (m_ready) m_rig.Update(motion, deltaSeconds, playbackRate);
+    if (m_ready) m_rig.Update(motion, deltaSeconds, playbackRate, upperBodyYaw, upperBodyPitch);
+}
+
+void PlayerRobotModel::BeginBreakApart(float groundY)
+{
+    if (!m_ready || m_debris.IsActive()) return;
+
+    // 照準の上下左右と歩行を含む「今の姿勢」を、ワールド座標の破片へ焼き付ける。
+    m_debris.Start(m_rig, ToAssimp(GetWorldMatrix()), groundY);
+    if (!m_debris.IsActive()) return;
+    if (m_debris.GetMatrices().size() > MaxBones)
+    {
+        m_debris.Reset();
+        return;
+    }
+
+    std::vector<SkinnedVertex> vertices;
+    vertices.reserve(m_debris.GetVertices().size());
+    for (const auto& vertex : m_debris.GetVertices()) vertices.push_back(MakeVertex(vertex));
+    m_debrisVertices.Create(vertices);
+}
+
+void PlayerRobotModel::AdvanceBreakApart(float deltaSeconds)
+{
+    m_debris.Update(deltaSeconds);
+}
+
+void PlayerRobotModel::RestoreBody()
+{
+    if (!m_debris.IsActive()) return;
+    m_debris.Reset();
+    m_debrisVertices = VertexBuffer<SkinnedVertex>{};
+}
+
+Matrix PlayerRobotModel::GetWorldMatrix() const
+{
+    // 素材の足元はY=0、正面は-Z。判定の底面まで下げ、ゲームの+Zへ正面を合わせる。
+    // m_Rotationは脚側の向き。照準へ向ける上半身の回転は骨行列にだけ加えている。
+    return Matrix::CreateScale(RobotScale) * Matrix::CreateRotationY(m_Rotation.y + DirectX::XM_PI) *
+        Matrix::CreateTranslation(m_Position - Vector3(0, PlayerCollisionRadius, 0));
 }
 
 void PlayerRobotModel::Draw(Camera* cam)
 {
     if (!m_ready || !cam) return;
     cam->SetCamera();
-    // 素材の足元はY=0、正面は-Z。判定の底面まで下げ、ゲームの+Zへ正面を合わせる。
-    Matrix world = Matrix::CreateScale(RobotScale) * Matrix::CreateRotationY(m_Rotation.y + DirectX::XM_PI) *
-        Matrix::CreateTranslation(m_Position - Vector3(0, PlayerCollisionRadius, 0));
+    // 破片は既にワールド座標。元の機体と二重に描かず、同じ材質・シェーダーで切り替える。
+    const bool broken = m_debris.IsActive();
+    Matrix world = broken ? Matrix::Identity : GetWorldMatrix();
     Renderer::SetWorldMatrix(&world);
     Renderer::SetUV(0, 0, 1, 1);
     MATERIAL material{};
@@ -86,7 +139,7 @@ void PlayerRobotModel::Draw(Camera* cam)
 
     std::array<Matrix, MaxBones> matrices;
     matrices.fill(Matrix::Identity);
-    const auto& pose = m_rig.GetMatrices();
+    const auto& pose = broken ? m_debris.GetMatrices() : m_rig.GetMatrices();
     for (size_t i = 0; i < pose.size(); ++i) matrices[i] = ToDirectX(pose[i]).Transpose();
     auto context = Renderer::GetDeviceContext();
     context->UpdateSubresource(m_boneBuffer.Get(), 0, nullptr, matrices.data(), 0, 0);
@@ -97,7 +150,8 @@ void PlayerRobotModel::Draw(Camera* cam)
     context->IASetInputLayout(m_layout.Get());
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_albedo.SetGPU();
-    m_vertices.SetGPU();
+    if (broken) m_debrisVertices.SetGPU();
+    else m_vertices.SetGPU();
     context->Draw(m_vertexCount, 0);
     bones = nullptr;
     context->VSSetConstantBuffers(6, 1, &bones);
@@ -108,7 +162,9 @@ void PlayerRobotModel::Uninit()
     m_ready = false;
     m_vertexCount = 0;
     m_rig = RobotAnimationRig{};
+    m_debris.Reset();
     m_vertices = VertexBuffer<SkinnedVertex>{};
+    m_debrisVertices = VertexBuffer<SkinnedVertex>{};
     m_albedo = Texture{};
     m_vertexShader.Reset();
     m_pixelShader.Reset();

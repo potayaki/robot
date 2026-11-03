@@ -34,6 +34,24 @@ namespace
     }
 }
 
+RobotMotion SelectRobotWalkMotion(float moveX, float moveZ, float lowerBodyYaw)
+{
+    if (moveX * moveX + moveZ * moveZ <= 0.000001f)
+    {
+        return RobotMotion::Idle;
+    }
+
+    const float forward = moveX * std::sin(lowerBodyYaw) + moveZ * std::cos(lowerBodyYaw);
+    const float right = moveX * std::cos(lowerBodyYaw) - moveZ * std::sin(lowerBodyYaw);
+
+    // カメラ基準のWASDではなく、実際の移動方向と脚の向きの関係で決める。
+    if (std::abs(forward) >= std::abs(right))
+    {
+        return forward > 0.0f ? RobotMotion::Forward : RobotMotion::Backward;
+    }
+    return right > 0.0f ? RobotMotion::Right : RobotMotion::Left;
+}
+
 int RobotAnimationRig::FindNode(const std::string& name) const
 {
     for (size_t i = 0; i < m_nodes.size(); ++i)
@@ -60,12 +78,15 @@ bool RobotAnimationRig::Load(const std::string& directory, std::string& error)
             Node entry;
             entry.name = node->mName.C_Str();
             entry.parent = parent;
+            entry.upperBody = entry.name == "Top_M" || (parent >= 0 && m_nodes[parent].upperBody);
             node->mTransformation.Decompose(entry.bind.scale, entry.bind.rotation, entry.bind.position);
             const int index = static_cast<int>(m_nodes.size());
             m_nodes.push_back(entry);
             for (unsigned i = 0; i < node->mNumChildren; ++i) addNode(node->mChildren[i], index);
         };
         addNode(scene->mRootNode, -1);
+        m_upperBodyNode = FindNode("Top_M");
+        if (m_upperBodyNode < 0) throw std::runtime_error("Robot upper-body joint Top_M is missing");
 
         for (unsigned i = 0; i < scene->mNumMeshes; ++i)
         {
@@ -158,9 +179,12 @@ bool RobotAnimationRig::Load(const std::string& directory, std::string& error)
     }
 }
 
-void RobotAnimationRig::Update(RobotMotion motion, float deltaSeconds, float playbackRate)
+void RobotAnimationRig::Update(RobotMotion motion, float deltaSeconds, float playbackRate,
+                               float upperBodyYaw, float upperBodyPitch)
 {
     if (m_parts.empty() || deltaSeconds <= 0) return;
+    m_upperBodyYaw = upperBodyYaw;
+    m_upperBodyPitch = upperBodyPitch;
     if (motion != m_motion)
     {
         // 切り替え途中に別方向へ動いても、現在表示している姿勢から補間を始める。
@@ -202,5 +226,34 @@ void RobotAnimationRig::Evaluate()
         const aiMatrix4x4 local(pose.scale, pose.rotation, pose.position);
         hierarchy[i] = node.parent < 0 ? local : hierarchy[node.parent] * local;
         m_globals[i] = m_inverseRoot * hierarchy[i];
+    }
+    ApplyUpperBodyAim();
+}
+
+void RobotAnimationRig::ApplyUpperBodyAim()
+{
+    if (m_upperBodyNode < 0 || (m_upperBodyYaw == 0.0f && m_upperBodyPitch == 0.0f)) return;
+
+    // 骨のローカル軸は斜めを向いているため、モデル空間で照準の回転を作る。
+    // 原点ではなくTop_Mの関節を中心に回し、胴体が脚から離れて公転するのを防ぐ。
+    const aiVector3D pivot = m_globals[m_upperBodyNode] * aiVector3D(0, 0, 0);
+    aiMatrix4x4 yaw, pitch;
+    aiMatrix4x4::RotationY(m_upperBodyYaw, yaw);
+    aiMatrix4x4::RotationX(m_upperBodyPitch, pitch);
+    // 素材の正面は-Zなので、X軸の正回転が上向き。上下を付けてから左右へ旋回する。
+    aiMatrix4x4 turn = yaw * pitch;
+    const aiVector3D translation = pivot - turn * pivot;
+    turn.a4 = translation.x;
+    turn.b4 = translation.y;
+    turn.c4 = translation.z;
+
+    // アニメーション計算後の上半身だけに適用する。元の姿勢へ書き戻さないので、
+    // フレームごとの回転が累積せず、脚の歩行や方向切り替えの補間にも混ざらない。
+    for (size_t i = 0; i < m_nodes.size(); ++i)
+    {
+        if (m_nodes[i].upperBody)
+        {
+            m_globals[i] = turn * m_globals[i];
+        }
     }
 }

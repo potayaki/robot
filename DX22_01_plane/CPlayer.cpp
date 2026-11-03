@@ -55,20 +55,31 @@ void CPlayer::Init() {
     m_body = new PlayerRobotModel;
     m_body->Init();
 
-
-
-
+    // 開始時だけ上下の正面を揃える。以後、上半身はカーソルの照準へ向ける。
+    const float cameraAngle = Game::GetInstance()->GetCamera()->GetCameraDirection();
+    m_lowerBodyYaw = std::atan2(-std::sin(cameraAngle), -std::cos(cameraAngle));
+    m_Rotation.y = m_lowerBodyYaw;
+    m_upperBodyPitch = 0.0f;
 }
 
 
 void CPlayer::Update() {
 
-
+    const float deltaSeconds = GameTime::DeltaSeconds();
     if (m_hp <= 0) {
+        // 操作は止めても死亡演出は更新する。開始処理はモデル側で1回だけ実行される。
+        m_body->SetPosition(m_Position);
+        m_body->SetRotation(Vector3(0.0f, m_lowerBodyYaw, 0.0f));
+        const auto grounds = Game::GetInstance()->GetObjects<Ground>();
+        const float groundY = grounds.empty() ? m_Position.y - GetCollisionSphere().radius : grounds[0]->GetPosition().y;
+        m_body->BeginBreakApart(groundY);
+        m_body->AdvanceBreakApart(deltaSeconds);
+        m_velocity = Vector3::Zero;
         return;
     }
 
-    const float deltaSeconds = GameTime::DeltaSeconds();
+    // DebugのHPスライダーなどで復活した場合、残骸を片付けて通常表示へ戻す。
+    m_body->RestoreBody();
     // 重力は加速度、速度は1秒あたりの移動量として積分する。
     m_Position += m_velocity * deltaSeconds;
     m_Position.y -= 0.5f * Gravity * deltaSeconds * deltaSeconds;
@@ -87,14 +98,18 @@ void CPlayer::Update() {
     movement.y = 0;
     const bool walking = IsGrounded && movement.LengthSquared() > 0.000001f;
     const float animationRate = walking ? 1.0f + 0.1f * m_progression.Rank(UpgradeId::MoveSpeed) : 1.0f;
-    RobotMotion displayMotion = walking ? m_robotMotion : RobotMotion::Idle;
+    RobotMotion displayMotion = walking
+        ? SelectRobotWalkMotion(movement.x, movement.z, m_lowerBodyYaw)
+        : RobotMotion::Idle;
 #ifdef _DEBUG
     if (m_debugRobotMotion > 0) displayMotion = static_cast<RobotMotion>(m_debugRobotMotion - 1);
 #endif
-    m_body->Advance(displayMotion, deltaSeconds, animationRate);
+    // モデル全体は脚の向きに固定し、照準との差分だけを上半身の骨へ渡す。
+    const float upperBodyYaw = m_Rotation.y - m_lowerBodyYaw;
+    m_body->Advance(displayMotion, deltaSeconds, animationRate, upperBodyYaw, m_upperBodyPitch);
 
     m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z);
-    m_body->SetRotation(m_Rotation);
+    m_body->SetRotation(Vector3(0.0f, m_lowerBodyYaw, 0.0f));
 }
 
 void CPlayer::Draw(Camera* cam) {
@@ -153,14 +168,6 @@ void CPlayer::Move() {
     float rightX = -cosf(angle);
     float rightZ = sinf(angle);
 
-    // 後退・横移動中もカメラ前方を向く。向きと歩行方向を分けて各方向の素材を使う。
-    m_Rotation.y = std::atan2(fwdX, fwdZ);
-    const int forwardInput = static_cast<int>(Input::GetKeyPress(VK_W)) - static_cast<int>(Input::GetKeyPress(VK_S));
-    const int sideInput = static_cast<int>(Input::GetKeyPress(VK_D)) - static_cast<int>(Input::GetKeyPress(VK_A));
-    m_robotMotion = RobotMotion::Idle;
-    if (forwardInput != 0) m_robotMotion = forwardInput > 0 ? RobotMotion::Forward : RobotMotion::Backward;
-    else if (sideInput != 0) m_robotMotion = sideInput > 0 ? RobotMotion::Right : RobotMotion::Left;
-
     float moveX = 0.0f;
     float moveZ = 0.0f;
 
@@ -193,6 +200,9 @@ void CPlayer::Move() {
     {
         m_Position = battle->ConstrainPosition(m_Position, GetCollisionSphere().radius);
     }
+
+    // 移動・バリア補正後の位置から毎フレーム照準を更新する。クリックしていなくても追従する。
+    UpdateAim();
 
     // 詳細画面やデバッグUIの操作クリックを射撃として扱わない。
     const bool usingMouseUI = ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse;
@@ -227,25 +237,24 @@ void CPlayer::isGrounded() {
     }
 }
 
-void CPlayer::StartBullet() {
-    if (m_currentBulletTime > 0) return;
-
+bool CPlayer::TryGetAimTarget(Vector3& targetPosition) const
+{
     Vector3 rayOrigin;
     Vector3 direction;
 
     Camera* camera = Game::GetInstance()->GetCamera();
-    if (camera == nullptr || !camera->GetMouseRay(rayOrigin, direction)) return;
+    if (camera == nullptr || !camera->GetMouseRay(rayOrigin, direction)) return false;
 
     std::vector<Ground*> grounds = Game::GetInstance()->GetObjects<Ground>();
     if (grounds.empty()) {
-        return;
+        return false;
     }
 
     const float groundY = grounds[0]->GetPosition().y;
     // 地面や敵が無い方向では、弾の飛行距離に合わせた遠方を目標にする。
     constexpr float maxAimDistance = 3000.0f;
     float nearestDistance = maxAimDistance;
-    Vector3 targetPosition = rayOrigin + direction * nearestDistance;
+    targetPosition = rayOrigin + direction * nearestDistance;
 
     // カメラの照準線が地面に当たる場合は、その交点を目標候補にする。
     if (direction.y < -0.001f) {
@@ -269,8 +278,39 @@ void CPlayer::StartBullet() {
         }
     }
 
-    // プレイヤー付近から弾を発射
-    const Vector3 bulletStart = m_Position + Vector3(0.0f, 5.0f, 0.0f);
+    return true;
+}
+
+Vector3 CPlayer::GetBulletOrigin() const
+{
+    return m_Position + Vector3(0.0f, 5.0f, 0.0f);
+}
+
+void CPlayer::UpdateAim()
+{
+    Vector3 targetPosition;
+    if (!TryGetAimTarget(targetPosition)) return;
+
+    // 弾と同じ発射位置から目標を見る。カメラの正面ではなく、画面内のカーソルを追う。
+    const Vector3 direction = targetPosition - GetBulletOrigin();
+    if (direction.LengthSquared() < 0.0001f) return;
+
+    const float horizontalLength = std::sqrt(direction.x * direction.x + direction.z * direction.z);
+    if (horizontalLength > 0.0001f)
+    {
+        // 真上・真下を狙ったときは左右の向きを保持して、不定な旋回を防ぐ。
+        m_Rotation.y = std::atan2(direction.x, direction.z);
+    }
+    m_upperBodyPitch = std::atan2(direction.y, horizontalLength);
+}
+
+void CPlayer::StartBullet() {
+    if (m_currentBulletTime > 0) return;
+
+    // 上半身の向きと同じ目標計算を使い、近い敵を狙ったときの視差補正も共有する。
+    Vector3 targetPosition;
+    if (!TryGetAimTarget(targetPosition)) return;
+    const Vector3 bulletStart = GetBulletOrigin();
 
     // 弾の飛ぶ方向ベクトルを計算
     Vector3 bulletDirection = targetPosition - bulletStart;

@@ -3,6 +3,9 @@
 #include<memory>
 #include"Object.h"
 #include"TestCube.h"
+#ifdef _DEBUG
+#include "CollisionDebugDraw.h"
+#endif
 #include "TestPlane.h"
 #include"TestModel.h"
 #include"Renderer.h"
@@ -37,7 +40,7 @@ private:
     std::vector<std::unique_ptr<Object> >m_addUIs;    // 追加待ちリスト
 
 #ifdef _DEBUG
-    TestCube m_DebugSphere;
+    CollisionDebugDraw m_CollisionDebug;
     bool m_ShowCollision = false;
 #endif
 

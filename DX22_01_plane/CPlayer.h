@@ -19,7 +19,8 @@ private:
     int curRocket = 1; //現在のミサイルの最大数
     const int maxRocket = 20; //最大ミサイル数
     PlayerRobotModel* m_body; // 骨格アニメーション付きの6本脚ロボット。
-    RobotMotion m_robotMotion = RobotMotion::Idle;
+    float m_lowerBodyYaw = 0.0f; // 開始時の脚の向き。カメラ旋回では変えない。
+    float m_upperBodyPitch = 0.0f; // カーソルの照準へ向ける仰角。上向きが正（ラジアン）。
 
     // 発射間隔と残り待ち時間は秒。実測したdeltaSecondsを引いて更新する。
     float m_BulletTime = 0.1f;
@@ -66,6 +67,11 @@ private:
     void ApplyUpgradeEffects(UpgradeId id, bool fromPresent);
     void UpdateAutoWeapons();
     void DeployTurret();
+
+    // 表示と通常弾が、同じカーソルの照準位置・発射基準位置を使う。
+    bool TryGetAimTarget(DirectX::SimpleMath::Vector3& targetPosition) const;
+    DirectX::SimpleMath::Vector3 GetBulletOrigin() const;
+    void UpdateAim();
 
 public:
     CPlayer();

@@ -2,10 +2,16 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="RobotAnimationRig.cpp"><Filter>ソース ファイル\Object</Filter></ClCompile>
+    <ClCompile Include="RobotDebris.cpp"><Filter>ソース ファイル\Object</Filter></ClCompile>
+    <ClCompile Include="CollisionDebugDraw.cpp"><Filter>ソース ファイル\Object</Filter></ClCompile>
     <ClCompile Include="PlayerRobotModel.cpp"><Filter>ソース ファイル\Object</Filter></ClCompile>
     <ClInclude Include="RobotAnimationRig.h"><Filter>ヘッダー ファイル\Object</Filter></ClInclude>
+    <ClInclude Include="RobotDebris.h"><Filter>ヘッダー ファイル\Object</Filter></ClInclude>
+    <ClInclude Include="CollisionDebugDraw.h"><Filter>ヘッダー ファイル\Object</Filter></ClInclude>
     <ClInclude Include="PlayerRobotModel.h"><Filter>ヘッダー ファイル\Object</Filter></ClInclude>
     <None Include="shader\playerRobotVS.hlsl" />
+    <None Include="shader\debugCollisionVS.hlsl" />
+    <None Include="shader\debugCollisionPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CBossBattle.cpp">

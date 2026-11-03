@@ -53,6 +53,10 @@ void CPlayer::DrawSurvivorDebugUI()
         ImGui::Combo("Animation preview", &m_debugRobotMotion,
                      "Automatic\0Idle\0Forward\0Backward\0Left\0Right\0");
         ImGui::TextWrapped("%s", Text(u8"Automaticで通常操作に戻ります。一時停止中は再生も止まります。"));
+        // HPを通常の死亡判定へ渡すため、無敵中でも演出だけを簡単に確認できる。
+        if (ImGui::Button(Text(u8"死亡演出を確認（HP 0）"))) SetHP(0);
+        ImGui::SameLine();
+        if (ImGui::Button(Text(u8"全回復して復帰"))) SetHP(GetMaxHp());
     }
 
     if (ImGui::CollapsingHeader(Text(u8"経験値・攻撃・敵の確認")))

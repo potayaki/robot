@@ -17,6 +17,7 @@
 #include"CPlayerUI.h"
 #include"CParticle.h"
 #include"CEnemy.h"
+#include "EnemyTarget.h"
 #include"CBullet.h"
 #include"CMissile.h"
 #include "CPresentBox.h"
@@ -79,7 +80,7 @@ void Game::Init() {
     m_instance->m_Camera.Init();
 
 #ifdef _DEBUG
-    m_instance->m_DebugSphere.Init();
+    m_instance->m_CollisionDebug.Init();
 #endif
 
     //最初のシーンを読み込む
@@ -281,6 +282,16 @@ void Game::Update(double elapsedSeconds) {
         if (ImGui::Button(m_instance->m_ShowCollision ? "Collision (ON)" : "Collision (OFF)")) {
             m_instance->m_ShowCollision = !m_instance->m_ShowCollision;
         }
+        if (m_instance->m_ShowCollision) {
+            // 線の色と対象を対応させ、重なっている判定を見分けやすくする。
+            ImGui::TextColored(ImVec4(0.2f, 0.9f, 1, 1), "Player");
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(1, 0.7f, 0.15f, 1), "Enemy");
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0.3f, 1, 0.35f, 1), "Bullet");
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0.9f, 0.4f, 1, 1), "Missile");
+        }
        
 
         // 弾の半径変更
@@ -385,48 +396,48 @@ void Game::Draw() {
     // 透明なバリアは地形と敵を描き終えてから重ねる。
     for (auto battle : m_instance->GetObjects<CBossBattle>()) battle->DrawBarrier(&m_instance->m_Camera);
 
-    Renderer::SetDepthEnable(false);
-
-    for (auto& a : m_instance->m_UIs) {
-
-        a->Draw(&m_instance->m_Camera);
-
-    }
-
-    Renderer::SetDepthEnable(true);
 #ifdef _DEBUG
     if (m_instance->m_ShowCollision) {
-        Renderer::SetWireFrame(true); // 線だけモードに変更
-        Renderer::SetBlendState(2);   // 加算合成（光らせる）
+        std::vector<CollisionDebugDraw::Sphere> spheres;
+        auto addSphere = [&](Object* obj) {
+            if (!obj || obj->IsDead() || !obj->GetActive()) return;
+            const Collision::Sphere shape = obj->GetCollisionSphere();
+            if (shape.radius <= 0.0f) return;
 
-        auto drawSphere = [](Object* obj) {
-            Collision::Sphere s = obj->GetCollisionSphere();
-            if (s.radius > 0.0f) {
-                m_instance->m_DebugSphere.SetPosition(s.center);
-                float scale = s.radius / 10.0f;
-                m_instance->m_DebugSphere.SetScale(scale, scale, scale);
-
-                m_instance->m_DebugSphere.Draw(&m_instance->m_Camera);
+            DirectX::SimpleMath::Color color(1, 1, 1, 1);
+            if (auto player = dynamic_cast<CPlayer*>(obj)) {
+                if (player->GetHp() <= 0) return; // 分解後の機体には接触ダメージが入らない。
+                color = DirectX::SimpleMath::Color(0.2f, 0.9f, 1, 1);
             }
-            };
+            else if (dynamic_cast<EnemyTarget*>(obj)) color = DirectX::SimpleMath::Color(1, 0.7f, 0.15f, 1);
+            else if (dynamic_cast<CBullet*>(obj)) color = DirectX::SimpleMath::Color(0.3f, 1, 0.35f, 1);
+            else if (dynamic_cast<CMissile*>(obj)) color = DirectX::SimpleMath::Color(0.9f, 0.4f, 1, 1);
+            spheres.push_back({shape, color});
+        };
 
         // 1. 通常のオブジェクト（Player, Enemy）を描画
         for (auto& a : m_instance->m_objects) {
-            drawSphere(a.get());
+            addSphere(a.get());
 
             // 2. プールマネージャーなら、中身の弾やミサイルも描画
             if (auto pBullet = dynamic_cast<BulletManager*>(a.get())) {
-                for (auto b : pBullet->GetPool()) { if (b->GetActive()) drawSphere(b); }
+                for (auto b : pBullet->GetPool()) { if (b->GetActive()) addSphere(b); }
             }
             if (auto pMissile = dynamic_cast<MissileManager*>(a.get())) {
-                for (auto m : pMissile->GetPool()) { if (m->GetActive()) drawSphere(m); }
+                for (auto m : pMissile->GetPool()) { if (m->GetActive()) addSphere(m); }
             }
         }
 
-        Renderer::SetBlendState(1);    // 通常の半透明に戻す
-        Renderer::SetWireFrame(false); // 塗りつぶしモードに戻す
+        m_instance->m_CollisionDebug.Draw(&m_instance->m_Camera, spheres);
     }
 #endif // _DEBUG
+
+    // Collisionの線でHP・クロスヘア・ミニマップを隠さないよう、HUDは最後に重ねる。
+    Renderer::SetDepthEnable(false);
+    for (auto& a : m_instance->m_UIs) {
+        a->Draw(&m_instance->m_Camera);
+    }
+    Renderer::SetDepthEnable(true);
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
@@ -436,6 +447,9 @@ void Game::Draw() {
 
 // 終了処理
 void Game::Uninit() {
+#ifdef _DEBUG
+    m_instance->m_CollisionDebug.Uninit();
+#endif
     // カメラ終了処理
     m_instance->m_Camera.Uninit();
 

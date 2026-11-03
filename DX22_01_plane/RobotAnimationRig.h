@@ -6,6 +6,9 @@
 
 enum class RobotMotion { Idle, Forward, Backward, Left, Right, Count };
 
+// ワールド上の移動量を、固定された脚側の正面・右方向に変換して歩行を選ぶ。
+RobotMotion SelectRobotWalkMotion(float moveX, float moveZ, float lowerBodyYaw);
+
 // このメカは全頂点が1本の骨に固定されている。各頂点の骨番号をGPUに渡すことで、
 // 毎フレームCPUで全頂点を変形せずに骨格アニメーションを再生できる。
 // GPUに依存しないため、実際のFBXを使った再生・FPS・切り替えの検証にも使用する。
@@ -25,7 +28,13 @@ public:
     };
 
 private:
-    struct Node { std::string name; int parent = -1; Pose bind; };
+    struct Node
+    {
+        std::string name;
+        int parent = -1;
+        Pose bind;
+        bool upperBody = false; // Top_M自身とその子（武器）。脚の枝は含まない。
+    };
     template<typename T> struct Key { double time; T value; };
     struct Channel
     {
@@ -46,12 +55,17 @@ private:
     RobotMotion m_motion = RobotMotion::Idle;
     double m_time = 0;
     float m_blendTime = 0.15f;
+    int m_upperBodyNode = -1;
+    float m_upperBodyYaw = 0.0f; // 下半身を基準にした照準方向の差（ラジアン）。
+    float m_upperBodyPitch = 0.0f; // 上を狙うほど正になる仰角（ラジアン）。
     int FindNode(const std::string& name) const;
     void Evaluate();
+    void ApplyUpperBodyAim();
 
 public:
     bool Load(const std::string& directory, std::string& error);
-    void Update(RobotMotion motion, float deltaSeconds, float playbackRate = 1.0f);
+    void Update(RobotMotion motion, float deltaSeconds, float playbackRate = 1.0f,
+                float upperBodyYaw = 0.0f, float upperBodyPitch = 0.0f);
     const std::vector<Part>& GetParts() const { return m_parts; }
     const std::vector<aiMatrix4x4>& GetMatrices() const { return m_globals; }
     RobotMotion GetMotion() const { return m_motion; }

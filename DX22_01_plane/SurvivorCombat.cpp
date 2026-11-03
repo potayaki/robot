@@ -32,6 +32,8 @@ void CPlayer::OnEnemyDefeated(int experience)
 {
     // 敵のDefeatから呼ばれる入口。撃破数と経験値をまとめて更新する。
     ++m_kills;
+    // 死亡後に残った弾の撃破でレベルアップ画面を開き、分解演出を止めないようにする。
+    if (m_hp <= 0) return;
     const bool wasChoosing = m_progression.IsChoosing();
     m_progression.AddExperience(experience);
 

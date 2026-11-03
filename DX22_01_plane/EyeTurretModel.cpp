@@ -25,11 +25,11 @@ void EyeTurretModel::Init()
 
 void EyeTurretModel::Draw(Camera* camera, const Vector3& center, const Quaternion& rotation)
 {
+
     if (camera == nullptr || m_indexCount == 0)
     {
         return;
     }
-
     ID3D11DeviceContext* context = Renderer::GetDeviceContext();
     Microsoft::WRL::ComPtr<ID3D11BlendState> previousBlend;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> previousDepth;
