@@ -147,7 +147,8 @@ void Game::Update(double elapsedSeconds) {
 #ifdef _DEBUG
     // 数字キー1～3は報酬選択に使用するため、以前のHPデバッグショートカットは廃止。
     std::vector<CPlayer*> GUIPlayer = GetInstance()->GetObjects<CPlayer>();
-    if (!GUIPlayer.empty() && !GUIPlayer[0]->IsGameplayPaused()) {
+    // Debugの一時停止中もCollisionや各種数値を確認・変更できるように表示する。
+    if (!GUIPlayer.empty() && (!GUIPlayer[0]->IsGameplayPaused() || GUIPlayer[0]->IsDebugPaused())) {
     //Imguiのウィンドウを作成
     ImGui::Begin("Player Debug");
 
@@ -335,6 +336,15 @@ void Game::Update(double elapsedSeconds) {
     // 同じUIをDebug / Releaseの両方で使用する。
     for (CPlayer* survivor : GetInstance()->GetObjects<CPlayer>()) survivor->DrawSurvivorUI();
     for (auto battle : GetInstance()->GetObjects<CBossBattle>()) battle->DrawUI();
+
+#ifdef _DEBUG
+    // ImGuiの入力先が確定してから、ゲーム進行とは独立して自由視点だけを動かす。
+    // Skill Debugを折り畳んでも操作でき、シーン切替でPlayerが消えた場合も解除する。
+    players = m_instance->GetObjects<CPlayer>();
+    const bool debugPaused = !players.empty() && players[0]->IsDebugPaused();
+    m_instance->m_Camera.SetDebugFreeCamera(debugPaused);
+    if (debugPaused) m_instance->m_Camera.UpdateDebugFreeCamera();
+#endif
    
 }
 

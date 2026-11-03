@@ -37,13 +37,19 @@ void CPlayer::DrawSurvivorDebugUI()
 
     // ウィンドウ全体をスクロールできるため、画面の高さが小さくても全スキルを選べる。
     ImGui::TextUnformatted(Text(u8"スキル名をクリックで取得 / 1段階強化"));
-    ImGui::Checkbox(Text(u8"ゲーム一時停止"), &m_debugPaused);
+    if (ImGui::Checkbox(Text(u8"ゲーム一時停止"), &m_debugPaused))
+    {
+        // チェックを切り替えたフレームから自由視点を使い、解除時には保存した視点へ戻す。
+        Game::GetInstance()->GetCamera()->SetDebugFreeCamera(m_debugPaused);
+    }
     ImGui::SameLine();
     ImGui::Checkbox(Text(u8"無敵"), &m_debugInvincible);
     if (ImGui::SliderInt("HP", &m_hp, 0, GetMaxHp()))
     {
         m_hp = std::clamp(m_hp, 0, GetMaxHp());
     }
+
+    if (m_debugPaused) Game::GetInstance()->GetCamera()->DrawDebugFreeCameraUI();
 
     for (auto battle : Game::GetInstance()->GetObjects<CBossBattle>()) battle->DrawDebugUI();
 

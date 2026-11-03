@@ -31,11 +31,29 @@ private:
     float m_ShakeTime = 0.0f; // 揺れの残り時間（秒）。
     float m_ShakePower = 0.0f;
 
+#ifdef _DEBUG
+    // 一時停止中だけ使う視点。通常の追従位置を保存し、再開時にそのまま戻す。
+    bool m_debugFreeCamera = false;
+    DirectX::SimpleMath::Vector3 m_debugSavedPosition{};
+    DirectX::SimpleMath::Vector3 m_debugSavedTarget{};
+    float m_debugYawDegrees = 0.0f;
+    float m_debugPitchDegrees = 0.0f;
+    float m_debugMoveSpeed = 100.0f; // ワールド座標での移動量 / 秒。
+
+    void ResetDebugFreeCamera();
+    void ApplyDebugFreeLook();
+#endif
+
 public:
 	void Init();
 	void Update();
 	void SetCamera(int mode = 0);
 	void Uninit();
+#ifdef _DEBUG
+    void SetDebugFreeCamera(bool enabled);
+    void UpdateDebugFreeCamera();
+    void DrawDebugFreeCameraUI();
+#endif
 	void SetPosition(DirectX::SimpleMath::Vector3 camera_pos) { m_Position = camera_pos; }
 	void SetTarget(DirectX::SimpleMath::Vector3 target);
 

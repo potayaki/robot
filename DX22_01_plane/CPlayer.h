@@ -135,7 +135,7 @@ public:
         return m_kills;
     }
 
-    // Game::UpdateはIsGameplayPausedを見て、敵・弾・カメラなどの更新を止める。
+    // Game::UpdateはIsGameplayPausedを見てゲーム進行を止める。Debug停止中の自由視点は別更新。
     bool IsChoosingUpgrade() const
     {
         return m_progression.IsChoosing();
@@ -159,6 +159,7 @@ public:
     DirectX::SimpleMath::Vector3 GetTurretFollowPosition() const;
 #ifdef _DEBUG
     void DrawSurvivorDebugUI();
+    bool IsDebugPaused() const { return m_debugPaused; }
     bool DebugGiveUpgrade(UpgradeId id);
 #endif
     void Heal(int amount);

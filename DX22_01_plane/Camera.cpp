@@ -4,6 +4,11 @@
 #include "input.h"
 #include"CPlayer.h"
 #include"Game.h"
+#ifdef _DEBUG
+#include "imgui.h"
+#include <algorithm>
+#include <cmath>
+#endif
 using namespace DirectX::SimpleMath;
 
 //=======================================
@@ -26,6 +31,9 @@ void Camera::Update() {
 	//Debug用のカメラ操作
 
 #ifdef _DEBUG
+
+    // 通常更新へ戻るときは、自由視点の座標をゲームの追従カメラへ持ち越さない。
+    SetDebugFreeCamera(false);
 
     //デバック用のカメラ操作
 	if (Input::GetKeyPress(VK_K)) {
@@ -116,6 +124,119 @@ void Camera::Update() {
     }
 
 }
+
+#ifdef _DEBUG
+void Camera::SetDebugFreeCamera(bool enabled)
+{
+    if (m_debugFreeCamera == enabled) return;
+    m_debugFreeCamera = enabled;
+
+    if (enabled)
+    {
+        m_debugSavedPosition = m_Position;
+        m_debugSavedTarget = m_Target;
+        ResetDebugFreeCamera();
+    }
+    else
+    {
+        m_Position = m_debugSavedPosition;
+        m_Target = m_debugSavedTarget;
+    }
+}
+
+void Camera::ResetDebugFreeCamera()
+{
+    m_Position = m_debugSavedPosition;
+    Vector3 forward = m_debugSavedTarget - m_debugSavedPosition;
+    if (forward.LengthSquared() < 0.0001f) forward = Vector3(0, 0, 1);
+    forward.Normalize();
+
+    m_debugYawDegrees = DirectX::XMConvertToDegrees(std::atan2(forward.x, forward.z));
+    m_debugPitchDegrees = DirectX::XMConvertToDegrees(std::asin(std::clamp(forward.y, -1.0f, 1.0f)));
+    ApplyDebugFreeLook();
+}
+
+void Camera::ApplyDebugFreeLook()
+{
+    // 真上・真下では注視方向と上方向が重なるため、少し手前で止める。
+    m_debugPitchDegrees = std::clamp(m_debugPitchDegrees, -89.0f, 89.0f);
+    m_debugYawDegrees = std::remainder(m_debugYawDegrees, 360.0f);
+    const float yaw = DirectX::XMConvertToRadians(m_debugYawDegrees);
+    const float pitch = DirectX::XMConvertToRadians(m_debugPitchDegrees);
+    m_Target = m_Position + Vector3(std::sin(yaw) * std::cos(pitch),
+                                    std::sin(pitch), std::cos(yaw) * std::cos(pitch));
+}
+
+void Camera::UpdateDebugFreeCamera()
+{
+    if (!m_debugFreeCamera || GetForegroundWindow() != Application::GetWindow()) return;
+
+    // スキル選択や装備詳細のダイアログを操作している間は、視点入力を受け付けない。
+    if (ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopup)) return;
+    const ImGuiIO& io = ImGui::GetIO();
+
+    // UI外の右ドラッグだけを視点操作に使う。数値欄やスライダーのドラッグとは分離する。
+    if (!io.WantCaptureMouse && !ImGui::IsAnyItemActive() &&
+        ImGui::IsMouseDragging(ImGuiMouseButton_Right))
+    {
+        constexpr float degreesPerPixel = 0.2f;
+        m_debugYawDegrees += io.MouseDelta.x * degreesPerPixel;
+        m_debugPitchDegrees -= io.MouseDelta.y * degreesPerPixel;
+        ApplyDebugFreeLook();
+    }
+
+    if (io.WantCaptureKeyboard || io.WantTextInput || ImGui::IsAnyItemActive()) return;
+
+    Vector3 forward = m_Target - m_Position;
+    forward.Normalize();
+    Vector3 right = Vector3(0, 1, 0).Cross(forward);
+    right.Normalize();
+
+    Vector3 movement = Vector3::Zero;
+    if (Input::GetKeyPress(VK_W)) movement += forward;
+    if (Input::GetKeyPress(VK_S)) movement -= forward;
+    if (Input::GetKeyPress(VK_D)) movement += right;
+    if (Input::GetKeyPress(VK_A)) movement -= right;
+    if (Input::GetKeyPress(VK_E)) movement.y += 1.0f;
+    if (Input::GetKeyPress(VK_Q)) movement.y -= 1.0f;
+
+    if (movement.LengthSquared() > 0.0001f)
+    {
+        // 斜め移動でも同じ速さにする。停止中はDeltaSecondsが0なので実時間を使う。
+        movement.Normalize();
+        const float speed = m_debugMoveSpeed * (Input::GetKeyPress(VK_SHIFT) ? 3.0f : 1.0f);
+        m_Position += movement * speed * GameTime::UnscaledDeltaSeconds();
+        ApplyDebugFreeLook();
+    }
+}
+
+void Camera::DrawDebugFreeCameraUI()
+{
+    if (!m_debugFreeCamera) return;
+    const auto text = [](const char8_t* value) { return reinterpret_cast<const char*>(value); };
+
+    ImGui::Separator();
+    ImGui::TextUnformatted(text(u8"一時停止中：フリーカメラ"));
+    ImGui::TextWrapped("%s", text(u8"WASD：移動 / Q・E：下降・上昇 / Shift：高速移動"));
+    ImGui::TextWrapped("%s", text(u8"画面上のUIがない場所で右ドラッグ：視点変更。数値でも調整できます。"));
+
+    float position[3] = { m_Position.x, m_Position.y, m_Position.z };
+    bool changed = ImGui::DragFloat3(text(u8"カメラ位置"), position, 0.5f, 0, 0, "%.1f");
+    if (changed) m_Position = Vector3(position[0], position[1], position[2]);
+
+    changed |= ImGui::DragFloat(text(u8"左右の角度"), &m_debugYawDegrees, 0.5f, -180, 180,
+                                "%.1f deg", ImGuiSliderFlags_AlwaysClamp);
+    changed |= ImGui::DragFloat(text(u8"上下の角度"), &m_debugPitchDegrees, 0.5f, -89, 89,
+                                "%.1f deg", ImGuiSliderFlags_AlwaysClamp);
+    if (changed) ApplyDebugFreeLook();
+
+    ImGui::SliderFloat(text(u8"カメラ移動速度"), &m_debugMoveSpeed, 5, 500, "%.0f / sec",
+                       ImGuiSliderFlags_AlwaysClamp);
+    if (ImGui::Button(text(u8"一時停止した時の視点に戻す"))) ResetDebugFreeCamera();
+    ImGui::TextDisabled("%s", text(u8"一時停止を解除すると通常の追従カメラに戻ります。"));
+    ImGui::Separator();
+}
+#endif
 
 //=======================================
 //描画処理
