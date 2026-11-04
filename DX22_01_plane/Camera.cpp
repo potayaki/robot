@@ -4,6 +4,7 @@
 #include "input.h"
 #include"CPlayer.h"
 #include"Game.h"
+#include "AimCursor.h"
 #ifdef _DEBUG
 #include "imgui.h"
 #include <algorithm>
@@ -251,7 +252,7 @@ void Camera::SetCamera(int mode) {
 		Renderer::SetViewMatrix(&m_ViewMatrix);
 
 		//プロジェクション行列の生成
-		constexpr float fieldOfView = DirectX::XMConvertToRadians(45.0f);    // 視野角
+		constexpr float fieldOfView = AimCursor::FieldOfView;    // 照準判定と共通の視野角。
 
 		float aspectRatio = static_cast<float>(Application::GetWidth()) / static_cast<float>(Application::GetHeight());	// アスペクト比	
 		float nearPlane = 1.0f;       // ニアクリップ
@@ -297,6 +298,13 @@ void Camera::SetTarget(DirectX::SimpleMath::Vector3 target) {
 //-------------------------------------
 //マウスレイを取得
  //-------------------------------------
+AimCursor::Region Camera::GetAimCursor() const
+{
+    const auto mouse = Input::GetMousePosition();
+    return AimCursor::Region(m_Position, m_Target, Vector2(mouse.x, mouse.y),
+                             static_cast<float>(Application::GetHeight()));
+}
+
 bool Camera::GetMouseRay(DirectX::SimpleMath::Vector3& rayOrigin, DirectX::SimpleMath::Vector3& rayDirection) const {
     const auto mouse = Input::GetMousePosition();
 
@@ -309,7 +317,7 @@ bool Camera::GetMouseRay(DirectX::SimpleMath::Vector3& rayOrigin, DirectX::Simpl
         const float ndcY = mouse.y / halfHeight;
 
         // 3D空間での視野角とアスペクト比を考慮して、レイの方向を計算する
-    constexpr float fov = DirectX::XMConvertToRadians(45.0f);
+    constexpr float fov = AimCursor::FieldOfView;
     const float aspect =
         static_cast<float>(Application::GetWidth()) /
         static_cast<float>(Application::GetHeight());

@@ -9,6 +9,8 @@ private:
 	std::vector<Object*> m_MySceneObjects; // このシーンのオブジェクト
 
     Texture2D* m_BulletCrosshair = nullptr; // 弾のクロスヘアのテクスチャ
+    int m_BulletCrosshairRank = 0; // 点と枠の切替時だけ画像を読み直す。
+    void UpdateCrosshairs();
 
     Texture2D* m_MissileCrosshair = nullptr; // ミサイルのクロスヘアのテクスチャ
 
@@ -21,6 +23,7 @@ public:
 	Stage1Scene(); // コンストラクタ
 	~Stage1Scene(); // デストラクタ
 	void Update(); // 更新
+    void Draw(Camera* cam) override;
 
 	
 

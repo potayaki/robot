@@ -224,6 +224,7 @@
     <ClInclude Include="EyeTurretShape.h" />
     <ClInclude Include="CBullet.h" />
     <ClInclude Include="BulletHoming.h" />
+    <ClInclude Include="AimCursor.h" />
     <ClInclude Include="CEnemy.h" />
     <ClInclude Include="CFlyingEnemy.h" />
     <ClInclude Include="EnemyTarget.h" />

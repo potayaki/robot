@@ -135,6 +135,9 @@ public:
         return m_kills;
     }
 
+    // 照準の表示と飛翔中の弾で、同じ現在レベルを参照する。
+    int GetBulletHomingRank() const { return m_progression.Rank(UpgradeId::BulletHoming); }
+
     // Game::UpdateはIsGameplayPausedを見てゲーム進行を止める。Debug停止中の自由視点は別更新。
     bool IsChoosingUpgrade() const
     {

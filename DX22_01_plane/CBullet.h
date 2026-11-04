@@ -16,7 +16,7 @@ private:
     float m_life = 0.0f; // 残りの寿命（秒）。
     float m_trailTimer = 0.0f; // 軌跡の生成間隔も秒で管理する。
     int damage = 1; // 弾のダメージ量
-    int m_homingRank = 0; // 発射時の誘導レベル。0なら従来通り直進する。
+    int m_homingRank = 0; // 発射時に設定し、飛翔中もPlayerの現在レベルへ揃える。0なら直進。
     Vector3 a{0.0f, 0.0f, 0.0f}; // 弾の初期方向（例: 前方）
 
     bool isActive = true; // 弾がアクティブかどうかのフラグ

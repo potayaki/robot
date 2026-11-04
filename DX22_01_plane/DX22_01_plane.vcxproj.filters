@@ -9,6 +9,7 @@
     <ClInclude Include="RobotDebris.h"><Filter>ヘッダー ファイル\Object</Filter></ClInclude>
     <ClInclude Include="CollisionDebugDraw.h"><Filter>ヘッダー ファイル\Object</Filter></ClInclude>
     <ClInclude Include="PlayerRobotModel.h"><Filter>ヘッダー ファイル\Object</Filter></ClInclude>
+    <ClInclude Include="AimCursor.h"><Filter>ヘッダー ファイル\Object</Filter></ClInclude>
     <None Include="shader\playerRobotVS.hlsl" />
     <None Include="shader\debugCollisionVS.hlsl" />
     <None Include="shader\debugCollisionPS.hlsl" />

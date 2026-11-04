@@ -2,6 +2,8 @@
 
 #include	<SimpleMath.h>
 
+namespace AimCursor { class Region; }
+
 /*
 ゲームのカメラを管理するクラス
 */
@@ -59,6 +61,8 @@ public:
 
     //マウスレイ取得
     bool GetMouseRay(DirectX::SimpleMath::Vector3& rayOrigin, DirectX::SimpleMath::Vector3& rayDirection)const;
+
+    AimCursor::Region GetAimCursor() const;
 
     DirectX::SimpleMath::Matrix GetViewMatrix() const { return m_ViewMatrix; }
 

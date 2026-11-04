@@ -104,7 +104,7 @@ namespace
         {
             UpgradeId::BulletHoming,
             u8"誘導弾",
-            u8"通常弾が前方で弾に最も近い敵へ少し曲がる。外れた先の敵にも再誘導。必中ではなく、強化で旋回が強くなる。",
+            u8"弾用カーソルの枠内で、照準の中心に最も近い敵へ通常弾が少し曲がる。レベルが上がると枠が広がり、旋回も強くなる。外れた先の枠内の敵にも再誘導。",
             BulletHoming::MaxRank
         }
     }};
@@ -216,7 +216,8 @@ std::string GetUpgradeEffectText(UpgradeId id, int rank)
         break;
 
     case UpgradeId::BulletHoming:
-        format(u8"最大旋回：%.0f度/秒 / 探索半径：%.0f / 弾速・寿命は変化なし",
+        format(u8"対象：弾用カーソルの中心に最も近い敵 / 枠サイズ：%.0f / 最大旋回：%.0f度/秒 / 弾からの探索半径：%.0f",
+               BulletHoming::CrosshairSize(rank),
                BulletHoming::DegreesPerSecond(rank),
                BulletHoming::SearchRadius);
         break;

@@ -1,5 +1,6 @@
 #include "../DX22_01_plane/SurvivorProgression.h"
 #include <cassert>
+#include "../DX22_01_plane/BulletHoming.h"
 #include <iostream>
 #include <set>
 
@@ -92,8 +93,10 @@ int main() {
     }
     assert(GetUpgradeDefinition(UpgradeId::BulletHoming).maxRank == 5);
     assert(chest.Rank(UpgradeId::BulletHoming) == 5); // プレゼントの共通抽選にも含まれる。
-    assert(GetUpgradeEffectText(UpgradeId::BulletHoming, 1).find("24") != std::string::npos);
-    assert(GetUpgradeEffectText(UpgradeId::BulletHoming, 5).find("120") != std::string::npos);
+    assert(GetUpgradeEffectText(UpgradeId::BulletHoming, 1).find(
+        std::to_string(static_cast<int>(BulletHoming::DegreesPerSecond(1)))) != std::string::npos);
+    assert(GetUpgradeEffectText(UpgradeId::BulletHoming, 5).find(
+        std::to_string(static_cast<int>(BulletHoming::DegreesPerSecond(5)))) != std::string::npos);
     assert(GetUpgradeEffectText(UpgradeId::RapidFire, 1).find("0.085") != std::string::npos);
     assert(chest.Choices().size() == 1 && chest.Choices()[0] == UpgradeId::Heal);
     assert(chest.Select(0, reward) && reward == UpgradeId::Heal);

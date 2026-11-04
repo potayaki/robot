@@ -6,6 +6,8 @@
 #include "Ground.h"
 #include "PoolManager.h"
 #include "BulletHoming.h"
+#include "AimCursor.h"
+#include "CPlayer.h"
 #include <cmath>
 
 namespace
@@ -83,10 +85,14 @@ void CBullet::Update()
     // ----- 2. 誘導先の検索と方向の更新 -----
     // この敵リストは、後半の衝突判定でも共通で使用する。
     const auto enemies = Game::GetInstance()->GetObjects<EnemyTarget>();
+    // 強化取得の直後も、表示中の枠の大きさと飛翔中の弾の誘導範囲を揃える。
+    const auto players = Game::GetInstance()->GetObjects<CPlayer>();
+    if (!players.empty()) m_homingRank = players[0]->GetBulletHomingRank();
     if (m_homingRank > 0)
     {
-        // 固定ロックはしない。弾から最も近い生存中の敵を探し直すので、
-        // 外れた先に別の敵がいれば、その敵へ少しずつ軌道を曲げられる。
+        // 弾用カーソルの枠内で、画面上のカーソル中心に最も近い敵を選び直す。
+        // 弾に近い横の敵へ引かれず、通過後は枠内に残った別の敵へ再誘導できる。
+        const auto cursor = Game::GetInstance()->GetCamera()->GetAimCursor();
         BulletHoming::Search<Vector3> search(m_velocity);
         for (EnemyTarget* enemy : enemies)
         {
@@ -94,7 +100,10 @@ void CBullet::Update()
             {
                 continue;
             }
-            search.Consider(enemy->GetCollisionSphere().center - m_Position);
+            const Collision::Sphere sphere = enemy->GetCollisionSphere();
+            float cursorDistanceSquared = 0.0f;
+            if (!cursor.TryGetBulletScore(sphere.center, m_homingRank, cursorDistanceSquared)) continue;
+            search.Consider(sphere.center - m_Position, cursorDistanceSquared);
         }
         if (search.Found())
         {

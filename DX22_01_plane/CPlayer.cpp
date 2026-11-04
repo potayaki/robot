@@ -7,6 +7,7 @@
 #include"CMissile.h"
 #include"CAutoturret.h"
 #include "CBossBattle.h"
+#include "AimCursor.h"
 #include"PoolManager.h"
 #include "imgui.h"
 #include<algorithm>
@@ -333,7 +334,7 @@ void CPlayer::StartBullet() {
             CBullet* bullet = bulletManagers[0]->Spawn();
             if (bullet != nullptr) {
                 bullet->SetDamage(1 + m_progression.Rank(UpgradeId::BulletPower));
-                // マルチショットの各弾が、それぞれの位置から誘導先を選ぶ。
+                // 各弾の前方にいる候補から、画面上の照準中心に近い敵を選ぶ。
                 bullet->Shoot(bulletStart, shotDirection, m_progression.Rank(UpgradeId::BulletHoming));
             }
         }
@@ -360,23 +361,22 @@ void CPlayer::StartMissile() {
         Camera* camera = Game::GetInstance()->GetCamera();
         Vector3 rayOrigin, rayDirection;
         if (camera == nullptr || !camera->GetMouseRay(rayOrigin, rayDirection)) return;
+        const auto cursor = camera->GetAimCursor();
         std::vector<TargetInfo>Targets;
 
         for (auto& enemy : enemys) {
-            if (enemy == nullptr || enemy->IsDead()) continue;
+            if (enemy == nullptr || enemy->IsDead() || !enemy->GetActive()) continue;
+            const Collision::Sphere sphere = enemy->GetCollisionSphere();
+            // ミサイルは大きい方の照準円を使用する。通常弾のレベル別の枠とは別判定。
+            if (!cursor.Contains(sphere.center, sphere.radius)) continue;
             //カメラから敵へのベクトル
-            Vector3 toEnemy = enemy->GetPosition() - rayOrigin;
+            Vector3 toEnemy = sphere.center - rayOrigin;
             toEnemy.Normalize();
 
             //マウスの方向と敵方向の角度の内積計算
             float dot = rayDirection.Dot(toEnemy);
 
-            // 大型ボスは画面上の体と中心が離れるため、照準線が体の球に入る場合も対象にする。
-            // 通常の小さい敵には従来の角度によるロックオン補助も残す。
-            float hitDistance = 0.0f;
-            if (dot > 0.99f || RaySphereHitDistance(rayOrigin, rayDirection, enemy->GetCollisionSphere(), hitDistance)) {
-                Targets.push_back({ enemy,dot });
-            }
+            Targets.push_back({ enemy,dot });
         }
 
         if (Targets.empty()) {

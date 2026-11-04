@@ -1,13 +1,30 @@
 ﻿#pragma once
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace BulletHoming
 {
     // 誘導弾の調整値。ゲーム側とスキル説明画面の両方がこの値を参照する。
-    // 通常弾の速度・寿命は変えず、Lv1～5で1秒あたり24～120度まで曲げる。
+    // 通常弾の速度・寿命は変えず、Lv1～5で1秒あたりHoming～Homig×5度まで曲げる。
     constexpr int MaxRank = 5;
     constexpr float SearchRadius = 600.0f;
+    constexpr float Homing = 10.0f;
+
+    // Lv0は64px画像の中央にある4pxの白点だけを表示する。
+    // Lv1以降はcrosshair061.pngを32, 48, 64, 80, 96の順に拡大する。
+    constexpr float CrosshairSize(int rank)
+    {
+        rank = std::clamp(rank, 0, MaxRank);
+        return rank == 0 ? 64.0f : 32.0f + 16.0f * (rank - 1);
+    }
+
+    constexpr float CursorRadius(int rank)
+    {
+        // crosshair061.pngの枠の内側は、64px画像の中心から約28px。
+        // Lv0は点を表示するだけで、誘導範囲は持たない。
+        return rank <= 0 ? 0.0f : CrosshairSize(rank) * (28.0f / 64.0f);
+    }
 
     // レベルを有効範囲に収めてから、1秒間に曲がれる最大角度を返す。
     // 未取得のLv0では0度となり、通常弾の直進を維持する。
@@ -22,7 +39,7 @@ namespace BulletHoming
             rank = MaxRank;
         }
 
-        return 24.0f * rank;
+        return Homing * rank;
     }
 
     // 計算を描画から独立させる。ゲームではSimpleMath::Vector3を使用する。
@@ -32,8 +49,9 @@ namespace BulletHoming
         // Searchは弾の更新ごとに作り直す。敵のポインタを保持しないため、
         // 前フレームで倒された敵を参照したり、特定の敵へ固定ロックしたりしない。
         Vector m_velocity;
-        Vector m_offset{}; // 弾から、現在の最短候補へ向かうベクトル。
-        float m_distanceSquared = SearchRadius * SearchRadius; // 最短候補までの距離の二乗。
+        Vector m_offset{}; // 弾から、照準の中心に最も近い候補へ向かうベクトル。
+        float m_cursorDistanceSquared = std::numeric_limits<float>::infinity();
+        float m_distanceSquared = SearchRadius * SearchRadius;
         bool m_found = false;
 
     public:
@@ -41,22 +59,31 @@ namespace BulletHoming
         {
         }
 
-        // 敵を1体ずつ候補として渡す。offset = 敵の中心座標 - 弾の座標。
-        void Consider(const Vector& offset)
+        // 弾用カーソル内の敵だけを渡す。画面上の照準中心からの距離を優先する。
+        // 同じ位置に重なっているときだけ、弾から近い方を選ぶ。
+        void Consider(const Vector& offset, float cursorDistanceSquared)
         {
             const float distanceSquared = offset.LengthSquared();
 
             // 通過済みの敵は追わず、その先にいる敵を新たな誘導先にする。
             // 内積が正なら弾の前方、0以下なら真横または後方にいる。
             // 距離の二乗で比較することで、候補ごとの平方根計算を省く。
-            if (distanceSquared <= 0.000001f || distanceSquared > m_distanceSquared ||
-                m_velocity.Dot(offset) <= 0.0f)
+            if (distanceSquared <= 0.000001f || distanceSquared > SearchRadius * SearchRadius ||
+                m_velocity.Dot(offset) <= 0.0f || !std::isfinite(cursorDistanceSquared) ||
+                cursorDistanceSquared < 0.0f)
             {
                 return;
             }
 
-            // 今までより近い有効な候補が見つかったので、探索結果を更新する。
+            if (cursorDistanceSquared > m_cursorDistanceSquared ||
+                (cursorDistanceSquared == m_cursorDistanceSquared && distanceSquared >= m_distanceSquared))
+            {
+                return;
+            }
+
+            // 弾から遠くても、照準の中心に近い敵なら新しい候補として採用する。
             m_found = true;
+            m_cursorDistanceSquared = cursorDistanceSquared;
             m_distanceSquared = distanceSquared;
             m_offset = offset;
         }
