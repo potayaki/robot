@@ -12,7 +12,7 @@ private:
 
     static TestModel* s_sharedModel; // 生成されたプレゼントボックスのリスト
     static int s_boxCount; // 最大生成数
-
+    int m_maxBoxCount = 10; // 最大生成数
 public:
     CPresentBox();
     ~CPresentBox();

@@ -18,7 +18,7 @@ private:
     float m_attackCooldown = 5.0f / 3.0f; // 次の急降下までの秒数。
     float m_hoverPhase = 0.0f;
     float m_rotorAngle = 0.0f;
-
+    int m_Droppercent = 2;//プレゼントのドロップ率
 public:
     ~CFlyingEnemy() override;
     void Init() override;

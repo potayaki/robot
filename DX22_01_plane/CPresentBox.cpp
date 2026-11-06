@@ -12,7 +12,7 @@ CPresentBox::CPresentBox() {
 CPresentBox::~CPresentBox() {Uninit();}
 
 void CPresentBox::Init() {
-    if (s_boxCount  >= 10) {
+    if (s_boxCount  >= m_maxBoxCount) {
         // 最大生成数に達している場合、モデルを取得できないため、オブジェクトを破棄する
         m_model = nullptr;
         Destroy();

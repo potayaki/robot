@@ -179,5 +179,5 @@ void CFlyingEnemy::OnHit(int& damage) {
     m_hp -= damage;
     if (m_hp > 0) return;
 
-    Defeat(2, 15); // 飛行型にも共通の経験値・地面へのプレゼント配置を適用する。
+    Defeat(2, m_Droppercent); // 飛行型にも共通の経験値・地面へのプレゼント配置を適用する。
 }
