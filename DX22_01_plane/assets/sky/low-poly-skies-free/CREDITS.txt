@@ -1,0 +1,7 @@
+Low Poly Skies Free by heyheythere - https://heyheythere.itch.io/low-poly-skies-free - CC BY 4.0
+License: https://creativecommons.org/licenses/by/4.0/ (full text: LICENSE.txt)
+
+The four panorama PNG files and skies.json are copied without modification.
+Game adaptations: DirectX 11 panorama rendering, a recolored/rotated sunrise
+derived from sunset_orange.png at runtime, timed sky transitions, and adjusted
+ambient lighting and ground fog. These adaptations are not part of the original pack.

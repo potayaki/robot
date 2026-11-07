@@ -168,6 +168,7 @@
     <ClCompile Include="RobotAnimationRig.cpp" />
     <ClCompile Include="RobotDebris.cpp" />
     <ClCompile Include="CollisionDebugDraw.cpp" />
+    <ClCompile Include="SkyEnvironment.cpp" />
     <ClCompile Include="PlayerRobotModel.cpp" />
     <ClCompile Include="CPlayerUI.cpp" />
     <ClCompile Include="CPresentBox.cpp" />
@@ -216,6 +217,8 @@
     <ClInclude Include="Bezier.h" />
     <ClInclude Include="billboard.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="SkyCycle.h" />
+    <ClInclude Include="SkyEnvironment.h" />
     <ClInclude Include="CAutoturret.h" />
     <ClInclude Include="CBossBattle.h" />
     <ClInclude Include="CBossEnemy.h" />
@@ -333,6 +336,10 @@
     <None Include="shader\playerRobotVS.hlsl" />
     <None Include="shader\debugCollisionVS.hlsl" />
     <None Include="shader\debugCollisionPS.hlsl" />
+    <None Include="shader\skyVS.hlsl" />
+    <None Include="shader\skyPS.hlsl" />
+    <None Include="shader\groundSkyVS.hlsl" />
+    <None Include="shader\groundSkyPS.hlsl" />
   </ItemGroup>
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -79,6 +79,10 @@ void Game::Init() {
     // カメラ初期化
     m_instance->m_Camera.Init();
 
+    // 空の画像は起動時にまとめて読み込み、時間帯の切替時には読み込み直さない。
+    if (!m_instance->m_sky.Init())
+        std::cerr << "SkyEnvironment initialization failed. Check assets/sky and shader files.\n";
+
 #ifdef _DEBUG
     m_instance->m_CollisionDebug.Init();
 #endif
@@ -114,6 +118,9 @@ void Game::Update(double elapsedSeconds) {
 
         // 表示時間と敵の出現段階も、武器・移動と同じ経過秒数で進める。
         m_instance->m_gameTime += GameTime::DeltaSeconds();
+
+        // ゲームと同じ実測秒数で空も進める。一時停止・レベルアップ中は昼夜も止まる。
+        m_instance->m_sky.Update(GameTime::DeltaSeconds());
 
         // テストオブジェクト更新
         for (auto& a : m_instance->m_objects) {
@@ -189,6 +196,8 @@ void Game::Update(double elapsedSeconds) {
         // デバッグ情報の表示
         ImGui::Begin("Game Debug");
         ImGui::Text("FPS: %.1f", 1.0f / ImGui::GetIO().DeltaTime);
+
+        m_instance->m_sky.DrawDebugUI();
 
         ImGui::Text("Player HP: %d / %d", GUIPlayer[0]->GetHp(), GUIPlayer[0]->GetMaxHp());
 
@@ -385,6 +394,9 @@ void Game::Draw() {
     // 描画前処理
     Renderer::DrawStart();
 
+    // 空を最背面に描いてから、その時間帯の光で地形・敵・プレイヤーを描く。
+    m_instance->m_sky.Draw(&m_instance->m_Camera);
+
     // テストオブジェクト描画
     for (auto& a : m_instance->m_objects) {
         if (!a->IsDead()) a->Draw(&m_instance->m_Camera);
@@ -457,6 +469,7 @@ void Game::Draw() {
 
 // 終了処理
 void Game::Uninit() {
+    m_instance->m_sky.Uninit();
 #ifdef _DEBUG
     m_instance->m_CollisionDebug.Uninit();
 #endif

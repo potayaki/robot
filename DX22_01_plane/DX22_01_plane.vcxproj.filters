@@ -483,4 +483,27 @@
       <Filter>リソース ファイル</Filter>
     </FxCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SkyEnvironment.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClInclude Include="SkyEnvironment.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyCycle.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <None Include="shader\skyVS.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="shader\skyPS.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="shader\groundSkyVS.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="shader\groundSkyPS.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </None>
+  </ItemGroup>
 </Project>

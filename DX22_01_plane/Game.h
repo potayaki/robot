@@ -9,6 +9,7 @@
 #include "TestPlane.h"
 #include"TestModel.h"
 #include"Renderer.h"
+#include "SkyEnvironment.h"
 #include"TitleScene.h"
 #include"Stage1Scene.h"
 #include"ResultScene.h"
@@ -27,6 +28,8 @@ private:
 	Scene* m_scene;//シーン
 	// カメラ
 	Camera  m_Camera;
+
+    SkyEnvironment m_sky; // 昼夜・天候と、それに合わせた空・照明。
 
 	// テストオブジェクト
 	TestPlane m_Plane;

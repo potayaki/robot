@@ -23,4 +23,7 @@ public:
 	bool LoadFromFemory(const unsigned char* data,int len);
 
 	void SetGPU();
+
+	// 空の切替時に2枚の画像を同時に参照するための読み取り専用ビュー。
+	ID3D11ShaderResourceView* GetShaderResourceView() const { return m_srv.Get(); }
 };

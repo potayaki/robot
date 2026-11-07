@@ -35,7 +35,8 @@ void Ground::Init() {
 	m_IndexBuffer.Create(m_Indices);
 
 	// シェーダオブジェクト生成
-	m_Shader.Create("shader/litTextureVS.hlsl", "shader/litTexturePS.hlsl");
+	// 時間帯に応じた照明に加え、遠景を空の地平線になじませる霞を描く。
+	m_Shader.Create("shader/groundSkyVS.hlsl", "shader/groundSkyPS.hlsl");
 
 	// テクスチャの読み込み（画像パスは環境に合わせてください）
 	bool sts = m_Texture.Load("assets/texture/field.jpg");
