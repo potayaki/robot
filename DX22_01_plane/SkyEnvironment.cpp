@@ -25,7 +25,7 @@ namespace
     // 元素材のskies.jsonを基準にした光源方向と色。
     // -Zが前の素材から、ゲームの左手座標へZを反転している。
     // 環境光はゲームの暗部が読める明るさに調整し、朝だけ夕焼け画像を加工する。
-    const std::array<SkyDefinition, 5> Definitions = {{
+    const std::array<SkyDefinition, 5> Definitions = { {
         {1, {-0.9835f, 0.0523f, -0.1734f}, {0.92f, 0.70f, 0.52f, 1},
             {0.48f, 0.42f, 0.40f, 1}, {0.941f, 0.549f, 0.298f},
             {1.03f, 1.15f, 1.32f, 0.55f}, DirectX::XM_PI},
@@ -41,7 +41,7 @@ namespace
         {3, {0.3830f, 0.6428f, -0.6634f}, {0.38f, 0.39f, 0.40f, 1},
             {0.43f, 0.46f, 0.50f, 1}, {0.663f, 0.686f, 0.722f},
             {1, 1, 1, 1}, 0}
-    }};
+    } };
 
     struct SkyConstants
     {
@@ -59,13 +59,11 @@ namespace
         Vector4 end;
     };
 
-    Vector4 PackVector(const Vector3& value, float w)
-    {
+    Vector4 PackVector(const Vector3& value, float w) {
         return Vector4(value.x, value.y, value.z, w);
     }
 
-    bool CreateBuffer(UINT size, ComPtr<ID3D11Buffer>& buffer)
-    {
+    bool CreateBuffer(UINT size, ComPtr<ID3D11Buffer>& buffer) {
         D3D11_BUFFER_DESC description{};
         description.ByteWidth = size;
         description.Usage = D3D11_USAGE_DEFAULT;
@@ -73,8 +71,7 @@ namespace
         return SUCCEEDED(Renderer::GetDevice()->CreateBuffer(&description, nullptr, buffer.GetAddressOf()));
     }
 
-    Vector3 FogColor(const SkyDefinition& definition)
-    {
+    Vector3 FogColor(const SkyDefinition& definition) {
         // 朝の色調整は空と地平線に同じものを適用する。
         const float gray = definition.fog.Dot(Vector3(0.2126f, 0.7152f, 0.0722f));
         const Vector3 color = Vector3::Lerp(Vector3(gray), definition.fog, definition.tint.w);
@@ -82,12 +79,10 @@ namespace
     }
 }
 
-bool SkyEnvironment::Init()
-{
+bool SkyEnvironment::Init() {
     Uninit();
-    const char* files[] = {"day_fair.png", "sunset_orange.png", "night_full_moon.png", "overcast_grey.png"};
-    for (unsigned i = 0; i < m_textures.size(); ++i)
-    {
+    const char* files[] = { "day_fair.png", "sunset_orange.png", "night_full_moon.png", "overcast_grey.png" };
+    for (unsigned i = 0; i < m_textures.size(); ++i) {
         if (!m_textures[i].Load(std::string("assets/sky/low-poly-skies-free/") + files[i])) return false;
     }
 
@@ -97,7 +92,7 @@ bool SkyEnvironment::Init()
     vertices[1].position = Vector3(-1, 3, 0);
     vertices[2].position = Vector3(3, -1, 0);
     m_vertices.Create(vertices);
-    D3D11_INPUT_ELEMENT_DESC layout = {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0};
+    D3D11_INPUT_ELEMENT_DESC layout = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 };
     if (FAILED(Renderer::CreateVertexShader(m_vertexShader.GetAddressOf(), m_inputLayout.GetAddressOf(),
         &layout, 1, "shader/skyVS.hlsl"))) return false;
     if (FAILED(Renderer::CreatePixelShader(m_pixelShader.GetAddressOf(), "shader/skyPS.hlsl"))) return false;
@@ -131,41 +126,34 @@ bool SkyEnvironment::Init()
     return true;
 }
 
-float SkyEnvironment::Random01()
-{
+float SkyEnvironment::Random01() {
     // 敵の出現などに使う乱数とは分け、天候の抽選でゲーム側の結果を変えない。
     return std::uniform_real_distribution<float>(0.0f, 1.0f)(m_random);
 }
 
-void SkyEnvironment::SetTarget(Preset preset, bool blend)
-{
-    if (!blend)
-    {
+void SkyEnvironment::SetTarget(Preset preset, bool blend) {
+    if (!blend) {
         // Debugで選んだときはすぐ確認できるよう、切替待ちなしで固定表示する。
         m_previous = m_current = preset;
         m_transitionSeconds = 8.0f;
     }
-    else if (preset != m_current)
-    {
+    else if (preset != m_current) {
         m_previous = m_current;
         m_current = preset;
         m_transitionSeconds = 0.0f;
     }
 }
 
-void SkyEnvironment::Update(float deltaSeconds)
-{
+void SkyEnvironment::Update(float deltaSeconds) {
     if (!std::isfinite(deltaSeconds) || deltaSeconds <= 0.0f) return;
-    if (m_automatic)
-    {
+    if (m_automatic) {
         m_cycle.Update(deltaSeconds, [this] { return Random01(); });
         SetTarget(m_cycle.Current(), true);
     }
     m_transitionSeconds = (std::min)(m_transitionSeconds + deltaSeconds, 8.0f);
 }
 
-void SkyEnvironment::Draw(Camera* camera)
-{
+void SkyEnvironment::Draw(Camera* camera) {
     if (!m_ready || !camera) return;
     auto context = Renderer::GetDeviceContext();
     camera->SetCamera();
@@ -202,7 +190,7 @@ void SkyEnvironment::Draw(Camera* camera)
 
     // 近くの戦闘は霞ませず、遠くの地面だけを地平線の色へ近づける。
     const Vector3 fog = Vector3::Lerp(FogColor(a), FogColor(b), blend) * m_skyBrightness;
-    FogConstants fogConstants{PackVector(fog, 600.0f), Vector4(3000.0f, 0, 0, 0)};
+    FogConstants fogConstants{ PackVector(fog, 600.0f), Vector4(3000.0f, 0, 0, 0) };
     context->UpdateSubresource(m_fogBuffer.Get(), 0, nullptr, &fogConstants, 0, 0);
     context->PSSetConstantBuffers(8, 1, m_fogBuffer.GetAddressOf());
 
@@ -226,7 +214,7 @@ void SkyEnvironment::Draw(Camera* camera)
     context->IAGetPrimitiveTopology(&topology);
 
     ID3D11ShaderResourceView* textures[] = {
-        m_textures[a.texture].GetShaderResourceView(), m_textures[b.texture].GetShaderResourceView()};
+        m_textures[a.texture].GetShaderResourceView(), m_textures[b.texture].GetShaderResourceView() };
     Renderer::SetBlendState(BS_NONE);
     context->OMSetDepthStencilState(m_depth.Get(), 0);
     context->RSSetState(m_rasterizer.Get());
@@ -253,28 +241,23 @@ void SkyEnvironment::Draw(Camera* camera)
 }
 
 #ifdef _DEBUG
-void SkyEnvironment::DrawDebugUI()
-{
+void SkyEnvironment::DrawDebugUI() {
     auto text = [](const char8_t* value) { return reinterpret_cast<const char*>(value); };
     if (!ImGui::CollapsingHeader(text(u8"空・天候"), ImGuiTreeNodeFlags_DefaultOpen)) return;
-    if (!m_ready)
-    {
+    if (!m_ready) {
         ImGui::TextUnformatted(text(u8"空の読み込みに失敗しました。assets/sky と shader を確認してください。"));
         return;
     }
 
-    if (ImGui::Checkbox(text(u8"時間で自動切替"), &m_automatic))
-    {
+    if (ImGui::Checkbox(text(u8"時間で自動切替"), &m_automatic)) {
         // 停止中のDebugでも、チェック操作の結果をその場で確認できるようにする。
         SetTarget(m_automatic ? m_cycle.Current() : m_current, false);
     }
-    const char8_t* names[] = {u8"朝", u8"昼", u8"夕方", u8"夜", u8"曇り"};
-    for (int i = 0; i < static_cast<int>(Preset::Count); ++i)
-    {
+    const char8_t* names[] = { u8"朝", u8"昼", u8"夕方", u8"夜", u8"曇り" };
+    for (int i = 0; i < static_cast<int>(Preset::Count); ++i) {
         if (i != 0) ImGui::SameLine();
         const auto preset = static_cast<Preset>(i);
-        if (ImGui::RadioButton(text(names[i]), m_current == preset))
-        {
+        if (ImGui::RadioButton(text(names[i]), m_current == preset)) {
             m_automatic = false;
             SetTarget(preset, false);
         }
@@ -290,8 +273,7 @@ void SkyEnvironment::DrawDebugUI()
         m_cycle.cloudyProbability = probability / 100.0f;
     ImGui::Text(text(u8"進行中の時間帯: %s（残り %.0f 秒）"), text(names[static_cast<int>(m_cycle.TimeOfDay())]),
         (1.0f - m_cycle.Progress()) * m_cycle.durationSeconds / 4.0f);
-    if (ImGui::Button(text(u8"次の時間帯へ")))
-    {
+    if (ImGui::Button(text(u8"次の時間帯へ"))) {
         m_cycle.Next([this] { return Random01(); });
         m_automatic = true;
         SetTarget(m_cycle.Current(), false);
@@ -304,8 +286,7 @@ void SkyEnvironment::DrawDebugUI()
 }
 #endif
 
-void SkyEnvironment::Uninit()
-{
+void SkyEnvironment::Uninit() {
     m_ready = false;
     m_textures = {};
     m_vertices = {};
