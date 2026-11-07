@@ -6,6 +6,7 @@
 #include "CEnemySpawn.h"
 #include "CAutoturret.h"
 #include "CBossBattle.h"
+#include "CBoarEnemy.h"
 #endif
 
 namespace
@@ -52,6 +53,8 @@ void CPlayer::DrawSurvivorDebugUI()
     if (m_debugPaused) Game::GetInstance()->GetCamera()->DrawDebugFreeCameraUI();
 
     for (auto battle : Game::GetInstance()->GetObjects<CBossBattle>()) battle->DrawDebugUI();
+
+    CBoarEnemy::DrawDebugUI();
 
     if (ImGui::CollapsingHeader(Text(u8"ロボットのアニメーション")))
     {

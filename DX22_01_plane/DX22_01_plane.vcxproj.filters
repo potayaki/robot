@@ -506,4 +506,16 @@
       <Filter>リソース ファイル</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BoarAnimationRig.cpp"><Filter>ソース ファイル</Filter></ClCompile>
+    <ClCompile Include="BoarModel.cpp"><Filter>ソース ファイル</Filter></ClCompile>
+    <ClCompile Include="CBoarEnemy.cpp"><Filter>ソース ファイル</Filter></ClCompile>
+    <ClInclude Include="BoarAnimationRig.h"><Filter>ヘッダー ファイル</Filter></ClInclude>
+    <ClInclude Include="BoarModel.h"><Filter>ヘッダー ファイル</Filter></ClInclude>
+    <ClInclude Include="BoarCharge.h"><Filter>ヘッダー ファイル</Filter></ClInclude>
+    <ClInclude Include="CBoarEnemy.h"><Filter>ヘッダー ファイル</Filter></ClInclude>
+    <None Include="shader\boarVS.hlsl"><Filter>リソース ファイル</Filter></None>
+    <None Include="shader\chargeTelegraphVS.hlsl"><Filter>リソース ファイル</Filter></None>
+    <None Include="shader\chargeTelegraphPS.hlsl"><Filter>リソース ファイル</Filter></None>
+  </ItemGroup>
 </Project>

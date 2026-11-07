@@ -1,9 +1,12 @@
 ﻿#pragma once
 #include "Object.h"
+#include <memory>
+class BoarModel;
 class CEnemySpawn :  public Object
 {
 private:
     float m_spawnElapsed = 0.0f; // 前回の生成からの経過秒数。
+    std::unique_ptr<BoarModel> m_boarResources; // 出現時にモデル読込で止まらないよう、共有素材を保持する。
 public:
 
 #ifdef _DEBUG

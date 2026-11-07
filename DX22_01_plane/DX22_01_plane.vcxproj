@@ -169,6 +169,9 @@
     <ClCompile Include="RobotDebris.cpp" />
     <ClCompile Include="CollisionDebugDraw.cpp" />
     <ClCompile Include="SkyEnvironment.cpp" />
+    <ClCompile Include="BoarAnimationRig.cpp" />
+    <ClCompile Include="BoarModel.cpp" />
+    <ClCompile Include="CBoarEnemy.cpp" />
     <ClCompile Include="PlayerRobotModel.cpp" />
     <ClCompile Include="CPlayerUI.cpp" />
     <ClCompile Include="CPresentBox.cpp" />
@@ -219,6 +222,10 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="SkyCycle.h" />
     <ClInclude Include="SkyEnvironment.h" />
+    <ClInclude Include="BoarAnimationRig.h" />
+    <ClInclude Include="BoarModel.h" />
+    <ClInclude Include="BoarCharge.h" />
+    <ClInclude Include="CBoarEnemy.h" />
     <ClInclude Include="CAutoturret.h" />
     <ClInclude Include="CBossBattle.h" />
     <ClInclude Include="CBossEnemy.h" />
@@ -340,6 +347,9 @@
     <None Include="shader\skyPS.hlsl" />
     <None Include="shader\groundSkyVS.hlsl" />
     <None Include="shader\groundSkyPS.hlsl" />
+    <None Include="shader\boarVS.hlsl" />
+    <None Include="shader\chargeTelegraphVS.hlsl" />
+    <None Include="shader\chargeTelegraphPS.hlsl" />
   </ItemGroup>
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

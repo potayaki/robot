@@ -10,6 +10,7 @@
 #include "CPlayer.h"
 #include "CAutoturret.h"
 #include "CBossBattle.h"
+#include "CBoarEnemy.h"
 #include "PoolManager.h"
 #include <filesystem>
 
@@ -404,6 +405,9 @@ void Game::Draw() {
     if (m_instance->m_scene) {
         m_instance->m_scene->Draw(&m_instance->m_Camera);
     }
+
+    // 突進の予測線は半透明なので、地面や敵を描き終えてから重ねる。
+    for (auto boar : m_instance->GetObjects<CBoarEnemy>()) boar->DrawTelegraph(&m_instance->m_Camera);
 
     // 不透明な地形・敵を描いた後で、砲台のレーザーを重ねる。
     // 後から出現した敵に光線が不自然に上書きされることを防ぐ。

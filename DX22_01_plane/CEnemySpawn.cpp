@@ -1,6 +1,7 @@
 ﻿#include "CEnemySpawn.h"
 #include"CEnemy.h"
 #include "CFlyingEnemy.h"
+#include "CBoarEnemy.h"
 #include "EnemyTarget.h"
 #include "CBossBattle.h"
 #include"CPlayer.h"
@@ -14,6 +15,8 @@ CEnemySpawn::~CEnemySpawn() {
 }
 
 void CEnemySpawn::Init() {
+    m_boarResources = std::make_unique<BoarModel>();
+    if (!m_boarResources->Init()) m_boarResources.reset();
 }
 
 void CEnemySpawn::Update() {
@@ -54,16 +57,21 @@ void CEnemySpawn::Update() {
         float x = playerPos.x + radius * cos(angle);
         float z = playerPos.z + radius * sin(angle);
 
-        // 飛行型・高速型・通常型を混ぜ、45秒以降は大型も候補に加える。
+        // 突進型Boarも20%の確率で混ぜる。全てEnemyTargetなので武器と出現上限を共有する。
         const int kind = rand() % 100;
-        if (kind < 20) {
+        if (kind < 20 && m_boarResources) {
+            auto boar = Game::GetInstance()->AddObject<CBoarEnemy>();
+            // Initで足元に合わせた高さは保ち、出現するXZ座標だけを変更する。
+            boar->SetPosition(x, boar->GetPosition().y, z);
+        }
+        else if (kind < 40) {
             CFlyingEnemy* drone = Game::GetInstance()->AddObject<CFlyingEnemy>();
             drone->SetPosition(x, 40.0f, z);
         }
         else {
             CEnemy* enemy = Game::GetInstance()->AddObject<CEnemy>();
-            if (kind < 45) enemy->SetVariant(SlimeVariant::Runner);
-            else if (kind < 60 && wave > 0) enemy->SetVariant(SlimeVariant::Brute);
+            if (kind < 65) enemy->SetVariant(SlimeVariant::Runner);
+            else if (kind < 80 && wave > 0) enemy->SetVariant(SlimeVariant::Brute);
             enemy->SetPosition(x, -3.0f, z);
             enemy->SetScale(1.0f, 1.0f, 1.0f);
         }
@@ -76,6 +84,7 @@ void CEnemySpawn::Draw(Camera* cam) {
 }
 
 void CEnemySpawn::Uninit() {
+    m_boarResources.reset();
 }
 
 
