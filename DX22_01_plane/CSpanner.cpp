@@ -17,6 +17,8 @@ void CSpanner::LoadResource()
         "assets/model/spanner/shaded.png");
 }
 
+
+
 void CSpanner::UnloadResource() { s_model.reset(); }
 
 void CSpanner::Init()
