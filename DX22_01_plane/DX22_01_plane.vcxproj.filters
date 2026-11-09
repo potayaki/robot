@@ -1,34 +1,52 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="RobotAnimationRig.cpp"><Filter>ソース ファイル\Object</Filter></ClCompile>
-    <ClCompile Include="RobotDebris.cpp"><Filter>ソース ファイル\Object</Filter></ClCompile>
-    <ClCompile Include="CollisionDebugDraw.cpp"><Filter>ソース ファイル\Object</Filter></ClCompile>
-    <ClCompile Include="PlayerRobotModel.cpp"><Filter>ソース ファイル\Object</Filter></ClCompile>
-    <ClInclude Include="RobotAnimationRig.h"><Filter>ヘッダー ファイル\Object</Filter></ClInclude>
-    <ClInclude Include="RobotDebris.h"><Filter>ヘッダー ファイル\Object</Filter></ClInclude>
-    <ClInclude Include="CollisionDebugDraw.h"><Filter>ヘッダー ファイル\Object</Filter></ClInclude>
-    <ClInclude Include="PlayerRobotModel.h"><Filter>ヘッダー ファイル\Object</Filter></ClInclude>
-    <ClInclude Include="AimCursor.h"><Filter>ヘッダー ファイル\Object</Filter></ClInclude>
+    <ClCompile Include="RobotAnimationRig.cpp">
+      <Filter>ソース ファイル\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="RobotDebris.cpp">
+      <Filter>ソース ファイル\Object\Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="CollisionDebugDraw.cpp">
+      <Filter>ソース ファイル\System</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerRobotModel.cpp">
+      <Filter>ソース ファイル\Model</Filter>
+    </ClCompile>
+    <ClInclude Include="RobotAnimationRig.h">
+      <Filter>ヘッダー ファイル\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="RobotDebris.h">
+      <Filter>ヘッダー ファイル\Object\Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionDebugDraw.h">
+      <Filter>ヘッダー ファイル\System</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerRobotModel.h">
+      <Filter>ヘッダー ファイル\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="AimCursor.h">
+      <Filter>ヘッダー ファイル\Player</Filter>
+    </ClInclude>
     <None Include="shader\playerRobotVS.hlsl" />
     <None Include="shader\debugCollisionVS.hlsl" />
     <None Include="shader\debugCollisionPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CBossBattle.cpp">
-      <Filter>ソース ファイル\Object</Filter>
+      <Filter>ソース ファイル\Enemy</Filter>
     </ClCompile>
     <ClCompile Include="CBossEnemy.cpp">
-      <Filter>ソース ファイル\Object</Filter>
+      <Filter>ソース ファイル\Enemy</Filter>
     </ClCompile>
     <ClInclude Include="CBossBattle.h">
-      <Filter>ヘッダー ファイル\Object</Filter>
+      <Filter>ヘッダー ファイル\Enemy</Filter>
     </ClInclude>
     <ClInclude Include="CBossEnemy.h">
-      <Filter>ヘッダー ファイル\Object</Filter>
+      <Filter>ヘッダー ファイル\Enemy</Filter>
     </ClInclude>
     <ClInclude Include="BossBattleRules.h">
-      <Filter>ヘッダー ファイル\Object</Filter>
+      <Filter>ヘッダー ファイル\Enemy</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -110,37 +128,37 @@
       <Filter>ソース ファイル\Imgui</Filter>
     </ClCompile>
     <ClCompile Include="CBullet.cpp">
-      <Filter>ソース ファイル\Object</Filter>
+      <Filter>ソース ファイル\Object\Weapon</Filter>
     </ClCompile>
     <ClCompile Include="CEnemy.cpp">
-      <Filter>ソース ファイル\Object</Filter>
+      <Filter>ソース ファイル\Enemy</Filter>
     </ClCompile>
     <ClCompile Include="EnemyTarget.cpp">
-      <Filter>ソース ファイル\Object</Filter>
+      <Filter>ソース ファイル\Enemy</Filter>
     </ClCompile>
     <ClCompile Include="SurvivorProgression.cpp">
-      <Filter>ソース ファイル\System</Filter>
+      <Filter>ソース ファイル\Level</Filter>
     </ClCompile>
     <ClCompile Include="SurvivorCombat.cpp">
-      <Filter>ソース ファイル\Object</Filter>
+      <Filter>ソース ファイル\Player</Filter>
     </ClCompile>
     <ClCompile Include="SurvivorUI.cpp">
       <Filter>ソース ファイル\Texture_UI</Filter>
     </ClCompile>
     <ClCompile Include="CFlyingEnemy.cpp">
-      <Filter>ソース ファイル\Object</Filter>
+      <Filter>ソース ファイル\Enemy</Filter>
     </ClCompile>
     <ClCompile Include="CMissile.cpp">
-      <Filter>ソース ファイル\Object</Filter>
+      <Filter>ソース ファイル\Object\Weapon</Filter>
     </ClCompile>
     <ClCompile Include="CPlayer.cpp">
-      <Filter>ソース ファイル\Object</Filter>
+      <Filter>ソース ファイル\Player</Filter>
     </ClCompile>
     <ClCompile Include="GolfBall.cpp">
       <Filter>ソース ファイル\Object</Filter>
     </ClCompile>
     <ClCompile Include="Ground.cpp">
-      <Filter>ソース ファイル\Object</Filter>
+      <Filter>ソース ファイル\Object\Environment</Filter>
     </ClCompile>
     <ClCompile Include="Object.cpp">
       <Filter>ソース ファイル\Object</Filter>
@@ -197,7 +215,7 @@
       <Filter>ソース ファイル\Texture_UI</Filter>
     </ClCompile>
     <ClCompile Include="CParticle.cpp">
-      <Filter>ソース ファイル\Object</Filter>
+      <Filter>ソース ファイル\Object\Effect</Filter>
     </ClCompile>
     <ClCompile Include="input.cpp">
       <Filter>ソース ファイル\System</Filter>
@@ -230,7 +248,7 @@
       <Filter>ソース ファイル\Object</Filter>
     </ClCompile>
     <ClCompile Include="AssimpPerse.cpp">
-      <Filter>ソース ファイル\Object</Filter>
+      <Filter>ソース ファイル\Model</Filter>
     </ClCompile>
     <ClCompile Include="Collision.cpp">
       <Filter>ソース ファイル\System</Filter>
@@ -239,22 +257,22 @@
       <Filter>ソース ファイル\System</Filter>
     </ClCompile>
     <ClCompile Include="CEnemySpawn.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\Enemy</Filter>
     </ClCompile>
     <ClCompile Include="CPresentBox.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\Object</Filter>
     </ClCompile>
     <ClCompile Include="ExplosionManager.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\Object\Effect</Filter>
     </ClCompile>
     <ClCompile Include="EyeTurretModel.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\Model</Filter>
     </ClCompile>
     <ClCompile Include="CAutoturret.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\Object\Weapon</Filter>
     </ClCompile>
     <ClCompile Include="COrbitalOrb.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\Object\Weapon</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -307,7 +325,7 @@
       <Filter>ヘッダー ファイル\System</Filter>
     </ClInclude>
     <ClInclude Include="GameTime.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\System</Filter>
     </ClInclude>
     <ClInclude Include="Game.h">
       <Filter>ヘッダー ファイル\System</Filter>
@@ -334,34 +352,34 @@
       <Filter>ヘッダー ファイル\Object</Filter>
     </ClInclude>
     <ClInclude Include="CBullet.h">
-      <Filter>ヘッダー ファイル\Object</Filter>
+      <Filter>ヘッダー ファイル\Object\Weapon</Filter>
     </ClInclude>
     <ClInclude Include="BulletHoming.h">
-      <Filter>ヘッダー ファイル\Object</Filter>
+      <Filter>ヘッダー ファイル\Object\Weapon</Filter>
     </ClInclude>
     <ClInclude Include="CEnemy.h">
-      <Filter>ヘッダー ファイル\Object</Filter>
+      <Filter>ヘッダー ファイル\Enemy</Filter>
     </ClInclude>
     <ClInclude Include="CFlyingEnemy.h">
-      <Filter>ヘッダー ファイル\Object</Filter>
+      <Filter>ヘッダー ファイル\Enemy</Filter>
     </ClInclude>
     <ClInclude Include="EnemyTarget.h">
-      <Filter>ヘッダー ファイル\Object</Filter>
+      <Filter>ヘッダー ファイル\Enemy</Filter>
     </ClInclude>
     <ClInclude Include="SurvivorProgression.h">
-      <Filter>ヘッダー ファイル\System</Filter>
+      <Filter>ヘッダー ファイル\Level</Filter>
     </ClInclude>
     <ClInclude Include="CMiniMap.h">
       <Filter>ヘッダー ファイル\Texture_UI</Filter>
     </ClInclude>
     <ClInclude Include="CMissile.h">
-      <Filter>ヘッダー ファイル\Object</Filter>
+      <Filter>ヘッダー ファイル\Object\Weapon</Filter>
     </ClInclude>
     <ClInclude Include="CParticle.h">
-      <Filter>ヘッダー ファイル\Object</Filter>
+      <Filter>ヘッダー ファイル\Object\Effect</Filter>
     </ClInclude>
     <ClInclude Include="CPlayer.h">
-      <Filter>ヘッダー ファイル\Object</Filter>
+      <Filter>ヘッダー ファイル\Player</Filter>
     </ClInclude>
     <ClInclude Include="CPlayerUI.h">
       <Filter>ヘッダー ファイル\Texture_UI</Filter>
@@ -373,10 +391,10 @@
       <Filter>ヘッダー ファイル\Object</Filter>
     </ClInclude>
     <ClInclude Include="Ground.h">
-      <Filter>ヘッダー ファイル\Object</Filter>
+      <Filter>ヘッダー ファイル\Object\Environment</Filter>
     </ClInclude>
     <ClInclude Include="imconfig.h">
-      <Filter>ヘッダー ファイル\Object</Filter>
+      <Filter>ヘッダー ファイル\Imgui</Filter>
     </ClInclude>
     <ClInclude Include="Object.h">
       <Filter>ヘッダー ファイル\Object</Filter>
@@ -424,31 +442,31 @@
       <Filter>ヘッダー ファイル\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="AssimpPerse.h">
-      <Filter>ヘッダー ファイル\System</Filter>
+      <Filter>ヘッダー ファイル\Model</Filter>
     </ClInclude>
     <ClInclude Include="sound.h">
       <Filter>ヘッダー ファイル\System</Filter>
     </ClInclude>
     <ClInclude Include="CEnemySpawn.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\Enemy</Filter>
     </ClInclude>
     <ClInclude Include="CPresentBox.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\Object</Filter>
     </ClInclude>
     <ClInclude Include="ExplosionManager.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\Object\Effect</Filter>
     </ClInclude>
     <ClInclude Include="EyeTurretModel.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\Model</Filter>
     </ClInclude>
     <ClInclude Include="EyeTurretShape.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\Model</Filter>
     </ClInclude>
     <ClInclude Include="CAutoturret.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\Object\Weapon</Filter>
     </ClInclude>
     <ClInclude Include="COrbitalOrb.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\Object\Weapon</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -485,13 +503,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SkyEnvironment.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\Object\Environment</Filter>
     </ClCompile>
     <ClInclude Include="SkyEnvironment.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\Object\Environment</Filter>
     </ClInclude>
     <ClInclude Include="SkyCycle.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\Object\Environment</Filter>
     </ClInclude>
     <None Include="shader\skyVS.hlsl">
       <Filter>リソース ファイル</Filter>
@@ -507,15 +525,79 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BoarAnimationRig.cpp"><Filter>ソース ファイル</Filter></ClCompile>
-    <ClCompile Include="BoarModel.cpp"><Filter>ソース ファイル</Filter></ClCompile>
-    <ClCompile Include="CBoarEnemy.cpp"><Filter>ソース ファイル</Filter></ClCompile>
-    <ClInclude Include="BoarAnimationRig.h"><Filter>ヘッダー ファイル</Filter></ClInclude>
-    <ClInclude Include="BoarModel.h"><Filter>ヘッダー ファイル</Filter></ClInclude>
-    <ClInclude Include="BoarCharge.h"><Filter>ヘッダー ファイル</Filter></ClInclude>
-    <ClInclude Include="CBoarEnemy.h"><Filter>ヘッダー ファイル</Filter></ClInclude>
-    <None Include="shader\boarVS.hlsl"><Filter>リソース ファイル</Filter></None>
-    <None Include="shader\chargeTelegraphVS.hlsl"><Filter>リソース ファイル</Filter></None>
-    <None Include="shader\chargeTelegraphPS.hlsl"><Filter>リソース ファイル</Filter></None>
+    <ClCompile Include="BoarAnimationRig.cpp">
+      <Filter>ソース ファイル\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="BoarModel.cpp">
+      <Filter>ソース ファイル\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="CBoarEnemy.cpp">
+      <Filter>ソース ファイル\Enemy</Filter>
+    </ClCompile>
+    <ClInclude Include="BoarAnimationRig.h">
+      <Filter>ヘッダー ファイル\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="BoarModel.h">
+      <Filter>ヘッダー ファイル\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="BoarCharge.h">
+      <Filter>ヘッダー ファイル\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="CBoarEnemy.h">
+      <Filter>ヘッダー ファイル\Enemy</Filter>
+    </ClInclude>
+    <None Include="shader\boarVS.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="shader\chargeTelegraphVS.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="shader\chargeTelegraphPS.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="ソース ファイル\Enemy">
+      <UniqueIdentifier>{e9cb37bc-1678-4874-920b-0362017288c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Level">
+      <UniqueIdentifier>{a26a9b48-c34f-45be-b637-ea6930cd12b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Model">
+      <UniqueIdentifier>{329fef5f-410e-4371-92c0-d292e0be9308}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Object\Effect">
+      <UniqueIdentifier>{ab4b9f7c-4538-4953-864a-a8bd32799b71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Object\Environment">
+      <UniqueIdentifier>{4a017789-b8c6-4561-ac31-f44060814833}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Object\Weapon">
+      <UniqueIdentifier>{fc9ac78b-27db-43fb-9a57-052998ce0e38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Player">
+      <UniqueIdentifier>{91d5e801-5721-47ce-8f03-7a1a8c1fdbbc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Enemy">
+      <UniqueIdentifier>{dc7edfae-32b9-4faf-aafc-901a488c6a04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Level">
+      <UniqueIdentifier>{dc035710-e389-47a3-af63-b99208ee7bfc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Model">
+      <UniqueIdentifier>{d9d3738b-b688-467e-9025-ce026b353324}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Object\Effect">
+      <UniqueIdentifier>{920f9db6-23d9-48e5-94d6-88e49d2009e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Object\Environment">
+      <UniqueIdentifier>{dc0e660c-0331-4286-85dd-cb66364dc9da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Object\Weapon">
+      <UniqueIdentifier>{619340d6-d693-4c0c-87ab-16bb54badd0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Player">
+      <UniqueIdentifier>{7cfb3961-26ee-44ff-b09e-9a6a53d99199}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>
