@@ -10,6 +10,7 @@
 #include"TestModel.h"
 #include"Renderer.h"
 #include "SkyEnvironment.h"
+#include "LowHealthGlitch.h"
 #include"TitleScene.h"
 #include"Stage1Scene.h"
 #include"ResultScene.h"
@@ -29,6 +30,7 @@ private:
 	// カメラ
 	Camera  m_Camera;
 
+    LowHealthGlitch m_lowHealthGlitch;
     SkyEnvironment m_sky; // 昼夜・天候と、それに合わせた空・照明。
 
 	// テストオブジェクト

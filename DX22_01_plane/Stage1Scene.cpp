@@ -21,6 +21,7 @@
 #include"CTimer.h"
 #include"CEnemySpawn.h"
 #include"CPresentBox.h"
+#include "CSpanner.h"
 #include"ExplosionManager.h"
 #include"CAutoturret.h"
 #include "CBossBattle.h"
@@ -47,6 +48,7 @@ void Stage1Scene::Init() {
 
     //プレゼントボックスの共有モデルの読み込み(複数生成してもOK)
     CPresentBox::LoadResource();
+    CSpanner::LoadResource();
 
     // プレイヤー・武器・スポナーより先に更新し、ボス開始フレームの雑魚を退場させる。
     m_MySceneObjects.push_back(Game::GetInstance()->AddObject<CBossBattle>());
@@ -194,5 +196,6 @@ void Stage1Scene::Uninit() {
     Game::GetInstance()->DeleteAllObject();
     m_MySceneObjects.clear();
     CPresentBox::UnloadResource(); // 共有モデルの解放
+    CSpanner::UnloadResource();
 }
 

@@ -9,10 +9,11 @@ private:
 
     float m_radius = 5.0f; // 当たり判定用の半径
     float m_angle = 0.0f; // 回転角度
-
+    float m_Scale = 0.055f; // モデルのスケール
     static TestModel* s_sharedModel; // 生成されたプレゼントボックスのリスト
     static int s_boxCount; // 最大生成数
     int m_maxBoxCount = 10; // 最大生成数
+    
 public:
     CPresentBox();
     ~CPresentBox();

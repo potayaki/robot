@@ -620,4 +620,26 @@
       <Filter>リソース ファイル</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="LowHealthGlitch.cpp">
+      <Filter>ソース ファイル\Renderer</Filter>
+    </ClCompile>
+    <ClInclude Include="LowHealthGlitch.h">
+      <Filter>ヘッダー ファイル\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="LowHealthGlitchStrength.h">
+      <Filter>ヘッダー ファイル\Renderer</Filter>
+    </ClInclude>
+    <None Include="shader\lowHealthGlitch.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CSpanner.cpp">
+      <Filter>ソース ファイル\Object</Filter>
+    </ClCompile>
+    <ClInclude Include="CSpanner.h">
+      <Filter>ヘッダー ファイル\Object</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

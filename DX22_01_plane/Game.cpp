@@ -12,6 +12,7 @@
 #include "CBossBattle.h"
 #include "CBoarEnemy.h"
 #include "PoolManager.h"
+#include "LowHealthGlitchStrength.h"
 #include <filesystem>
 
 #ifdef _DEBUG
@@ -22,6 +23,7 @@
 #include"CBullet.h"
 #include"CMissile.h"
 #include "CPresentBox.h"
+#include "CSpanner.h"
 #endif
 Game* Game::m_instance;//ゲームインスタンス
 // コンストラクタ
@@ -212,6 +214,8 @@ void Game::Update(double elapsedSeconds) {
             box->SetPosition(GUIPlayer[0]->GetPosition());
         }
         if (ImGui::Button("Restore HP")) GUIPlayer[0]->SetHP(GUIPlayer[0]->GetMaxHp());
+        ImGui::SliderInt("Spanner drop chance (%)", &CSpanner::m_spawnChancePercent, 0, 100,
+            "%d%%", ImGuiSliderFlags_AlwaysClamp);
 
         // 武器の抽選を待たずに、砲台の攻撃方向とレーザー表示を確認するための操作。
         if (ImGui::Button("Get / upgrade companion"))
@@ -458,6 +462,13 @@ void Game::Draw() {
     }
 #endif // _DEBUG
 
+    const auto glitchPlayers = m_instance->GetObjects<CPlayer>();
+    if (!glitchPlayers.empty())
+    {
+        auto player = glitchPlayers[0];
+        m_instance->m_lowHealthGlitch.Draw(LowHealthGlitchStrength(player->GetHp(), player->GetMaxHp()),
+            static_cast<float>(m_instance->m_gameTime));
+    }
     // Collisionの線でHP・クロスヘア・ミニマップを隠さないよう、HUDは最後に重ねる。
     Renderer::SetDepthEnable(false);
     for (auto& a : m_instance->m_UIs) {
@@ -473,6 +484,7 @@ void Game::Draw() {
 
 // 終了処理
 void Game::Uninit() {
+    m_instance->m_lowHealthGlitch = LowHealthGlitch{};
     m_instance->m_sky.Uninit();
 #ifdef _DEBUG
     m_instance->m_CollisionDebug.Uninit();

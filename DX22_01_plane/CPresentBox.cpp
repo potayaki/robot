@@ -51,9 +51,8 @@ void CPresentBox::Draw(Camera* cam) {
         m_model->SetRotation(DirectX::SimpleMath::Vector3(m_Rotation.x, m_angle, m_Rotation.z));
 
         float floatY = sinf(m_angle * 2.0f);
-        m_model->SetScale(0.045f + floatY * 0.01f, 0.045f + floatY * 0.01f, 0.045f + floatY * 0.01f);
+        m_model->SetScale(m_Scale + floatY * 0.01f, m_Scale + floatY * 0.01f, m_Scale + floatY * 0.01f);
         float offsetY = -4.0f;
-
         m_model->SetPosition(DirectX::SimpleMath::Vector3(m_Position.x, m_Position.y + floatY + offsetY, m_Position.z));
 
         m_model->Draw(cam);
