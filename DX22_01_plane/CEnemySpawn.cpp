@@ -2,6 +2,7 @@
 #include"CEnemy.h"
 #include "CFlyingEnemy.h"
 #include "CBoarEnemy.h"
+#include "CMushroomEnemy.h"
 #include "EnemyTarget.h"
 #include "CBossBattle.h"
 #include"CPlayer.h"
@@ -64,7 +65,11 @@ void CEnemySpawn::Update() {
             // Initで足元に合わせた高さは保ち、出現するXZ座標だけを変更する。
             boar->SetPosition(x, boar->GetPosition().y, z);
         }
-        else if (kind < 40) {
+        else if (kind < 35) {
+            auto mushroom = Game::GetInstance()->AddObject<CMushroomEnemy>();
+            mushroom->SetPosition(x, mushroom->GetPosition().y, z);
+        }
+        else if (kind < 55) {
             CFlyingEnemy* drone = Game::GetInstance()->AddObject<CFlyingEnemy>();
             drone->SetPosition(x, 40.0f, z);
         }

@@ -353,4 +353,12 @@
   </ItemGroup>
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <ItemGroup>
+    <ClCompile Include="CMushroomEnemy.cpp" />
+    <ClCompile Include="MushroomModel.cpp" />
+    <ClInclude Include="CMushroomEnemy.h" />
+    <ClInclude Include="MushroomFuse.h" />
+    <ClInclude Include="MushroomModel.h" />
+    <None Include="shader\mushroomWarningPS.hlsl" />
+  </ItemGroup>
 </Project>

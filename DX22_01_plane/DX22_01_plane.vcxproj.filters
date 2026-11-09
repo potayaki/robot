@@ -600,4 +600,24 @@
       <UniqueIdentifier>{7cfb3961-26ee-44ff-b09e-9a6a53d99199}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CMushroomEnemy.cpp">
+      <Filter>ソース ファイル\Enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="MushroomModel.cpp">
+      <Filter>ソース ファイル\Model</Filter>
+    </ClCompile>
+    <ClInclude Include="CMushroomEnemy.h">
+      <Filter>ヘッダー ファイル\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="MushroomFuse.h">
+      <Filter>ヘッダー ファイル\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="MushroomModel.h">
+      <Filter>ヘッダー ファイル\Model</Filter>
+    </ClInclude>
+    <None Include="shader\mushroomWarningPS.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </None>
+  </ItemGroup>
 </Project>

@@ -40,7 +40,7 @@ void CFlyingEnemy::Init() {
     if (std::filesystem::exists(DroneModelFile)) {
         m_model = std::make_unique<TestModel>();
         m_model->Init();
-        m_model->Load(DroneModelFile, DroneTextureDirectory, DroneOverrideTexture);
+        m_model->Load(DroneModelFile, DroneTextureDirectory, DroneOverrideTexture, true);
         m_model->SetScale(DroneModelScale);
         return;
     }
