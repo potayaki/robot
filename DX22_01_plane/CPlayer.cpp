@@ -61,6 +61,7 @@ void CPlayer::Init() {
     m_lowerBodyYaw = std::atan2(-std::sin(cameraAngle), -std::cos(cameraAngle));
     m_Rotation.y = m_lowerBodyYaw;
     m_upperBodyPitch = 0.0f;
+
 }
 
 

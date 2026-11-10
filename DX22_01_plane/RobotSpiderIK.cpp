@@ -187,33 +187,40 @@ void RobotSpiderIK::Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& wo
     }
     else if (!swinging)
     {
-        // Alternating tripods leave three planted feet at all times.
-        int group = -1;
-        for (int attempt = 0; attempt < 2 && group < 0; ++attempt)
-        {
-            const int candidate = (m_nextTripod + attempt) % 2;
-            for (size_t i = candidate; i < m_feet.size(); i += 2)
-            {
-                const auto home = world * m_legs[i].home;
-                if (Horizontal(home - m_feet[i].position).Length() > settings.stepDistance || speed > 4.0f)
-                { group = candidate; break; }
-            }
+        // ★追加：速度がほとんど無い（停止中＝Idle状態）なら、勝手にステップを始めない！
+         // これにより、止まった瞬間に足が初期位置へ勝手に戻るのを防ぎます。
+        if (speed < 0.1f) {
+            // 停止中は現在の足の位置をそのままキープする
         }
-        if (group >= 0)
-        {
-            m_stepDuration = std::clamp(2.7f / (speed + 8.0f), 0.025f, 0.22f);
-            const auto lead = Limited(velocity * (m_stepDuration * 1.5f), 4.0f);
-            for (size_t i = group; i < m_feet.size(); i += 2)
-            {
-                auto& foot = m_feet[i];
-                foot.start = foot.position;
-                foot.target = world * m_legs[i].home + lead;
-                foot.target.y = groundY;
-                foot.progress = 0; foot.swinging = true;
-                ++foot.stepNumber;
-            }
-            m_nextTripod = 1 - group;
-        }
+        else {
+            // 従来の歩行ステップ処理（移動中のみ実行）
+            int group = -1;
+            for (int attempt = 0; attempt < 2 && group < 0; ++attempt) {
+                const int candidate = (m_nextTripod + attempt) % 2;
+                for (size_t i = candidate; i < m_feet.size(); i += 2) {
+                    const auto home = world * m_legs[i].home;
+                    if (Horizontal(home - m_feet[i].position).Length() > settings.stepDistance || speed > 4.0f)                         {
+ group = candidate; break; }
+                        }
+                    }
+                    if (group >= 0) {
+                        // ★ついでに、先ほど話題になった「バタつき防止」の下限値（0.08f）もここに反映しています
+                        m_stepDuration = std::clamp(2.7f / (speed + 8.0f), 0.08f, 0.22f);
+
+                        // 高速移動時の歩幅（lead）の上限も少し広げておくと安定します
+                        const auto lead = Limited(velocity * (m_stepDuration * 1.5f), 8.0f);
+
+                        for (size_t i = group; i < m_feet.size(); i += 2) {
+                            auto& foot = m_feet[i];
+                            foot.start = foot.position;
+                            foot.target = world * m_legs[i].home + lead;
+                            foot.target.y = groundY;
+                            foot.progress = 0; foot.swinging = true;
+                            ++foot.stepNumber;
+                        }
+                        m_nextTripod = 1 - group;
+                    }
+                }
     }
 
     auto targetOffset = Limited(-m_filteredVelocity * 0.012f, 1.0f);
