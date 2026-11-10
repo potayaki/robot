@@ -48,6 +48,8 @@ void PlayerRobotModel::Init()
         return;
     }
     if (m_rig.GetMatrices().size() > MaxBones) return;
+    m_ikReady = m_spiderIK.Init(m_rig);
+    if (!m_ikReady) std::cerr << "Player six-leg IK could not find the expected joints.\n";
     // FBX内の画像参照は配布フォルダと一致しないため、付属のBase Colorを直接指定する。
     if (!m_albedo.Load("assets/model/Player/Textures/T_Mech_Base_Color.png")) return;
 
@@ -79,9 +81,13 @@ void PlayerRobotModel::Init()
 }
 
 void PlayerRobotModel::Advance(RobotMotion motion, float deltaSeconds, float playbackRate,
-                               float upperBodyYaw, float upperBodyPitch)
+                               float upperBodyYaw, float upperBodyPitch, float groundY, bool grounded, bool procedural)
 {
-    if (m_ready) m_rig.Update(motion, deltaSeconds, playbackRate, upperBodyYaw, upperBodyPitch);
+    if (!m_ready) return;
+    const bool useIK = m_ikReady && procedural;
+    m_rig.Update(useIK ? RobotMotion::Idle : motion, deltaSeconds, playbackRate, upperBodyYaw, upperBodyPitch);
+    if (useIK) m_spiderIK.Update(m_rig, deltaSeconds, ToAssimp(GetWorldMatrix()), groundY, grounded);
+    else m_spiderIK.Reset(); // Legacy clip previews can return to IK without stale planted feet.
 }
 
 void PlayerRobotModel::BeginBreakApart(float groundY)
@@ -113,6 +119,7 @@ void PlayerRobotModel::RestoreBody()
     if (!m_debris.IsActive()) return;
     m_debris.Reset();
     m_debrisVertices = VertexBuffer<SkinnedVertex>{};
+    m_spiderIK.Reset();
 }
 
 Matrix PlayerRobotModel::GetWorldMatrix() const
@@ -160,6 +167,8 @@ void PlayerRobotModel::Draw(Camera* cam)
 void PlayerRobotModel::Uninit()
 {
     m_ready = false;
+    m_ikReady = false;
+    m_spiderIK = RobotSpiderIK{};
     m_vertexCount = 0;
     m_rig = RobotAnimationRig{};
     m_debris.Reset();

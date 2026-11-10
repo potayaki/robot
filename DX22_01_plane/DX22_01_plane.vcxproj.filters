@@ -642,4 +642,12 @@
       <Filter>ヘッダー ファイル\Object</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="RobotSpiderIK.cpp">
+      <Filter>ソース ファイル\Model</Filter>
+    </ClCompile>
+    <ClInclude Include="RobotSpiderIK.h">
+      <Filter>ヘッダー ファイル\Model</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

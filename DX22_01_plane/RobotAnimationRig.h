@@ -14,6 +14,7 @@ RobotMotion SelectRobotWalkMotion(float moveX, float moveZ, float lowerBodyYaw);
 // GPUに依存しないため、実際のFBXを使った再生・FPS・切り替えの検証にも使用する。
 class RobotAnimationRig
 {
+    friend class RobotSpiderIK;
 public:
     struct Vertex { aiVector3D position, normal, uv; unsigned node = 0; };
     struct Part

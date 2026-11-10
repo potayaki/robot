@@ -102,15 +102,19 @@ void CPlayer::Update() {
     RobotMotion displayMotion = walking
         ? SelectRobotWalkMotion(movement.x, movement.z, m_lowerBodyYaw)
         : RobotMotion::Idle;
+    bool procedural = true;
 #ifdef _DEBUG
     if (m_debugRobotMotion > 0) displayMotion = static_cast<RobotMotion>(m_debugRobotMotion - 1);
+    procedural = m_debugRobotMotion == 0;
 #endif
     // モデル全体は脚の向きに固定し、照準との差分だけを上半身の骨へ渡す。
     const float upperBodyYaw = m_Rotation.y - m_lowerBodyYaw;
-    m_body->Advance(displayMotion, deltaSeconds, animationRate, upperBodyYaw, m_upperBodyPitch);
-
     m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z);
     m_body->SetRotation(Vector3(0.0f, m_lowerBodyYaw, 0.0f));
+    const auto grounds = Game::GetInstance()->GetObjects<Ground>();
+    const float groundY = grounds.empty() ? -5.0f : grounds[0]->GetPosition().y;
+    m_body->Advance(displayMotion, deltaSeconds, animationRate, upperBodyYaw, m_upperBodyPitch,
+        groundY, IsGrounded && m_velocity.y <= 0.0f, procedural);
 }
 
 void CPlayer::Draw(Camera* cam) {

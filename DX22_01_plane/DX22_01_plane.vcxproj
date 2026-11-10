@@ -70,6 +70,10 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <!-- Keep application intermediates separate from standalone test/probe outputs. -->
+    <IntDir>$(ProjectDir)obj\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\assimp\assimp\5.2.5\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\directxtk\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\assimp\assimp\5.2.5\lib;C:\directxtk\lib\x64\Debug;$(LibraryPath)</LibraryPath>
@@ -370,5 +374,9 @@
   <ItemGroup>
     <ClCompile Include="CSpanner.cpp" />
     <ClInclude Include="CSpanner.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="RobotSpiderIK.cpp" />
+    <ClInclude Include="RobotSpiderIK.h" />
   </ItemGroup>
 </Project>
