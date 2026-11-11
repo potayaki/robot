@@ -1,3 +1,6 @@
+﻿/// @file main.h
+/// @brief アプリケーションを開始し、メインループを呼び出す入口。
+
 #pragma once
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -9,11 +12,11 @@
 #include <string>
 
 #pragma warning(push)
-#pragma warning(disable:4005)
+#pragma warning(disable : 4005)
 
 #pragma warning(pop)
 
-#pragma comment (lib,"winmm.lib")
+#pragma comment(lib, "winmm.lib")
 
 constexpr uint32_t SCREEN_WIDTH = 1280;
 constexpr uint32_t SCREEN_HEIGHT = 720;

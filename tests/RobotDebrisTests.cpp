@@ -1,27 +1,38 @@
-﻿#include "../DX22_01_plane/RobotDebris.h"
+﻿/// @file RobotDebrisTests.cpp
+/// @brief 動作と境界条件を検証する RobotDebrisTests の自動テスト。
+
+#include "../DX22_01_plane/RobotDebris.h"
 #include <cassert>
 #include <cmath>
 #include <iostream>
 
-float MatrixDifference(const std::vector<aiMatrix4x4>& a, const std::vector<aiMatrix4x4>& b)
-{
+float MatrixDifference(const std::vector<aiMatrix4x4>& a, const std::vector<aiMatrix4x4>& b) {
     assert(a.size() == b.size());
     float difference = 0.0f;
-    for (size_t i = 0; i < a.size(); ++i)
-        for (unsigned row = 0; row < 4; ++row)
-            for (unsigned column = 0; column < 4; ++column)
+    for (size_t i = 0; i < a.size(); ++i) {
+        for (unsigned row = 0; row < 4; ++row) {
+            for (unsigned column = 0; column < 4; ++column) {
                 difference += std::abs(a[i][row][column] - b[i][row][column]);
+            }
+        }
+    }
     return difference;
 }
 
-struct GeometryStats
-{
-    double x = 0, y = 0, z = 0, area = 0;
+struct GeometryStats {
+    /// 姿勢比較のために集計する全頂点のX座標の合計。
+    double x = 0;
+    /// 姿勢比較のために集計する全頂点のY座標の合計。
+    double y = 0;
+    /// 姿勢比較のために集計する全頂点のZ座標の合計。
+    double z = 0;
+    /// 剛体形状が伸びていないかを比較するための面積の合計。
+    double area = 0;
+    /// 描画に使用する頂点の配列。
     size_t vertices = 0;
-    void AddTriangle(const aiVector3D& a, const aiVector3D& b, const aiVector3D& c)
-    {
-        for (const auto& point : {a, b, c})
-        {
+
+    void AddTriangle(const aiVector3D& a, const aiVector3D& b, const aiVector3D& c) {
+        for (const auto& point : {a, b, c}) {
             x += point.x;
             y += point.y;
             z += point.z;
@@ -31,15 +42,14 @@ struct GeometryStats
     }
 };
 
-int main()
-{
+int main() {
     RobotAnimationRig rig;
     std::string error;
     assert(rig.Load("DX22_01_plane/assets/model/Player", error));
     // 歩行途中に上半身を右上へ向けた状態で死亡させ、待機姿勢へ戻らないことを調べる。
     rig.Update(RobotMotion::Left, 0.37f, 1.0f, 0.8f, 0.3f);
-    const aiMatrix4x4 world(aiVector3D(0.025f, 0.025f, 0.025f),
-        aiQuaternion(aiVector3D(0, 1, 0), 1.2f), aiVector3D(120, 30, -400));
+    const aiMatrix4x4 world(aiVector3D(0.025f, 0.025f, 0.025f), aiQuaternion(aiVector3D(0, 1, 0), 1.2f),
+                            aiVector3D(120, 30, -400));
     constexpr float groundY = -5.0f;
     RobotDebris debris;
     debris.Start(rig, world, groundY);
@@ -47,13 +57,10 @@ int main()
     assert(debris.GetMatrices().size() >= 12 && debris.GetMatrices().size() <= 128);
 
     GeometryStats before, after;
-    for (const auto& part : rig.GetParts())
-    {
-        for (size_t i = 0; i < part.vertices.size(); i += 3)
-        {
+    for (const auto& part : rig.GetParts()) {
+        for (size_t i = 0; i < part.vertices.size(); i += 3) {
             aiVector3D points[3];
-            for (size_t corner = 0; corner < 3; ++corner)
-            {
+            for (size_t corner = 0; corner < 3; ++corner) {
                 const auto& vertex = part.vertices[i + corner];
                 points[corner] = world * rig.GetMatrices()[vertex.node] * vertex.position;
             }
@@ -61,8 +68,7 @@ int main()
         }
     }
     const auto& vertices = debris.GetVertices();
-    for (size_t i = 0; i < vertices.size(); i += 3)
-    {
+    for (size_t i = 0; i < vertices.size(); i += 3) {
         const auto& a = vertices[i];
         const auto& b = vertices[i + 1];
         const auto& c = vertices[i + 2];
@@ -86,22 +92,25 @@ int main()
     assert(MatrixDifference(moved, debris.GetMatrices()) == 0); // 停止中やHP0の再通知では再発生しない。
 
     // 破片が回転しても、三角形の辺の長さを保つ（骨間がゴムのように伸びない）。
-    for (size_t i = 0; i < vertices.size(); i += 3)
-    {
+    for (size_t i = 0; i < vertices.size(); i += 3) {
         const auto& matrix = moved[vertices[i].node];
         const auto a = matrix * vertices[i].position;
         const auto b = matrix * vertices[i + 1].position;
-        assert(std::abs((a - b).Length() - (vertices[i].position - vertices[i + 1].position).Length()) < 0.001f);
+        assert(std::abs((a - b).Length() - (vertices[i].position - vertices[i + 1].position).Length()) <
+               0.001f);
     }
 
     RobotDebris slow, fast;
     slow.Start(rig, world, groundY);
     fast.Start(rig, world, groundY);
-    for (int i = 0; i < 30 * 8; ++i) slow.Update(1.0f / 30);
-    for (int i = 0; i < 120 * 8; ++i) fast.Update(1.0f / 120);
+    for (int i = 0; i < 30 * 8; ++i) {
+        slow.Update(1.0f / 30);
+    }
+    for (int i = 0; i < 120 * 8; ++i) {
+        fast.Update(1.0f / 120);
+    }
     assert(MatrixDifference(slow.GetMatrices(), fast.GetMatrices()) < 0.01f);
-    for (const auto& vertex : slow.GetVertices())
-    {
+    for (const auto& vertex : slow.GetVertices()) {
         const auto point = slow.GetMatrices()[vertex.node] * vertex.position;
         assert(std::isfinite(point.x) && std::isfinite(point.y) && std::isfinite(point.z));
         assert(point.y >= groundY - 0.001f); // すべての破片が床より上にある。

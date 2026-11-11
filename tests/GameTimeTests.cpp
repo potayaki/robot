@@ -1,29 +1,33 @@
-﻿#include "../DX22_01_plane/GameTime.h"
+﻿/// @file GameTimeTests.cpp
+/// @brief 動作と境界条件を検証する GameTimeTests の自動テスト。
+
+#include "../DX22_01_plane/GameTime.h"
 #include <cassert>
 #include <iostream>
 #include <limits>
 #include <vector>
 
-namespace
-{
-    struct Result
-    {
+namespace {
+    struct Result {
+        /// 時間更新テストで積算した経過秒数。
         double elapsed = 0.0;
+        /// 寿命テストで計測する残り秒数。
         float remaining = 2.0f;
+        /// 寿命が尽きた瞬間の実測経過秒数。
         double expiredAt = 0.0;
+        /// 移動テストで積算した距離。
         float distance = 0.0f;
+        /// 射撃テストで次の発射までに残っている秒数。
         float cooldown = 0.085f;
+        /// 一定時間内に発射した回数。
         int shots = 0;
     };
 
-    Result Simulate(const std::vector<double>& frames, float scale = 1.0f)
-    {
+    Result Simulate(const std::vector<double>& frames, float scale = 1.0f) {
         Result result;
-        for (double frame : frames)
-        {
+        for (double frame : frames) {
             GameTime::BeginFrame(frame, scale, false);
-            while (GameTime::NextStep())
-            {
+            while (GameTime::NextStep()) {
                 const float dt = GameTime::DeltaSeconds();
                 assert(dt > 0.0f && dt <= 1.0f / 30.0f);
                 result.elapsed += dt;
@@ -32,15 +36,13 @@ namespace
                 const float flightTime = (std::min)(dt, result.remaining);
                 result.distance += 1500.0f * flightTime;
                 GameTime::CountDown(result.remaining, dt);
-                if (result.remaining == 0.0f && result.expiredAt == 0.0)
-                {
+                if (result.remaining == 0.0f && result.expiredAt == 0.0) {
                     result.expiredAt = result.elapsed;
                 }
 
                 // 0.085秒というフレームに割り切れない間隔でも端数を失わない。
                 GameTime::AdvanceCooldown(result.cooldown, dt);
-                if (result.cooldown <= 0.0f)
-                {
+                if (result.cooldown <= 0.0f) {
                     ++result.shots;
                     result.cooldown += 0.085f;
                 }
@@ -50,10 +52,8 @@ namespace
     }
 } // namespace
 
-int main()
-{
-    for (int fps : {15, 30, 60, 120, 144})
-    {
+int main() {
+    for (int fps : {15, 30, 60, 120, 144}) {
         const auto result = Simulate(std::vector<double>(fps * 20, 1.0 / fps));
         assert(std::abs(result.elapsed - 20.0) < 0.0001);
         assert(result.remaining == 0.0f);
@@ -65,10 +65,8 @@ int main()
 
     // 可変FPSと一時的な処理落ち。0.4秒のフレームも切り捨てない。
     std::vector<double> irregular;
-    for (int i = 0; i < 20; ++i)
-    {
-        for (double dt : {0.01, 0.07, 0.4, 0.02, 0.5})
-        {
+    for (int i = 0; i < 20; ++i) {
+        for (double dt : {0.01, 0.07, 0.4, 0.02, 0.5}) {
             irregular.push_back(dt);
         }
     }
@@ -106,8 +104,7 @@ int main()
     assert(std::abs(slow.elapsed - 2.0) < 0.0001);
     assert(std::abs(slow.distance - 3000.0f) < 0.05f);
 
-    for (double invalid : {0.0, -1.0, std::numeric_limits<double>::quiet_NaN()})
-    {
+    for (double invalid : {0.0, -1.0, std::numeric_limits<double>::quiet_NaN()}) {
         GameTime::BeginFrame(invalid, 1.0f, false);
         assert(!GameTime::NextStep());
     }

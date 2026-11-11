@@ -1,3 +1,6 @@
+﻿/// @file MushroomModel.cpp
+/// @brief キノコモデルの読込と、通常色・予告色の描画。
+
 #include "MushroomModel.h"
 #include <algorithm>
 #include <assimp/Importer.hpp>
@@ -6,29 +9,30 @@
 #include <assimp/config.h>
 
 using namespace DirectX::SimpleMath;
-namespace
-{
-    class MushroomMesh : public Mesh
-    {
+
+namespace {
+    class MushroomMesh : public Mesh {
     public:
-        std::vector<SUBSET> subsets;
-        bool Load()
-        {
+        /// 材質ごとに分けた描画範囲と使用するインデックスの情報。
+        std::vector<SUBSET> m_subsets;
+
+        bool Load() {
             Assimp::Importer importer;
             // Replace the FBX's flat normals; GenSmoothNormals alone keeps existing normals.
             importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
             const auto scene = importer.ReadFile("assets/model/mushroom/Mushroom.fbx",
-                aiProcess_ConvertToLeftHanded | aiProcess_Triangulate |
-                aiProcess_PreTransformVertices | aiProcess_GenSmoothNormals | aiProcess_ForceGenNormals);
-            if (!scene) return false;
-            for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
-            {
+                                                 aiProcess_ConvertToLeftHanded | aiProcess_Triangulate |
+                                                     aiProcess_PreTransformVertices |
+                                                     aiProcess_GenSmoothNormals | aiProcess_ForceGenNormals);
+            if (!scene) {
+                return false;
+            }
+            for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
                 const auto mesh = scene->mMeshes[i];
                 SUBSET subset{};
                 subset.VertexBase = static_cast<unsigned int>(m_vertices.size());
                 subset.IndexBase = static_cast<unsigned int>(m_indices.size());
-                for (unsigned int v = 0; v < mesh->mNumVertices; ++v)
-                {
+                for (unsigned int v = 0; v < mesh->mNumVertices; ++v) {
                     VERTEX_3D vertex{};
                     const auto p = mesh->mVertices[v];
                     const auto n = mesh->mNormals[v];
@@ -37,42 +41,51 @@ namespace
                     vertex.position = Vector3(p.x, -p.z, p.y);
                     vertex.normal = Vector3(n.x, -n.z, n.y);
                     vertex.color = Color(1, 1, 1, 1);
-                    if (mesh->HasTextureCoords(0))
+                    if (mesh->HasTextureCoords(0)) {
                         vertex.uv = Vector2(mesh->mTextureCoords[0][v].x, mesh->mTextureCoords[0][v].y);
+                    }
                     m_vertices.push_back(vertex);
                 }
-                for (unsigned int f = 0; f < mesh->mNumFaces; ++f)
-                    for (unsigned int j = 0; j < mesh->mFaces[f].mNumIndices; ++j)
+                for (unsigned int f = 0; f < mesh->mNumFaces; ++f) {
+                    for (unsigned int j = 0; j < mesh->mFaces[f].mNumIndices; ++j) {
                         m_indices.push_back(mesh->mFaces[f].mIndices[j]);
+                    }
+                }
                 subset.IndexNum = static_cast<unsigned int>(m_indices.size()) - subset.IndexBase;
-                subsets.push_back(subset);
+                m_subsets.push_back(subset);
             }
             return FitToGround(28.0f);
         }
-        bool FitToGround(float height)
-        {
-            if (m_vertices.empty() || m_indices.empty()) return false;
+
+        bool FitToGround(float height) {
+            if (m_vertices.empty() || m_indices.empty()) {
+                return false;
+            }
             Vector3 low = m_vertices[0].position, high = low;
-            for (const auto& v : m_vertices)
-            {
+            for (const auto& v : m_vertices) {
                 low = Vector3::Min(low, v.position);
                 high = Vector3::Max(high, v.position);
             }
-            if (high.y - low.y < 0.0001f) return false;
+            if (high.y - low.y < 0.0001f) {
+                return false;
+            }
             const float scale = height / (high.y - low.y);
             const Vector3 origin((low.x + high.x) * 0.5f, low.y, (low.z + high.z) * 0.5f);
-            for (auto& v : m_vertices) v.position = (v.position - origin) * scale;
+            for (auto& v : m_vertices) {
+                v.position = (v.position - origin) * scale;
+            }
             return true;
         }
     };
-}
+} // namespace
 
-bool MushroomModel::Init()
-{
+bool MushroomModel::Init() {
     MushroomMesh mesh;
-    if (!mesh.Load()) return false;
+    if (!mesh.Load()) {
+        return false;
+    }
     m_mesh.Init(mesh);
-    m_subsets = mesh.subsets;
+    m_subsets = mesh.m_subsets;
     const bool textured = m_texture.Load("assets/model/mushroom/albedo.tga");
     {
         MATERIAL data{};
@@ -87,8 +100,7 @@ bool MushroomModel::Init()
     return !m_materials.empty() && !m_subsets.empty();
 }
 
-void MushroomModel::Draw(Camera* camera, Vector3 feet, float yaw, bool red)
-{
+void MushroomModel::Draw(Camera* camera, Vector3 feet, float yaw, bool red) {
     camera->SetCamera();
     // The upright model faces -Z; movement yaw uses +Z as its forward direction.
     Matrix world = Matrix::CreateRotationY(yaw + DirectX::XM_PI) * Matrix::CreateTranslation(feet);
@@ -96,8 +108,7 @@ void MushroomModel::Draw(Camera* camera, Vector3 feet, float yaw, bool red)
     (red ? m_redShader : m_normalShader).SetGPU();
     m_mesh.BeforeDraw();
     m_texture.SetGPU();
-    for (const auto& subset : m_subsets)
-    {
+    for (const auto& subset : m_subsets) {
         m_materials[subset.MaterialIdx]->SetGPU();
         m_mesh.DrawSubset(subset.IndexNum, subset.IndexBase, subset.VertexBase);
     }

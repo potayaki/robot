@@ -1,3 +1,6 @@
+﻿/// @file BoarChargeTests.cpp
+/// @brief 動作と境界条件を検証する BoarChargeTests の自動テスト。
+
 #include "../DX22_01_plane/BoarCharge.h"
 #include <cassert>
 #include <iostream>
@@ -5,8 +8,7 @@
 using DirectX::SimpleMath::Vector3;
 using State = BoarCharge::State;
 
-int main()
-{
+int main() {
     BoarCharge charge;
     Vector3 position(0, 14, 0), target(0, 10, 150);
     charge.Update(0.5f, position, target, 170);
@@ -26,14 +28,18 @@ int main()
 
     // 同じ実時間で、接近→予備動作→突進をまたいでもFPSに依存しない位置へ進む。
     Vector3 reference;
-    for (int fps : {30, 60, 144})
-    {
+    for (int fps : {30, 60, 144}) {
         BoarCharge timed;
         Vector3 location(0, 14, -100);
-        for (int i = 0; i < fps * 4; ++i) timed.Update(1.0f / fps, location, Vector3(0, 10, 150), 170);
+        for (int i = 0; i < fps * 4; ++i) {
+            timed.Update(1.0f / fps, location, Vector3(0, 10, 150), 170);
+        }
         assert(timed.GetState() == State::Charging);
-        if (fps == 30) reference = location;
-        else assert((location - reference).Length() < 0.01f);
+        if (fps == 30) {
+            reference = location;
+        } else {
+            assert((location - reference).Length() < 0.01f);
+        }
     }
 
     BoarCharge shortRange;

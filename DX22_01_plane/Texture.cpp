@@ -1,153 +1,146 @@
-﻿#include	<iostream>
-#include	"Texture.h"
-#include	"stb_image.h"
-#include	"renderer.h"
+﻿/// @file Texture.cpp
+/// @brief 画像の読込、ミップマップ生成、シェーダーへの設定。
+
+#include <iostream>
+#include "Texture.h"
+#include "stb_image.h"
+#include "renderer.h"
 
 // テクスチャをロード
-bool Texture::Load(const std::string& filename)
-{
-	bool sts = true;
-	unsigned char* pixels;
+bool Texture::Load(const std::string& filename) {
+    bool sts = true;
+    unsigned char* pixels;
 
-	// 画像読み込み
-	pixels = stbi_load(filename.c_str(), &m_width, &m_height, &m_bpp, 4);
-	if (pixels == nullptr) {
-		std::cout << filename.c_str() << " Load error " << std::endl;
-		return false;
-	}
+    // 画像読み込み
+    pixels = stbi_load(filename.c_str(), &m_width, &m_height, &m_bpp, STBI_rgb_alpha);
+    if (pixels == nullptr) {
+        std::cout << filename.c_str() << " Load error " << std::endl;
+        return false;
+    }
 
-	// テクスチャ2Dリソース生成
-	ComPtr<ID3D11Texture2D> pTexture;
+    // テクスチャ2Dリソース生成
+    ComPtr<ID3D11Texture2D> pTexture;
 
-	D3D11_TEXTURE2D_DESC desc;
-	ZeroMemory(&desc, sizeof(desc));
+    D3D11_TEXTURE2D_DESC desc;
+    ZeroMemory(&desc, sizeof(desc));
 
-	desc.Width = m_width;
-	desc.Height = m_height;
-	desc.MipLevels = 1;
-	desc.ArraySize = 1;
-	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;			// RGBA
-	desc.SampleDesc.Count = 1;
-	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	desc.CPUAccessFlags = 0;
+    desc.Width = m_width;
+    desc.Height = m_height;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // RGBA
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = 0;
 
-	D3D11_SUBRESOURCE_DATA subResource{};
-	subResource.pSysMem = pixels;
-	subResource.SysMemPitch = desc.Width * 4;			// RGBA = 4 bytes per pixel
-	subResource.SysMemSlicePitch = 0;
+    D3D11_SUBRESOURCE_DATA subResource{};
+    subResource.pSysMem = pixels;
+    subResource.SysMemPitch = desc.Width * STBI_rgb_alpha; // RGBA = 4 bytes per pixel
+    subResource.SysMemSlicePitch = 0;
 
-	ID3D11Device* device = Renderer::GetDevice();
+    ID3D11Device* device = Renderer::GetDevice();
 
-	// 縮小表示時に遠景の地面やモデルの模様がちらつかないよう、対応GPUではミップマップを生成する。
-	UINT formatSupport = 0;
-	bool useMipmaps = SUCCEEDED(device->CheckFormatSupport(desc.Format, &formatSupport)) &&
-		(formatSupport & D3D11_FORMAT_SUPPORT_MIP_AUTOGEN) != 0;
-	HRESULT hr = E_FAIL;
-	if (useMipmaps) {
-		desc.MipLevels = 0; // 画像サイズに合わせて全段階のミップレベルを確保する。
-		desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
-		desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
-		hr = device->CreateTexture2D(&desc, nullptr, pTexture.GetAddressOf());
-		if (SUCCEEDED(hr)) {
-			Renderer::GetDeviceContext()->UpdateSubresource(pTexture.Get(), 0, nullptr,
-				pixels, subResource.SysMemPitch, 0);
-		}
-		else {
-			// 自動生成できない環境では従来の1段階テクスチャに戻す。
-			useMipmaps = false;
-			pTexture.Reset();
-			desc.MipLevels = 1;
-			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-			desc.MiscFlags = 0;
-		}
-	}
-	if (!useMipmaps) {
-		hr = device->CreateTexture2D(&desc, &subResource, pTexture.GetAddressOf());
-	}
-	if (FAILED(hr)) {
-		stbi_image_free(pixels);
-		return false;
-	}
+    // 縮小表示時に遠景の地面やモデルの模様がちらつかないよう、対応GPUではミップマップを生成する。
+    UINT formatSupport = 0;
+    bool useMipmaps = SUCCEEDED(device->CheckFormatSupport(desc.Format, &formatSupport)) &&
+                      (formatSupport & D3D11_FORMAT_SUPPORT_MIP_AUTOGEN) != 0;
+    HRESULT hr = E_FAIL;
+    if (useMipmaps) {
+        desc.MipLevels = 0; // 画像サイズに合わせて全段階のミップレベルを確保する。
+        desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+        desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+        hr = device->CreateTexture2D(&desc, nullptr, pTexture.GetAddressOf());
+        if (SUCCEEDED(hr)) {
+            Renderer::GetDeviceContext()->UpdateSubresource(pTexture.Get(), 0, nullptr, pixels,
+                                                            subResource.SysMemPitch, 0);
+        } else {
+            // 自動生成できない環境では従来の1段階テクスチャに戻す。
+            useMipmaps = false;
+            pTexture.Reset();
+            desc.MipLevels = 1;
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            desc.MiscFlags = 0;
+        }
+    }
+    if (!useMipmaps) {
+        hr = device->CreateTexture2D(&desc, &subResource, pTexture.GetAddressOf());
+    }
+    if (FAILED(hr)) {
+        stbi_image_free(pixels);
+        return false;
+    }
 
-	// SRV生成
-	m_srv.Reset();
-	hr = device->CreateShaderResourceView(pTexture.Get(), nullptr, m_srv.GetAddressOf());
-	if (FAILED(hr)) {
-		stbi_image_free(pixels);
-		return false;
-	}
-	if (useMipmaps) {
-		// 0段目の画像から縮小版を作り、距離に応じてGPUが選べるようにする。
-		Renderer::GetDeviceContext()->GenerateMips(m_srv.Get());
-	}
+    // SRV生成
+    m_srv.Reset();
+    hr = device->CreateShaderResourceView(pTexture.Get(), nullptr, m_srv.GetAddressOf());
+    if (FAILED(hr)) {
+        stbi_image_free(pixels);
+        return false;
+    }
+    if (useMipmaps) {
+        // 0段目の画像から縮小版を作り、距離に応じてGPUが選べるようにする。
+        Renderer::GetDeviceContext()->GenerateMips(m_srv.Get());
+    }
 
-	// ピクセルイメージ解放
-	stbi_image_free(pixels);
+    // ピクセルイメージ解放
+    stbi_image_free(pixels);
 
-	return true;
+    return true;
 }
 
 // テクスチャをメモリからロード
-bool Texture::LoadFromFemory(const unsigned char* Data,int len) {
+bool Texture::LoadFromFemory(const unsigned char* Data, int len) {
+    bool sts = true;
+    unsigned char* pixels;
 
-	bool sts = true;
-	unsigned char* pixels;
+    // 画像読み込み
+    pixels = stbi_load_from_memory(Data, len, &m_width, &m_height, &m_bpp, STBI_rgb_alpha);
 
-	// 画像読み込み
-	pixels = stbi_load_from_memory(Data, 
-		len, 
-		&m_width, 
-		&m_height, 
-		&m_bpp, 
-		STBI_rgb_alpha);
+    // テクスチャ2Dリソース生成
+    ComPtr<ID3D11Texture2D> pTexture;
 
-	// テクスチャ2Dリソース生成
-	ComPtr<ID3D11Texture2D> pTexture;
+    D3D11_TEXTURE2D_DESC desc;
+    ZeroMemory(&desc, sizeof(desc));
 
-	D3D11_TEXTURE2D_DESC desc;
-	ZeroMemory(&desc, sizeof(desc));
+    desc.Width = m_width;
+    desc.Height = m_height;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // RGBA
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = 0;
 
-	desc.Width = m_width;
-	desc.Height = m_height;
-	desc.MipLevels = 1;
-	desc.ArraySize = 1;
-	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;			// RGBA
-	desc.SampleDesc.Count = 1;
-	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	desc.CPUAccessFlags = 0;
+    D3D11_SUBRESOURCE_DATA subResource{};
+    subResource.pSysMem = pixels;
+    subResource.SysMemPitch = desc.Width * STBI_rgb_alpha; // RGBA = 4 bytes per pixel
+    subResource.SysMemSlicePitch = 0;
 
-	D3D11_SUBRESOURCE_DATA subResource{};
-	subResource.pSysMem = pixels;
-	subResource.SysMemPitch = desc.Width * 4;			// RGBA = 4 bytes per pixel
-	subResource.SysMemSlicePitch = 0;
+    ID3D11Device* device = Renderer::GetDevice();
 
-	ID3D11Device* device = Renderer::GetDevice();
+    HRESULT hr = device->CreateTexture2D(&desc, &subResource, pTexture.GetAddressOf());
+    if (FAILED(hr)) {
+        stbi_image_free(pixels);
+        return false;
+    }
 
-	HRESULT hr = device->CreateTexture2D(&desc, &subResource, pTexture.GetAddressOf());
-	if (FAILED(hr)) {
-		stbi_image_free(pixels);
-		return false;
-	}
+    // SRV生成
+    hr = device->CreateShaderResourceView(pTexture.Get(), nullptr, m_srv.GetAddressOf());
+    if (FAILED(hr)) {
+        stbi_image_free(pixels);
+        return false;
+    }
 
-	// SRV生成
-	hr = device->CreateShaderResourceView(pTexture.Get(), nullptr, m_srv.GetAddressOf());
-	if (FAILED(hr)) {
-		stbi_image_free(pixels);
-		return false;
-	}
+    // ピクセルイメージ解放
+    stbi_image_free(pixels);
 
-	// ピクセルイメージ解放
-	stbi_image_free(pixels);
-
-	return true;
+    return true;
 }
 
 // テクスチャをGPUにセット
-void Texture::SetGPU()
-{
-	ID3D11DeviceContext* devicecontext = Renderer::GetDeviceContext();
-	devicecontext->PSSetShaderResources(0, 1, m_srv.GetAddressOf());
+void Texture::SetGPU() {
+    ID3D11DeviceContext* devicecontext = Renderer::GetDeviceContext();
+    devicecontext->PSSetShaderResources(0, 1, m_srv.GetAddressOf());
 }
-

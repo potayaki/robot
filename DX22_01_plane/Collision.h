@@ -1,83 +1,107 @@
+ï»¿/// @file Collision.h
+/// @brief çƒã€ç·šåˆ†ã€å¹³é¢ã€ä¸‰è§’å½¢ãªã©ã®å½“ãŸã‚Šåˆ¤å®šã¨è·é›¢è¨ˆç®—ã€‚
+
 //================================
-// Collision.h@v1.0
+// Collision.hã€€v1.0
 //================================
 #pragma once
 
 #include <simplemath.h>
 
-namespace Collision
-{
-	// ƒ‰ƒCƒ“i–³ŒÀ‚Ì’·‚³‚Ìüj
-	struct Line {
-		DirectX::SimpleMath::Vector3 point; // ’Ê‰ß’n“_
-		DirectX::SimpleMath::Vector3 vec; // ü‚Ì•ûŒüƒxƒNƒgƒ‹
-	};
+namespace Collision {
+    // ãƒ©ã‚¤ãƒ³ï¼ˆç„¡é™ã®é•·ã•ã®ç·šï¼‰
+    struct Line {
+        /// é€šéåœ°ç‚¹
+        DirectX::SimpleMath::Vector3 point;
+        /// ç·šã®æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«
+        DirectX::SimpleMath::Vector3 vec;
+    };
 
-	// ƒvƒŒ[ƒ“(–³ŒÀ‚ÌL‚³‚Ì•½–Ê)
-	struct Plane {
-		DirectX::SimpleMath::Vector3 point; // •½–Êã‚Ì1“_
-		DirectX::SimpleMath::Vector3 normal; // •½–Ê‚Ì–@üƒxƒNƒgƒ‹
-		//float d;         // •½–Ê‚Ì•û’ö®: ax + by + cz + d = 0 ‚Ì d
-	};
+    // ãƒ—ãƒ¬ãƒ¼ãƒ³(ç„¡é™ã®åºƒã•ã®å¹³é¢)
+    struct Plane {
+        /// å¹³é¢ä¸Šã®1ç‚¹
+        DirectX::SimpleMath::Vector3 point;
+        /// å¹³é¢ã®æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«
+        DirectX::SimpleMath::Vector3 normal;
+        //float d;         // å¹³é¢ã®æ–¹ç¨‹å¼: ax + by + cz + d = 0 ã® d
+    };
 
-	// ƒZƒOƒƒ“ƒgi—LŒÀ‚Ì’·‚³‚Ìü•ªj
-	struct Segment {
-		DirectX::SimpleMath::Vector3 start; // n“_
-		DirectX::SimpleMath::Vector3 end; // I“_
-	};
+    // ã‚»ã‚°ãƒ¡ãƒ³ãƒˆï¼ˆæœ‰é™ã®é•·ã•ã®ç·šåˆ†ï¼‰
+    struct Segment {
+        /// å§‹ç‚¹
+        DirectX::SimpleMath::Vector3 start;
+        /// çµ‚ç‚¹
+        DirectX::SimpleMath::Vector3 end;
+    };
 
-	// OŠpŒ`ƒ|ƒŠƒSƒ“i—LŒÀ‚ÌL‚³‚Ì•½–Êj
-	struct Polygon {
-		const DirectX::SimpleMath::Vector3 p0; //’¸“_0
-		const DirectX::SimpleMath::Vector3 p1; //’¸“_1
-		const DirectX::SimpleMath::Vector3 p2; //’¸“_2
-	};
+    // ä¸‰è§’å½¢ãƒãƒªã‚´ãƒ³ï¼ˆæœ‰é™ã®åºƒã•ã®å¹³é¢ï¼‰
+    struct Polygon {
+        /// é ‚ç‚¹0
+        const DirectX::SimpleMath::Vector3 p0;
+        /// é ‚ç‚¹1
+        const DirectX::SimpleMath::Vector3 p1;
+        /// é ‚ç‚¹2
+        const DirectX::SimpleMath::Vector3 p2;
+    };
 
-	// ‹…‘Ì
-	struct Sphere {
-		DirectX::SimpleMath::Vector3 center; //’†S
-		float radius; // ”¼Œa
-	};
+    // çƒä½“
+    struct Sphere {
+        /// ä¸­å¿ƒ
+        DirectX::SimpleMath::Vector3 center;
+        /// åŠå¾„
+        float radius;
+    };
 
-	// BOX’è‹`
-	struct AABB {
-		DirectX::SimpleMath::Vector3 min;
-		DirectX::SimpleMath::Vector3 max;
-	};
+    // BOXå®šç¾©
+    struct AABB {
+        /// å„è»¸ã®æœ€å°åº§æ¨™ã§è¡¨ã—ãŸå¢ƒç•Œã®ä¸‹é™ã€‚
+        DirectX::SimpleMath::Vector3 min;
+        /// å„è»¸ã®æœ€å¤§åº§æ¨™ã§è¡¨ã—ãŸå¢ƒç•Œã®ä¸Šé™ã€‚
+        DirectX::SimpleMath::Vector3 max;
+    };
 
-	//“–‚½‚è”»’è
-	bool CheckHit(const Line& line, const Plane& plane); //ü(–³ŒÀ‚Ì’·‚³)‚Æ•½–Ê(–³ŒÀ‚Ì‘å‚«‚³)
-	bool CheckHit(const Segment& segment, const Plane& plane); //ü•ª‚Æ•½–Ê(–³ŒÀ‚Ì‘å‚«‚³)
-	bool CheckHit(const Line& line, const Polygon& polygon); //ü(–³ŒÀ‚Ì’·‚³)‚Æƒ|ƒŠƒSƒ“
-	bool CheckHit(const Line& line, const Polygon& polygon, DirectX::SimpleMath::Vector3& contact); //“¯ã
-	bool CheckHit(const Segment& segment, const Polygon& polygon); //ü•ª‚Æƒ|ƒŠƒSƒ“
-	bool CheckHit(const Segment& segment, const Polygon& polygon, DirectX::SimpleMath::Vector3& contact); //“¯ã
-	bool CheckHit(const Sphere& sphere, const Plane& plane); //‹…‘Ì‚Æ•½–Ê(–³ŒÀ‚Ì‘å‚«‚³)
-	bool CheckHit(const Sphere& sphere, const Polygon& polygon); //‹…‘Ì‚Æƒ|ƒŠƒSƒ“
-	bool CheckHit(const Sphere& sphere, const Polygon& polygon, DirectX::SimpleMath::Vector3& contact); //“¯ã
-	bool CheckHit(Sphere sphere1, Sphere sphere2); //‹…‘Ì‚Æ‹…‘Ì
-	bool CheckHit(Sphere sphere1, Sphere sphere2, DirectX::SimpleMath::Vector3& contact); //“¯ã
-	bool CheckHit(AABB p1, AABB p2); // AABB‚ÆAABB
+    //å½“ãŸã‚Šåˆ¤å®š
+    bool CheckHit(const Line& line, const Plane& plane); //ç·š(ç„¡é™ã®é•·ã•)ã¨å¹³é¢(ç„¡é™ã®å¤§ãã•)
+    bool CheckHit(const Segment& segment, const Plane& plane); //ç·šåˆ†ã¨å¹³é¢(ç„¡é™ã®å¤§ãã•)
+    bool CheckHit(const Line& line, const Polygon& polygon); //ç·š(ç„¡é™ã®é•·ã•)ã¨ãƒãƒªã‚´ãƒ³
+    bool CheckHit(const Line& line, const Polygon& polygon, DirectX::SimpleMath::Vector3& contact); //åŒä¸Š
+    bool CheckHit(const Segment& segment, const Polygon& polygon); //ç·šåˆ†ã¨ãƒãƒªã‚´ãƒ³
+    bool CheckHit(const Segment& segment, const Polygon& polygon,
+                  DirectX::SimpleMath::Vector3& contact); //åŒä¸Š
+    bool CheckHit(const Sphere& sphere, const Plane& plane); //çƒä½“ã¨å¹³é¢(ç„¡é™ã®å¤§ãã•)
+    bool CheckHit(const Sphere& sphere, const Polygon& polygon); //çƒä½“ã¨ãƒãƒªã‚´ãƒ³
+    bool CheckHit(const Sphere& sphere, const Polygon& polygon, DirectX::SimpleMath::Vector3& contact); //åŒä¸Š
+    bool CheckHit(Sphere sphere1, Sphere sphere2); //çƒä½“ã¨çƒä½“
+    bool CheckHit(Sphere sphere1, Sphere sphere2, DirectX::SimpleMath::Vector3& contact); //åŒä¸Š
+    bool CheckHit(AABB p1, AABB p2); // AABBã¨AABB
 
-	//“àÏEŠOÏ
-	float Dot(const DirectX::SimpleMath::Vector3& v1, const DirectX::SimpleMath::Vector3& v2);
-	DirectX::SimpleMath::Vector3 Cross(const DirectX::SimpleMath::Vector3& v1, const DirectX::SimpleMath::Vector3& v2);
+    //å†…ç©ãƒ»å¤–ç©
+    float Dot(const DirectX::SimpleMath::Vector3& v1, const DirectX::SimpleMath::Vector3& v2);
+    DirectX::SimpleMath::Vector3 Cross(const DirectX::SimpleMath::Vector3& v1,
+                                       const DirectX::SimpleMath::Vector3& v2);
 
+    DirectX::SimpleMath::Vector3 ClosestPointOnSegment(const DirectX::SimpleMath::Vector3& point,
+                                                       const Segment& segment);
+    float DistanceSquaredPointToSegment(const DirectX::SimpleMath::Vector3& point, const Segment& segment);
+    float DistanceSquaredPointToSegment(const DirectX::SimpleMath::Vector3& point, const Segment& segment,
+                                        DirectX::SimpleMath::Vector3& contact);
+    float DistancePointToSegment(const DirectX::SimpleMath::Vector3& point, const Segment& segment);
+    float DistancePointToSegment(const DirectX::SimpleMath::Vector3& point, const Segment& segment,
+                                 DirectX::SimpleMath::Vector3& contact);
+    float DistancePointToPlane(const DirectX::SimpleMath::Vector3& point, const Plane& plane);
+    DirectX::SimpleMath::Vector3 ProjectPointToPlane(const DirectX::SimpleMath::Vector3& point,
+                                                     const Plane& plane);
+    bool PointInTriangle(const DirectX::SimpleMath::Vector3& point, const Polygon& polygon);
+    DirectX::SimpleMath::Vector3 ClosestPointOnTriangle(const DirectX::SimpleMath::Vector3& point,
+                                                        const Polygon& polygon);
+    DirectX::SimpleMath::Vector3 GetNormal(const Polygon& polygon);
 
-	DirectX::SimpleMath::Vector3 ClosestPointOnSegment(const DirectX::SimpleMath::Vector3& point, const Segment& segment);
-	float DistanceSquaredPointToSegment(const DirectX::SimpleMath::Vector3& point, const Segment& segment);
-	float DistanceSquaredPointToSegment(const DirectX::SimpleMath::Vector3& point, const Segment& segment, DirectX::SimpleMath::Vector3& contact);
-	float DistancePointToSegment(const DirectX::SimpleMath::Vector3& point, const Segment& segment);
-	float DistancePointToSegment(const DirectX::SimpleMath::Vector3& point, const Segment& segment, DirectX::SimpleMath::Vector3& contact);
-	float DistancePointToPlane(const DirectX::SimpleMath::Vector3& point, const Plane& plane);
-	DirectX::SimpleMath::Vector3 ProjectPointToPlane(const DirectX::SimpleMath::Vector3& point, const Plane& plane);
-	bool PointInTriangle(const DirectX::SimpleMath::Vector3& point, const Polygon& polygon);
-	DirectX::SimpleMath::Vector3 ClosestPointOnTriangle(const DirectX::SimpleMath::Vector3& point, const Polygon& polygon);
-	DirectX::SimpleMath::Vector3 GetNormal(const Polygon& polygon);
+    //çƒä½“ã‚’å½“ãŸã£ãŸå¾Œã®åœ°ç‚¹ã«å‹•ã‹ã™
+    DirectX::SimpleMath::Vector3 moveSphere(const Segment& capsule, const float& radius,
+                                            const Polygon& polygon,
+                                            const DirectX::SimpleMath::Vector3& contact, float& distance);
+    DirectX::SimpleMath::Vector3 moveSphere(const Sphere& sphere, const Polygon& polygon,
+                                            const DirectX::SimpleMath::Vector3& contact);
 
-	//‹…‘Ì‚ğ“–‚½‚Á‚½Œã‚Ì’n“_‚É“®‚©‚·
-	DirectX::SimpleMath::Vector3 moveSphere(const Segment& capsule, const float& radius, const Polygon& polygon, const DirectX::SimpleMath::Vector3& contact, float& distance);
-	DirectX::SimpleMath::Vector3 moveSphere(const Sphere& sphere, const Polygon& polygon, const DirectX::SimpleMath::Vector3& contact);
-
-	AABB SetAABB(DirectX::SimpleMath::Vector3 centerposition, float width, float height, float depth);
-}
+    AABB SetAABB(DirectX::SimpleMath::Vector3 centerposition, float width, float height, float depth);
+} // namespace Collision

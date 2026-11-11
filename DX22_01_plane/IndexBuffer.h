@@ -1,42 +1,42 @@
+ï»¿/// @file IndexBuffer.h
+/// @brief Direct3Dã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½œæˆã¨è¨­å®šã€‚
+
 #pragma once
 
-#include	<vector>
-#include	<wrl/client.h>
-#include	"renderer.h"
+#include <vector>
+#include <wrl/client.h>
+#include "renderer.h"
 
 using Microsoft::WRL::ComPtr;
 
 //-----------------------------------------------------------------------------
-//IndexBufferƒNƒ‰ƒX
+//IndexBufferã‚¯ãƒ©ã‚¹
 //-----------------------------------------------------------------------------
 class IndexBuffer {
-
-	ComPtr<ID3D11Buffer> m_IndexBuffer;
+    /// æç”»ã™ã‚‹é ‚ç‚¹ã®é †ç•ªã‚’ä¿æŒã™ã‚‹GPUãƒãƒƒãƒ•ã‚¡ã€‚
+    ComPtr<ID3D11Buffer> m_indexBuffer;
 
 public:
-	void Create(const std::vector<unsigned int>& indices)
-	{
-		// ƒfƒoƒCƒXæ“¾
-		ID3D11Device* device = nullptr;
-		device = Renderer::GetDevice();
-		assert(device); //device‚ª‘¶İ‚·‚é‚±‚Æ‚ğŠm”F
+    void Create(const std::vector<unsigned int>& indices) {
+        // ãƒ‡ãƒã‚¤ã‚¹å–å¾—
+        ID3D11Device* device = nullptr;
+        device = Renderer::GetDevice();
+        assert(device); //deviceãŒå­˜åœ¨ã™ã‚‹ã“ã¨ã‚’ç¢ºèª
 
-		// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@ì¬
-		bool sts = Renderer::CreateIndexBuffer(
-			(unsigned int)(indices.size()),				// ƒCƒ“ƒfƒbƒNƒX”
-			(void*)indices.data(),						// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^æ“ªƒAƒhƒŒƒX
-			&m_IndexBuffer);							// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@
+        // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ä½œæˆ
+        bool sts = Renderer::CreateIndexBuffer((unsigned int)(indices.size()), // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+                                               (void*)indices.data(), // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿å…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
+                                               &m_indexBuffer); // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡
 
-		assert(sts == true); //Œ‹‰Ê‚ğŠm”F
-	}
+        assert(sts == true); //çµæœã‚’ç¢ºèª
+    }
 
-	void SetGPU()
-	{
-		// ƒfƒoƒCƒXƒRƒ“ƒeƒLƒXƒgæ“¾
-		ID3D11DeviceContext* devicecontext = nullptr;
-		devicecontext = Renderer::GetDeviceContext();
+    void SetGPU() {
+        // ãƒ‡ãƒã‚¤ã‚¹ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆå–å¾—
+        ID3D11DeviceContext* devicecontext = nullptr;
+        devicecontext = Renderer::GetDeviceContext();
 
-		// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ğƒZƒbƒg
-		devicecontext->IASetIndexBuffer(m_IndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-	}
+        // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã‚’ã‚»ãƒƒãƒˆ
+        devicecontext->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+    }
 };

@@ -1,13 +1,10 @@
+﻿/// @file Scene.cpp
+/// @brief ゲームシーンの初期化・更新・描画・終了の共通インターフェース。
+
 #include "Scene.h"
 
-// �R���X�g���N�^
-Scene::Scene()
-{
+// コンストラクタ
+Scene::Scene() {}
 
-}
-
-// �f�X�g���N�^
-Scene::~Scene()
-{
-
-}
+// デストラクタ
+Scene::~Scene() {}

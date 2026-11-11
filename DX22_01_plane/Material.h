@@ -1,150 +1,142 @@
+ï»¿/// @file Material.h
+/// @brief æè³ªãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’ä¿æŒã—ã¦GPUã¸è»¢é€ã™ã‚‹å‡¦ç†ã€‚
+
 #pragma once
-#include	<Windows.h>
-#include	<directxmath.h>
-#include	<d3d11.h>
-#include	<wrl/client.h>
-#include	"renderer.h"
+#include <Windows.h>
+#include <directxmath.h>
+#include <d3d11.h>
+#include <wrl/client.h>
+#include "renderer.h"
 
 class Material {
+    struct ConstantBufferMaterial {
+        /// GPUã¸è»¢é€ã™ã‚‹æè³ªãƒ‡ãƒ¼ã‚¿ã€‚
+        MATERIAL Material;
+    };
 
-	struct ConstantBufferMaterial {
-		MATERIAL	Material;
-	};
-
-	MATERIAL	m_Material{};
-	Microsoft::WRL::ComPtr<ID3D11Buffer> m_pConstantBufferMaterial;
+    /// æç”»æ™‚ã«ä½¿ç”¨ã™ã‚‹è‰²ãƒ»åå°„ãƒ»ãƒ†ã‚¯ã‚¹ãƒãƒ£æœ‰åŠ¹çŠ¶æ…‹ã€‚
+    MATERIAL m_material{};
+    /// æè³ªã®å„ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’GPUã¸æ¸¡ã™å®šæ•°ãƒãƒƒãƒ•ã‚¡ã€‚
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_pConstantBufferMaterial;
 
 public:
-	Material() {}
-	Material(MATERIAL mtrl) {
-		Create(mtrl);
-	}
-	~Material() {
-		Uninit();
-	}
+    Material() {}
 
-	bool Create(MATERIAL mtrl) {
+    Material(MATERIAL mtrl) {
+        Create(mtrl);
+    }
 
-		ID3D11Device* dev;
-		dev = Renderer::GetDevice();
+    ~Material() {
+        Uninit();
+    }
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@ì¬
-		bool sts = Renderer::CreateConstantBuffer(
-			sizeof(ConstantBufferMaterial),		// ƒTƒCƒY
-			m_pConstantBufferMaterial.GetAddressOf());		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@‚S
-		if (!sts) {
-			MessageBox(NULL, "CreateBuffer(constant buffer Material) error", "Error", MB_OK);
-			return false;
-		}
+    bool Create(MATERIAL mtrl) {
+        ID3D11Device* dev;
+        dev = Renderer::GetDevice();
 
-		m_Material.Ambient = mtrl.Ambient;
-		m_Material.Diffuse = mtrl.Diffuse;
-		m_Material.Speclar = mtrl.Speclar;
-		m_Material.Emmision = mtrl.Emmision;
-		m_Material.Shiness = mtrl.Shiness;
-		m_Material.TextureEnable = mtrl.TextureEnable;
+        // ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡ä½œæˆ
+        bool sts = Renderer::CreateConstantBuffer(
+            sizeof(ConstantBufferMaterial), // ã‚µã‚¤ã‚º
+            m_pConstantBufferMaterial.GetAddressOf()); // ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡ï¼”
+        if (!sts) {
+            MessageBox(NULL, "CreateBuffer(constant buffer Material) error", "Error", MB_OK);
+            return false;
+        }
 
-		Update();
+        m_material.Ambient = mtrl.Ambient;
+        m_material.Diffuse = mtrl.Diffuse;
+        m_material.Speclar = mtrl.Speclar;
+        m_material.Emmision = mtrl.Emmision;
+        m_material.Shiness = mtrl.Shiness;
+        m_material.TextureEnable = mtrl.TextureEnable;
 
-		return true;
-	}
+        Update();
 
-	void Update() {
-		ConstantBufferMaterial		cb{};
+        return true;
+    }
 
-		cb.Material = m_Material;
+    /// çµŒéæ™‚é–“ã¨å…¥åŠ›ã«åˆã‚ã›ã¦çŠ¶æ…‹ã‚’æ›´æ–°ã™ã‚‹ã€‚
+    void Update() {
+        ConstantBufferMaterial cb{};
 
-		ID3D11DeviceContext* devcontext;
-		devcontext = Renderer::GetDeviceContext();
+        cb.Material = m_material;
 
-		devcontext->UpdateSubresource(
-			m_pConstantBufferMaterial.Get(),
-			0,
-			nullptr,
-			&cb,
-			0, 0);
+        ID3D11DeviceContext* devcontext;
+        devcontext = Renderer::GetDeviceContext();
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@4‚ğ‚‚4ƒŒƒWƒXƒ^‚ÖƒZƒbƒgi’¸“_ƒVƒF[ƒ_[—pj
-		devcontext->VSSetConstantBuffers(4, 1, m_pConstantBufferMaterial.GetAddressOf());
+        devcontext->UpdateSubresource(m_pConstantBufferMaterial.Get(), 0, nullptr, &cb, 0, 0);
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@4‚ğ‚‚4ƒŒƒWƒXƒ^‚ÖƒZƒbƒg(ƒsƒNƒZƒ‹ƒVƒF[ƒ_[—p)
-		devcontext->PSSetConstantBuffers(4, 1, m_pConstantBufferMaterial.GetAddressOf());
+        // ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡4ã‚’ï½‚4ãƒ¬ã‚¸ã‚¹ã‚¿ã¸ã‚»ãƒƒãƒˆï¼ˆé ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ç”¨ï¼‰
+        devcontext->VSSetConstantBuffers(4, 1, m_pConstantBufferMaterial.GetAddressOf());
 
-	}
+        // ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡4ã‚’ï½‚4ãƒ¬ã‚¸ã‚¹ã‚¿ã¸ã‚»ãƒƒãƒˆ(ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ç”¨)
+        devcontext->PSSetConstantBuffers(4, 1, m_pConstantBufferMaterial.GetAddressOf());
+    }
 
-	void SetGPU() {
+    void SetGPU() {
+        ID3D11DeviceContext* devcontext;
+        devcontext = Renderer::GetDeviceContext();
 
-		ID3D11DeviceContext* devcontext;
-		devcontext = Renderer::GetDeviceContext();
+        // ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡4ã‚’ï½‚4ãƒ¬ã‚¸ã‚¹ã‚¿ã¸ã‚»ãƒƒãƒˆï¼ˆé ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ç”¨ï¼‰
+        devcontext->VSSetConstantBuffers(4, 1, m_pConstantBufferMaterial.GetAddressOf());
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@4‚ğ‚‚4ƒŒƒWƒXƒ^‚ÖƒZƒbƒgi’¸“_ƒVƒF[ƒ_[—pj
-		devcontext->VSSetConstantBuffers(4, 1, m_pConstantBufferMaterial.GetAddressOf());
+        // ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡4ã‚’ï½‚4ãƒ¬ã‚¸ã‚¹ã‚¿ã¸ã‚»ãƒƒãƒˆ(ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ç”¨)
+        devcontext->PSSetConstantBuffers(4, 1, m_pConstantBufferMaterial.GetAddressOf());
+    }
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@4‚ğ‚‚4ƒŒƒWƒXƒ^‚ÖƒZƒbƒg(ƒsƒNƒZƒ‹ƒVƒF[ƒ_[—p)
-		devcontext->PSSetConstantBuffers(4, 1, m_pConstantBufferMaterial.GetAddressOf());
-	}
+    void SetMaterial(const MATERIAL& mtrl) {
+        ConstantBufferMaterial cb{};
 
-	void SetMaterial(const MATERIAL& mtrl) {
-		ConstantBufferMaterial		cb{};
+        cb.Material = mtrl;
 
-		cb.Material = mtrl;
+        ID3D11DeviceContext* devcontext;
+        devcontext = Renderer::GetDeviceContext();
 
-		ID3D11DeviceContext* devcontext;
-		devcontext = Renderer::GetDeviceContext();
+        devcontext->UpdateSubresource(m_pConstantBufferMaterial.Get(), 0, nullptr, &cb, 0, 0);
 
-		devcontext->UpdateSubresource(
-			m_pConstantBufferMaterial.Get(),
-			0,
-			nullptr,
-			&cb,
-			0, 0);
+        // ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡4ã‚’ï½‚4ãƒ¬ã‚¸ã‚¹ã‚¿ã¸ã‚»ãƒƒãƒˆï¼ˆé ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ç”¨ï¼‰
+        devcontext->VSSetConstantBuffers(4, 1, m_pConstantBufferMaterial.GetAddressOf());
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@4‚ğ‚‚4ƒŒƒWƒXƒ^‚ÖƒZƒbƒgi’¸“_ƒVƒF[ƒ_[—pj
-		devcontext->VSSetConstantBuffers(4, 1, m_pConstantBufferMaterial.GetAddressOf());
+        // ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡4ã‚’ï½‚4ãƒ¬ã‚¸ã‚¹ã‚¿ã¸ã‚»ãƒƒãƒˆ(ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ç”¨)
+        devcontext->PSSetConstantBuffers(4, 1, m_pConstantBufferMaterial.GetAddressOf());
+    }
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@4‚ğ‚‚4ƒŒƒWƒXƒ^‚ÖƒZƒbƒg(ƒsƒNƒZƒ‹ƒVƒF[ƒ_[—p)
-		devcontext->PSSetConstantBuffers(4, 1, m_pConstantBufferMaterial.GetAddressOf());
+    /// ä½¿ç”¨ã—ãŸè³‡æºã‚’è§£æ”¾ã—ã¦çµ‚äº†ã™ã‚‹ã€‚
+    void Uninit() {}
 
-	}
+    void SetDiffuse(DirectX::XMFLOAT4 diffuse) {
+        m_material.Diffuse = diffuse;
+    }
 
-	void Uninit() {
-	}
+    void SetAmbient(DirectX::XMFLOAT4 ambient) {
+        m_material.Ambient = ambient;
+    }
 
-	void SetDiffuse(DirectX::XMFLOAT4 diffuse) {
-		m_Material.Diffuse = diffuse;
-	}
+    void SetSpecular(DirectX::XMFLOAT4 specular) {
+        m_material.Speclar = specular;
+    }
 
-	void SetAmbient(DirectX::XMFLOAT4 ambient) {
-		m_Material.Ambient = ambient;
-	}
+    void SetEmission(DirectX::XMFLOAT4 emission) {
+        m_material.Emmision = emission;
+    }
 
-	void SetSpecular(DirectX::XMFLOAT4 specular) {
-		m_Material.Speclar = specular;
-	}
+    void SetShiness(float shiness) {
+        m_material.Shiness = shiness;
+    }
 
-	void SetEmission(DirectX::XMFLOAT4 emission) {
-		m_Material.Emmision = emission;
-	}
+    bool isTextureEnable() {
+        return m_material.TextureEnable == TRUE;
+    }
 
-	void SetShiness(float shiness) {
-		m_Material.Shiness = shiness;
-	}
+    void SetColor(float r, float g, float b, float a) {
+        // ãƒãƒ†ãƒªã‚¢ãƒ«ã®ãƒ‡ã‚£ãƒ•ãƒ¥ãƒ¼ã‚ºï¼ˆæ‹¡æ•£åå°„å…‰ï¼‰ã®è‰²ã‚’æ›¸ãæ›ãˆã‚‹
 
-	bool isTextureEnable() {
-		return m_Material.TextureEnable == TRUE;
-	}
+        m_material.Diffuse.x = r;
+        m_material.Diffuse.y = g;
+        m_material.Diffuse.z = b;
+        m_material.Diffuse.w = a;
 
-	void SetColor(float r, float g, float b, float a) {
-
-		// ƒ}ƒeƒŠƒAƒ‹‚ÌƒfƒBƒtƒ…[ƒYiŠgU”½ËŒõj‚ÌF‚ğ‘‚«Š·‚¦‚é
-
-		m_Material.Diffuse.x = r;
-		m_Material.Diffuse.y = g;
-		m_Material.Diffuse.z = b;
-		m_Material.Diffuse.w = a;
-
-		// •ÏX‚ğGPU‚É”½‰f‚³‚¹‚é
-		SetMaterial(m_Material);
-
-	}
+        // å¤‰æ›´ã‚’GPUã«åæ˜ ã•ã›ã‚‹
+        SetMaterial(m_material);
+    }
 };

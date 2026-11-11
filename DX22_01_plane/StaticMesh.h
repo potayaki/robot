@@ -1,37 +1,43 @@
+ï»¿/// @file StaticMesh.h
+/// @brief Assimpã®é™çš„ãƒ¢ãƒ‡ãƒ«ã‹ã‚‰ä½œã‚‹é ‚ç‚¹ã€æè³ªã€ãƒ†ã‚¯ã‚¹ãƒãƒ£ã€‚
+
 #pragma once
 
-#include	<simplemath.h>
-#include	<string>
-#include	<vector>
-#include	<memory>
-#include	"Texture.h"
-#include	"Mesh.h"
-#include	"renderer.h"
+#include <simplemath.h>
+#include <string>
+#include <vector>
+#include <memory>
+#include "Texture.h"
+#include "Mesh.h"
+#include "renderer.h"
 
 class StaticMesh : public Mesh {
 public:
-	void Load(std::string filename, std::string texturedirectory="");
+    void Load(std::string filename, std::string texturedirectory = "");
 
-	const std::vector<MATERIAL>& GetMaterials() {
-		return m_materials;
-	}
+    const std::vector<MATERIAL>& GetMaterials() {
+        return m_materials;
+    }
 
-	const std::vector<SUBSET>& GetSubsets() {
-		return m_subsets;
-	}
+    const std::vector<SUBSET>& GetSubsets() {
+        return m_subsets;
+    }
 
-	const std::vector<std::string>& GetTextureNames() {
-		return m_texturenames;
-	}
+    const std::vector<std::string>& GetTextureNames() {
+        return m_texturenames;
+    }
 
-	std::vector<std::unique_ptr<Texture>> GetTextures() {
-		return std::move(m_textures);
-	}
+    std::vector<std::unique_ptr<Texture>> GetTextures() {
+        return std::move(m_textures);
+    }
 
 private:
-
-	std::vector<MATERIAL> m_materials;	    // ƒ}ƒeƒŠƒAƒ‹î•ñ
-	std::vector<std::string> m_texturenames;			// ƒeƒNƒXƒ`ƒƒ–¼
-	std::vector<SUBSET> m_subsets;						// ƒTƒuƒZƒbƒgî•ñ
-	std::vector<std::unique_ptr<Texture>>	m_textures;	// ƒeƒNƒXƒ`ƒƒŒQ
+    /// ãƒãƒ†ãƒªã‚¢ãƒ«æƒ…å ±
+    std::vector<MATERIAL> m_materials;
+    /// ãƒ†ã‚¯ã‚¹ãƒãƒ£å
+    std::vector<std::string> m_texturenames;
+    /// ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±
+    std::vector<SUBSET> m_subsets;
+    /// ãƒ†ã‚¯ã‚¹ãƒãƒ£ç¾¤
+    std::vector<std::unique_ptr<Texture>> m_textures;
 };

@@ -1,20 +1,25 @@
+ï»¿/// @file Mesh.h
+/// @brief ãƒ¢ãƒ‡ãƒ«ã®é ‚ç‚¹ã¨ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’ä¿æŒã™ã‚‹å…±é€šãƒ‡ãƒ¼ã‚¿ã€‚
+
 #pragma once
-#include	<vector>
-#include	"renderer.h"
+#include <vector>
+#include "renderer.h"
 
 class Mesh {
 protected:
-	std::vector<VERTEX_3D>		m_vertices;		// ’¸“_À•WŒQ
-	std::vector<unsigned int>	m_indices;		// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^ŒQ
+    /// é ‚ç‚¹åº§æ¨™ç¾¤
+    std::vector<VERTEX_3D> m_vertices;
+    /// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ç¾¤
+    std::vector<unsigned int> m_indices;
+
 public:
-	// ’¸“_ƒf[ƒ^æ“¾
-	const std::vector<VERTEX_3D>& GetVertices() {
-		return m_vertices;
-	}
+    // é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿å–å¾—
+    const std::vector<VERTEX_3D>& GetVertices() {
+        return m_vertices;
+    }
 
-	// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^æ“¾
-	const std::vector<unsigned int>& GetIndices() {
-		return m_indices;
-	}
+    // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿å–å¾—
+    const std::vector<unsigned int>& GetIndices() {
+        return m_indices;
+    }
 };
-

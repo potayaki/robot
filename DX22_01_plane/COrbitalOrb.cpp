@@ -1,7 +1,10 @@
-﻿#include "COrbitalOrb.h"
+﻿/// @file COrbitalOrb.cpp
+/// @brief プレイヤーの周囲を回転して敵へダメージを与える守護オーブ。
+
+#include "COrbitalOrb.h"
 #include <DirectXMath.h>
-#include"Game.h"
-#include"EnemyTarget.h"
+#include "Game.h"
+#include "EnemyTarget.h"
 
 COrbitalOrb::COrbitalOrb() {
     m_body = nullptr;
@@ -19,7 +22,7 @@ void COrbitalOrb::Init() {
     m_body = new TestCube();
     m_body->Init();
     // プレイヤー(1.0f)より少し小さくする
-    m_body->SetScale(0.5f, 0.5f, 0.5f);
+    m_body->SetScale(m_modelScale, m_modelScale, m_modelScale);
     // 獲得した武器を識別できるよう、青白いオーブとして描画する。
     m_body->SetTexture("assets/texture/white.png");
     m_body->SetMaterial(DirectX::SimpleMath::Color(0.2f, 0.8f, 1.0f, 1.0f));
@@ -31,9 +34,12 @@ void COrbitalOrb::SetOrbitalParam(Object* player, float startAngle, float radius
     m_radius = radius;
     m_speed = speed;
     // 報酬選択中はUpdateが止まるため、生成時点でも正しい周回位置を表示する。
-    m_Position = player->GetPosition() + DirectX::SimpleMath::Vector3(
-        radius * cosf(startAngle), 1.0f, radius * sinf(startAngle));
-    if (m_body) m_body->SetPosition(m_Position);
+    m_position =
+        player->GetPosition() +
+        DirectX::SimpleMath::Vector3(radius * cosf(startAngle), m_heightOffset, radius * sinf(startAngle));
+    if (m_body) {
+        m_body->SetPosition(m_position);
+    }
 }
 
 void COrbitalOrb::Update() {
@@ -53,13 +59,13 @@ void COrbitalOrb::Update() {
     DirectX::SimpleMath::Vector3 playerPos = m_parentPlayer->GetPosition();
 
     // プレイヤーの周囲を回るXZ座標を計算
-    m_Position.x = playerPos.x + m_radius * cosf(m_angle);
-    m_Position.y = playerPos.y + 1.0f; // プレイヤーの少し上に浮かす
-    m_Position.z = playerPos.z + m_radius * sinf(m_angle);
+    m_position.x = playerPos.x + m_radius * cosf(m_angle);
+    m_position.y = playerPos.y + m_heightOffset; // プレイヤーの少し上に浮かす
+    m_position.z = playerPos.z + m_radius * sinf(m_angle);
 
     // 見た目のモデルに座標を適用
     if (m_body) {
-        m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z);
+        m_body->SetPosition(m_position.x, m_position.y, m_position.z);
     }
 
     //--------------------
@@ -82,29 +88,26 @@ void COrbitalOrb::Update() {
             }
 
             // オーブと敵の距離を計算
-            DirectX::SimpleMath::Vector3 diff = m_Position - enemy->GetPosition();
+            DirectX::SimpleMath::Vector3 diff = m_position - enemy->GetPosition();
             float distanceSq = diff.LengthSquared();
 
             // お互いの半径（当たり判定のサイズ）を足す
-            float myRadius = GetCollisionSphere().radius; // オーブの半径 (2.0f)
+            float myRadius = GetCollisionSphere().radius; // オーブの判定半径
             float enemyRadius = enemy->GetCollisionSphere().radius;
             float hitRange = myRadius + enemyRadius;
 
             // 距離が当たり判定の範囲内ならヒット
             if (distanceSq <= (hitRange * hitRange)) {
-
                 enemy->OnHit(m_damage);
                 hitEnemy = true;
 
-                
                 // 貫通して複数に当たる仕様なら break は書かない
                 //break;
             }
         }
         // 重なっている敵全体への1回の攻撃として、端数秒を残して次の間隔を加える。
-        if (hitEnemy)
-        {
-            m_cooldownTime += 0.5f;
+        if (hitEnemy) {
+            m_cooldownTime += m_hitInterval;
         }
     }
 }
@@ -125,6 +128,5 @@ void COrbitalOrb::Uninit() {
 
 Collision::Sphere COrbitalOrb::GetCollisionSphere() {
     // 独自の当たり判定サイズを返す（敵との接触判定用）
-    return { m_Position,8.0f };
+    return {m_position, m_collisionRadius};
 }
-

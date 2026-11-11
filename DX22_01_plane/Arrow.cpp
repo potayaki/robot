@@ -1,3 +1,6 @@
+ï»¿/// @file Arrow.cpp
+/// @brief ã‚´ãƒ«ãƒ•æ“ä½œã§æ–¹å‘ã¨å¼·ã•ã‚’ç¤ºã™çŸ¢å°ãƒ¢ãƒ‡ãƒ«ã€‚
+
 #include "Arrow.h"
 #include "Collision.h"
 #include "Game.h"
@@ -7,161 +10,153 @@ using namespace std;
 using namespace DirectX::SimpleMath;
 
 //=======================================
-// ‰Šú‰»ˆ—
+// åˆæœŸåŒ–å‡¦ç†
 //=======================================
-void Arrow::Init()
-{
-	// ƒƒbƒVƒ…“Ç‚İ‚İ
-	StaticMesh staticmesh;
+void Arrow::Init() {
+    // ãƒ¡ãƒƒã‚·ãƒ¥èª­ã¿è¾¼ã¿
+    StaticMesh staticmesh;
 
-	// 3Dƒ‚ƒfƒ‹ƒf[ƒ^
-	std::u8string modelFile = u8"assets/model/arrow/arrow.fbx";
+    // 3Dãƒ¢ãƒ‡ãƒ«ãƒ‡ãƒ¼ã‚¿
+    std::u8string modelFile = u8"assets/model/arrow/arrow.fbx";
 
-	// ƒeƒNƒXƒ`ƒƒƒfƒBƒŒƒNƒgƒŠ
-	std::string texDirectory = "assets/model/arrow";
+    // ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª
+    std::string texDirectory = "assets/model/arrow";
 
-	// Mesh‚ğ“Ç‚İ‚Ş
-	std::string tmpStr1(reinterpret_cast<const char*>(modelFile.c_str()), modelFile.size());
-	staticmesh.Load(tmpStr1, texDirectory);
+    // Meshã‚’èª­ã¿è¾¼ã‚€
+    std::string tmpStr1(reinterpret_cast<const char*>(modelFile.c_str()), modelFile.size());
+    staticmesh.Load(tmpStr1, texDirectory);
 
-	m_MeshRenderer.Init(staticmesh);
+    m_meshRenderer.Init(staticmesh);
 
-	// ƒVƒF[ƒ_ƒIƒuƒWƒFƒNƒg¶¬
-	m_Shader.Create("shader/litTextureVS.hlsl", "shader/litTexturePS.hlsl");
+    // ã‚·ã‚§ãƒ¼ãƒ€ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç”Ÿæˆ
+    m_shader.Create("shader/litTextureVS.hlsl", "shader/litTexturePS.hlsl");
 
-	// ƒTƒuƒZƒbƒgî•ñæ“¾
-	m_subsets = staticmesh.GetSubsets();
+    // ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±å–å¾—
+    m_subsets = staticmesh.GetSubsets();
 
-	// ƒeƒNƒXƒ`ƒƒî•ñæ“¾
-	m_Textures = staticmesh.GetTextures();
+    // ãƒ†ã‚¯ã‚¹ãƒãƒ£æƒ…å ±å–å¾—
+    m_textures = staticmesh.GetTextures();
 
-	// ƒ}ƒeƒŠƒAƒ‹î•ñæ“¾
-	vector<MATERIAL> materials = staticmesh.GetMaterials();
+    // ãƒãƒ†ãƒªã‚¢ãƒ«æƒ…å ±å–å¾—
+    vector<MATERIAL> materials = staticmesh.GetMaterials();
 
-	// ƒ}ƒeƒŠƒAƒ‹”•ªƒ‹[ƒv
-	for (int i = 0; i < materials.size(); i++)
-	{
-		// ƒ}ƒeƒŠƒAƒ‹ƒIƒuƒWƒFƒNƒg¶¬
-		std::unique_ptr<Material> m = std::make_unique<Material>();
+    // ãƒãƒ†ãƒªã‚¢ãƒ«æ•°åˆ†ãƒ«ãƒ¼ãƒ—
+    for (int i = 0; i < materials.size(); i++) {
+        // ãƒãƒ†ãƒªã‚¢ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç”Ÿæˆ
+        std::unique_ptr<Material> m = std::make_unique<Material>();
 
-		// ƒ}ƒeƒŠƒAƒ‹î•ñ‚ğƒZƒbƒg
-		m->Create(materials[i]);
+        // ãƒãƒ†ãƒªã‚¢ãƒ«æƒ…å ±ã‚’ã‚»ãƒƒãƒˆ
+        m->Create(materials[i]);
 
-		// ƒ}ƒeƒŠƒAƒ‹ƒIƒuƒWƒFƒNƒg‚ğ”z—ñ‚É’Ç‰Á
-		m_Materials.push_back(std::move(m));
-	}
+        // ãƒãƒ†ãƒªã‚¢ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’é…åˆ—ã«è¿½åŠ 
+        m_materials.push_back(std::move(m));
+    }
 
-	// ƒ‚ƒfƒ‹‚É‚æ‚Á‚ÄƒXƒP[ƒ‹‚ğ’²®
-	m_Scale.x = 3;
-	m_Scale.y = 3;
-	m_Scale.z = 3;
+    // ãƒ¢ãƒ‡ãƒ«ã«ã‚ˆã£ã¦ã‚¹ã‚±ãƒ¼ãƒ«ã‚’èª¿æ•´
+    m_scale.x = 3;
+    m_scale.y = 3;
+    m_scale.z = 3;
 
-	m_State = 1;
+    m_state = 1;
 }
 
 //=======================================
-// XVˆ—
+// æ›´æ–°å‡¦ç†
 //=======================================
-void Arrow::Update()
-{
-	if (m_State == 0)return; // ”ñ•\¦‚È‚çreturn
+void Arrow::Update() {
+    if (m_state == 0) {
+        return; // éè¡¨ç¤ºãªã‚‰return
+    }
 
-	// ƒSƒ‹ƒtƒ{[ƒ‹‚ÌˆÊ’u‚ğæ“¾
-	vector<GolfBall*> ballpt = Game::GetInstance()->GetObjects<GolfBall>();
-	if (ballpt.size() > 0)
-	{
-		// –îˆó‚ÌˆÊ’u‚ğXV
-		m_Position = ballpt[0]->GetPosition();
-	}
+    // ã‚´ãƒ«ãƒ•ãƒœãƒ¼ãƒ«ã®ä½ç½®ã‚’å–å¾—
+    vector<GolfBall*> ballpt = Game::GetInstance()->GetObjects<GolfBall>();
+    if (ballpt.size() > 0) {
+        // çŸ¢å°ã®ä½ç½®ã‚’æ›´æ–°
+        m_position = ballpt[0]->GetPosition();
+    }
 
-	// •ûŒü‘I‘ğ‚È‚ç
-	if (m_State == 1)
-	{
-		m_Scale.z = 3; // ’·‚³‚ğŒÅ’è
+    // æ–¹å‘é¸æŠãªã‚‰
+    if (m_state == 1) {
+        m_scale.z = 3; // é•·ã•ã‚’å›ºå®š
 
-		// Œü‚«‚ğ‰ñ“]‚³‚¹‚é
-		m_Rotation.y += 0.03f;
+        // å‘ãã‚’å›è»¢ã•ã›ã‚‹
+        m_rotation.y += 0.03f;
 
-		if (m_Rotation.y > 6.28)m_Rotation.y = 0;
-	}
-	// ƒpƒ[‘I‘ğ‚È‚ç
-	else if (m_State == 2)
-	{
-		// ‘å‚«‚³‚ğ•ÏX‚³‚¹‚é
-		m_Scale.z += 0.04f;
-		if (m_Scale.z > 4)m_Scale.z = 1;
-	}
+        if (m_rotation.y > 6.28) {
+            m_rotation.y = 0;
+        }
+    }
+    // ãƒ‘ãƒ¯ãƒ¼é¸æŠãªã‚‰
+    else if (m_state == 2) {
+        // å¤§ãã•ã‚’å¤‰æ›´ã•ã›ã‚‹
+        m_scale.z += 0.04f;
+        if (m_scale.z > 4) {
+            m_scale.z = 1;
+        }
+    }
 }
 
 //=======================================
-// •`‰æˆ—
+// æç”»å‡¦ç†
 //=======================================
-void Arrow::Draw(Camera* cam)
-{
-	if (m_State == 0)return; // ”ñ•\¦‚È‚çreturn
+void Arrow::Draw(Camera* cam) {
+    if (m_state == 0) {
+        return; // éè¡¨ç¤ºãªã‚‰return
+    }
 
-	//ƒJƒƒ‰‚ğ‘I‘ğ‚·‚é
-	cam->SetCamera();
+    //ã‚«ãƒ¡ãƒ©ã‚’é¸æŠã™ã‚‹
+    cam->SetCamera();
 
-	// SRTî•ñì¬
-	Matrix r = Matrix::CreateFromYawPitchRoll(m_Rotation.y, m_Rotation.x, m_Rotation.z);
-	Matrix t = Matrix::CreateTranslation(m_Position.x, m_Position.y, m_Position.z);
-	Matrix s = Matrix::CreateScale(m_Scale.x, m_Scale.y, m_Scale.z);
+    // SRTæƒ…å ±ä½œæˆ
+    Matrix r = Matrix::CreateFromYawPitchRoll(m_rotation.y, m_rotation.x, m_rotation.z);
+    Matrix t = Matrix::CreateTranslation(m_position.x, m_position.y, m_position.z);
+    Matrix s = Matrix::CreateScale(m_scale.x, m_scale.y, m_scale.z);
 
-	Matrix worldmtx;
-	worldmtx = s * r * t;
-	Renderer::SetWorldMatrix(&worldmtx); // GPU‚ÉƒZƒbƒg
+    Matrix worldmtx;
+    worldmtx = s * r * t;
+    Renderer::SetWorldMatrix(&worldmtx); // GPUã«ã‚»ãƒƒãƒˆ
 
-	m_Shader.SetGPU();
+    m_shader.SetGPU();
 
-	// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@E’¸“_ƒoƒbƒtƒ@‚ğƒZƒbƒg
-	m_MeshRenderer.BeforeDraw();
+    // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ãƒ»é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚’ã‚»ãƒƒãƒˆ
+    m_meshRenderer.BeforeDraw();
 
-	//ƒ}ƒeƒŠƒAƒ‹”•ªƒ‹[ƒv 
-	for (int i = 0; i < m_subsets.size(); i++)
-	{
-		// ƒ}ƒeƒŠƒAƒ‹‚ğƒZƒbƒg(ƒTƒuƒZƒbƒgî•ñ‚Ì’†‚É‚ ‚éƒ}ƒeƒŠƒAƒ‹ƒCƒ“ƒfƒbƒNƒX‚ğg—p)
-		m_Materials[m_subsets[i].MaterialIdx]->SetGPU();
+    //ãƒãƒ†ãƒªã‚¢ãƒ«æ•°åˆ†ãƒ«ãƒ¼ãƒ—
+    for (int i = 0; i < m_subsets.size(); i++) {
+        // ãƒãƒ†ãƒªã‚¢ãƒ«ã‚’ã‚»ãƒƒãƒˆ(ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±ã®ä¸­ã«ã‚ã‚‹ãƒãƒ†ãƒªã‚¢ãƒ«ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’ä½¿ç”¨)
+        m_materials[m_subsets[i].MaterialIdx]->SetGPU();
 
-		if (m_Materials[m_subsets[i].MaterialIdx]->isTextureEnable())
-		{
-			m_Textures[m_subsets[i].MaterialIdx]->SetGPU();
-		}
+        if (m_materials[m_subsets[i].MaterialIdx]->isTextureEnable()) {
+            m_textures[m_subsets[i].MaterialIdx]->SetGPU();
+        }
 
-		m_MeshRenderer.DrawSubset(
-			m_subsets[i].IndexNum, // •`‰æ‚·‚éƒCƒ“ƒfƒbƒNƒX”
-			m_subsets[i].IndexBase, // Å‰‚ÌƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ÌˆÊ’u	
-			m_subsets[i].VertexBase); // ’¸“_ƒoƒbƒtƒ@‚ÌÅ‰‚©‚çg—p
-	}
+        m_meshRenderer.DrawSubset(m_subsets[i].IndexNum, // æç”»ã™ã‚‹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+                                  m_subsets[i].IndexBase, // æœ€åˆã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½ç½®
+                                  m_subsets[i].VertexBase); // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã®æœ€åˆã‹ã‚‰ä½¿ç”¨
+    }
 }
 
 //=======================================
-// I—¹ˆ—
+// çµ‚äº†å‡¦ç†
 //=======================================
-void Arrow::Uninit()
-{
+void Arrow::Uninit() {}
 
+//çŠ¶æ…‹ã®è¨­å®š
+void Arrow::SetState(int s) {
+    m_state = s;
 }
 
+// çŸ¢å°ã®ãƒ™ã‚¯ãƒˆãƒ«ã‚’å–å¾—
+Vector3 Arrow::GetVector() {
+    //çŸ¢å°ã®åˆæœŸçŠ¶æ…‹ã®å‘ã
+    Vector3 res = {0, 0, -1};
 
-//ó‘Ô‚Ìİ’è
-void Arrow::SetState(int s)
-{
-	m_State = s;
-}
+    // ãƒ™ã‚¯ãƒˆãƒ«ã‚’å›è»¢
+    Matrix r = Matrix::CreateFromYawPitchRoll(m_rotation.y, m_rotation.x, m_rotation.z);
+    res = Vector3::Transform(res, r);
 
-// –îˆó‚ÌƒxƒNƒgƒ‹‚ğæ“¾
-Vector3 Arrow::GetVector()
-{
-	//–îˆó‚Ì‰Šúó‘Ô‚ÌŒü‚«
-	Vector3 res = { 0, 0, -1 };
+    //çŸ¢å°ã®é•·ã•(ãƒ‘ãƒ¯ãƒ¼)ã‚’æ›ã‘ã‚‹
+    res *= m_scale.z;
 
-	// ƒxƒNƒgƒ‹‚ğ‰ñ“]
-	Matrix r = Matrix::CreateFromYawPitchRoll(m_Rotation.y, m_Rotation.x, m_Rotation.z);
-	res = Vector3::Transform(res, r);
-
-	//–îˆó‚Ì’·‚³(ƒpƒ[)‚ğŠ|‚¯‚é
-	res *= m_Scale.z;
-
-	return res;
+    return res;
 }

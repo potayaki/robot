@@ -1,4 +1,7 @@
-﻿#pragma once
+﻿/// @file EnemyTarget.h
+/// @brief 敵の共通インターフェースと撃破時の経験値・ドロップ処理。
+
+#pragma once
 
 #include "Object.h"
 
@@ -7,6 +10,7 @@ class EnemyTarget : public Object {
 protected:
     // 全敵共通の撃破報酬。経験値とプレゼントを一度だけ付与する。
     void Defeat(int experience, int presentChance);
+
 public:
     virtual void OnHit(int& damage) = 0;
 };

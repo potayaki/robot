@@ -1,4 +1,7 @@
-﻿#include "CPlayer.h"
+﻿/// @file SurvivorUI.cpp
+/// @brief CPlayerの成長表示、報酬選択、装備詳細、デバッグ操作。
+
+#include "CPlayer.h"
 #include "imgui.h"
 #include <algorithm>
 #ifdef _DEBUG
@@ -9,11 +12,9 @@
 #include "CBoarEnemy.h"
 #endif
 
-namespace
-{
+namespace {
     // C++20のu8文字列を、ImGuiが使うUTF-8のchar文字列へ渡すための補助関数。
-    const char* Text(const char8_t* value)
-    {
+    const char* Text(const char8_t* value) {
         return reinterpret_cast<const char*>(value);
     }
 
@@ -22,111 +23,111 @@ namespace
     constexpr ImGuiWindowFlags HudFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings |
                                           ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoInputs |
                                           ImGuiWindowFlags_AlwaysAutoResize;
-}
+} // namespace
 
 #ifdef _DEBUG
-void CPlayer::DrawSurvivorDebugUI()
-{
+void CPlayer::DrawSurvivorDebugUI() {
     const auto display = ImGui::GetIO().DisplaySize;
     ImGui::SetNextWindowPos(ImVec2(12, 245), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(480, (std::max)(240.0f, display.y - 265)), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("Skill Debug"))
-    {
+    if (!ImGui::Begin("Skill Debug")) {
         ImGui::End();
         return;
     }
 
     // ウィンドウ全体をスクロールできるため、画面の高さが小さくても全スキルを選べる。
     ImGui::TextUnformatted(Text(u8"スキル名をクリックで取得 / 1段階強化"));
-    if (ImGui::Checkbox(Text(u8"ゲーム一時停止"), &m_debugPaused))
-    {
+    if (ImGui::Checkbox(Text(u8"ゲーム一時停止"), &m_debugPaused)) {
         // チェックを切り替えたフレームから自由視点を使い、解除時には保存した視点へ戻す。
         Game::GetInstance()->GetCamera()->SetDebugFreeCamera(m_debugPaused);
     }
     ImGui::SameLine();
     ImGui::Checkbox(Text(u8"無敵"), &m_debugInvincible);
-    if (ImGui::SliderInt("HP", &m_hp, 0, GetMaxHp()))
-    {
+    if (ImGui::SliderInt("HP", &m_hp, 0, GetMaxHp())) {
         m_hp = std::clamp(m_hp, 0, GetMaxHp());
     }
 
-    if (m_debugPaused) Game::GetInstance()->GetCamera()->DrawDebugFreeCameraUI();
+    if (m_debugPaused) {
+        Game::GetInstance()->GetCamera()->DrawDebugFreeCameraUI();
+    }
 
-    for (auto battle : Game::GetInstance()->GetObjects<CBossBattle>()) battle->DrawDebugUI();
+    for (auto battle : Game::GetInstance()->GetObjects<CBossBattle>()) {
+        battle->DrawDebugUI();
+    }
 
     CBoarEnemy::DrawDebugUI();
 
-    if (ImGui::CollapsingHeader(Text(u8"ロボットのアニメーション")))
-    {
+    if (ImGui::CollapsingHeader(Text(u8"ロボットのアニメーション"))) {
         // 見た目だけの確認。移動位置や攻撃判定は変えず、実測した秒数で再生する。
         ImGui::Combo("Animation preview", &m_debugRobotMotion,
                      "Automatic\0Idle\0Forward\0Backward\0Left\0Right\0");
         ImGui::TextWrapped("%s", Text(u8"Automaticで通常操作に戻ります。一時停止中は再生も止まります。"));
         // クリップのプレビュー中はIKを使わないため、Automaticに戻してから調整する。
         ImGui::BeginDisabled(m_debugRobotMotion != 0 || m_hp <= 0);
-        if (m_body) m_body->DrawIKDebugUI();
+        if (m_body) {
+            m_body->DrawIKDebugUI();
+        }
         ImGui::EndDisabled();
-        if (m_debugRobotMotion != 0)
+        if (m_debugRobotMotion != 0) {
             ImGui::TextWrapped("%s", Text(u8"IKを調整するにはAnimation previewをAutomaticにしてください。"));
+        }
         ImGui::Separator();
         // HPを通常の死亡判定へ渡すため、無敵中でも演出だけを簡単に確認できる。
-        if (ImGui::Button(Text(u8"死亡演出を確認（HP 0）"))) SetHP(0);
+        if (ImGui::Button(Text(u8"死亡演出を確認（HP 0）"))) {
+            SetHP(0);
+        }
         ImGui::SameLine();
-        if (ImGui::Button(Text(u8"全回復して復帰"))) SetHP(GetMaxHp());
+        if (ImGui::Button(Text(u8"全回復して復帰"))) {
+            SetHP(GetMaxHp());
+        }
     }
 
-    if (ImGui::CollapsingHeader(Text(u8"経験値・攻撃・敵の確認")))
-    {
+    if (ImGui::CollapsingHeader(Text(u8"経験値・攻撃・敵の確認"))) {
         ImGui::Text("Lv.%d / EXP %.1f / %.0f / KILLS %d", m_progression.Level(),
-                    m_progression.Experience() / 100.0f,
-                    m_progression.RequiredExperience() / 100.0f, m_kills);
-        ImGui::SliderInt(Text(u8"追加経験値"), &m_debugExperience, 1, 100, "%d", ImGuiSliderFlags_AlwaysClamp);
+                    m_progression.Experience() / static_cast<float>(UpgradeBalance::ExperienceUnit),
+                    m_progression.RequiredExperience() / static_cast<float>(UpgradeBalance::ExperienceUnit),
+                    m_kills);
+        ImGui::SliderInt(Text(u8"追加経験値"), &m_debugExperience, 1, 100, "%d",
+                         ImGuiSliderFlags_AlwaysClamp);
         ImGui::BeginDisabled(m_hp <= 0 || IsChoosingUpgrade());
-        if (ImGui::Button(Text(u8"経験値を追加")))
-        {
+        if (ImGui::Button(Text(u8"経験値を追加"))) {
             // 撃破数やプレゼントの確定ドロップ条件を変えず、経験値だけ追加する。
             m_progression.AddExperience(m_debugExperience);
-            if (IsChoosingUpgrade())
-            {
-                m_selectionDelay = 0.2f;
+            if (IsChoosingUpgrade()) {
+                m_selectionDelay = m_selectionInputDelay;
             }
         }
         ImGui::EndDisabled();
 
-        ImGui::Text(Text(u8"通常弾：残り %.2f 秒 / 間隔 %.3f 秒"),
-                    (std::max)(0.0f, m_currentBulletTime), m_BulletTime);
-        ImGui::Text(Text(u8"ミサイル：残り %.2f 秒 / 間隔 %.2f 秒"),
-                    (std::max)(0.0f, m_currentMissileTime), m_MissileTime);
-        ImGui::Text(Text(u8"衝撃波 %.2f 秒 / 電撃 %.2f 秒"),
-                    (std::max)(0.0f, m_shockwaveTimer),
+        ImGui::Text(Text(u8"通常弾：残り %.2f 秒 / 間隔 %.3f 秒"), (std::max)(0.0f, m_currentBulletTime),
+                    m_bulletTime);
+        ImGui::Text(Text(u8"ミサイル：残り %.2f 秒 / 間隔 %.2f 秒"), (std::max)(0.0f, m_currentMissileTime),
+                    m_missileTime);
+        ImGui::Text(Text(u8"衝撃波 %.2f 秒 / 電撃 %.2f 秒"), (std::max)(0.0f, m_shockwaveTimer),
                     (std::max)(0.0f, m_lightningTimer));
-        for (auto manager : Game::GetInstance()->GetObjects<AutoTurretManager>())
-        {
+        for (auto manager : Game::GetInstance()->GetObjects<AutoTurretManager>()) {
             ImGui::Text(Text(u8"相棒 %d / 1体 / 攻撃待ち %.2f 秒"), manager->GetActiveCount(),
                         manager->GetPool().front()->GetAttackCooldown());
         }
-        if (ImGui::Button(Text(u8"攻撃待ち時間をリセット")))
-        {
+        if (ImGui::Button(Text(u8"攻撃待ち時間をリセット"))) {
             // 未取得の自動武器は発動しない。取得済みの武器を次の更新で確認できる。
             m_currentBulletTime = 0;
             m_currentMissileTime = 0;
-            for (auto manager : Game::GetInstance()->GetObjects<AutoTurretManager>())
-            {
+            for (auto manager : Game::GetInstance()->GetObjects<AutoTurretManager>()) {
                 manager->GetPool().front()->SetAttackCooldown(0.0f);
             }
             m_shockwaveTimer = 0;
             m_lightningTimer = 0;
         }
 
-        for (auto spawner : Game::GetInstance()->GetObjects<CEnemySpawn>())
-        {
+        for (auto spawner : Game::GetInstance()->GetObjects<CEnemySpawn>()) {
             ImGui::PushID(spawner);
             ImGui::Checkbox(Text(u8"敵の自動出現"), &spawner->m_debugSpawnEnabled);
             // 上限を下げても現在の敵は削除せず、次回以降の自動出現を制限する。
-            ImGui::SliderInt(Text(u8"敵の出現上限"), &spawner->m_MaxEnemyCount, 1, 60,
-                             "%d", ImGuiSliderFlags_AlwaysClamp);
-            ImGui::SliderFloat(Text(u8"基本出現間隔（秒）"), &spawner->m_SpawnInterval, 0.75f, 10.0f,
-                               "%.2f", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SliderInt(Text(u8"敵の出現上限"), &spawner->m_maxEnemyCount, 1, 60, "%d",
+                             ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SliderFloat(Text(u8"基本出現間隔（秒）"), &spawner->m_spawnInterval, 0.75f, 10.0f, "%.2f",
+                               ImGuiSliderFlags_AlwaysClamp);
             ImGui::TextWrapped("%s", Text(u8"出現間隔は時間経過でも短縮されます。既存の敵は動き続けます。"));
             ImGui::PopID();
         }
@@ -134,35 +135,29 @@ void CPlayer::DrawSurvivorDebugUI()
 
     ImGui::Separator();
     ImGui::TextDisabled("%s", Text(u8"マウスを重ねると説明と現在の効果を表示"));
-    if (m_hp <= 0)
-    {
+    if (m_hp <= 0) {
         ImGui::TextUnformatted(Text(u8"HPを上げるとスキルを取得できます。"));
     }
-    for (int i = 0; i < static_cast<int>(UpgradeId::Count); ++i)
-    {
+    for (int i = 0; i < static_cast<int>(UpgradeId::Count); ++i) {
         const auto id = static_cast<UpgradeId>(i);
         const auto& definition = GetUpgradeDefinition(id);
         const int rank = m_progression.Rank(id);
         const bool maxed = rank >= definition.maxRank;
         ImGui::PushID(i);
         ImGui::BeginDisabled(maxed || m_hp <= 0 || IsChoosingUpgrade());
-        if (ImGui::Button(Text(definition.name), ImVec2(210, 30)))
-        {
+        if (ImGui::Button(Text(definition.name), ImVec2(210, 30))) {
             DebugGiveUpgrade(id);
         }
         ImGui::EndDisabled();
         // 最大レベルでボタンが無効でも、説明は読めるようにする。
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-        {
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
             ImGui::BeginTooltip();
             ImGui::PushTextWrapPos(ImGui::GetFontSize() * 24.0f);
             ImGui::TextWrapped("%s", Text(definition.description));
-            if (rank > 0)
-            {
+            if (rank > 0) {
                 ImGui::TextWrapped(Text(u8"現在：%s"), GetUpgradeEffectText(id, rank).c_str());
             }
-            if (!maxed)
-            {
+            if (!maxed) {
                 ImGui::TextWrapped(Text(u8"次のレベル：%s"), GetUpgradeEffectText(id, rank + 1).c_str());
             }
             ImGui::PopTextWrapPos();
@@ -177,15 +172,13 @@ void CPlayer::DrawSurvivorDebugUI()
 }
 #endif
 
-void CPlayer::DrawSurvivorUI()
-{
+void CPlayer::DrawSurvivorUI() {
     // UIの位置とサイズは、現在のウィンドウのピクセル数を基準にする。
     const auto display = ImGui::GetIO().DisplaySize;
 
     // ----- 1. 詳細画面を開閉する入力 -----
     // Tabで安全に説明を読める。レベルアップ中は報酬選択を優先する。
-    if (!IsChoosingUpgrade() && ImGui::IsKeyPressed(ImGuiKey_Tab, false))
-    {
+    if (!IsChoosingUpgrade() && ImGui::IsKeyPressed(ImGuiKey_Tab, false)) {
         m_showLoadout = !m_showLoadout;
     }
 
@@ -201,15 +194,12 @@ void CPlayer::DrawSurvivorUI()
 
     // 経験値は内部で100倍されているので、表示するときだけ元の単位へ戻す。
     char xp[80];
-    snprintf(xp,
-             sizeof(xp),
-             "EXP %.1f / %.0f",
-             m_progression.Experience() / 100.0f,
-             m_progression.RequiredExperience() / 100.0f);
+    snprintf(xp, sizeof(xp), "EXP %.1f / %.0f",
+             m_progression.Experience() / static_cast<float>(UpgradeBalance::ExperienceUnit),
+             m_progression.RequiredExperience() / static_cast<float>(UpgradeBalance::ExperienceUnit));
     ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.25f, 0.7f, 0.85f, 1));
     ImGui::ProgressBar(static_cast<float>(m_progression.Experience()) / m_progression.RequiredExperience(),
-                       ImVec2(-1, 16),
-                       xp);
+                       ImVec2(-1, 16), xp);
     ImGui::PopStyleColor();
     ImGui::End();
 
@@ -226,33 +216,27 @@ void CPlayer::DrawSurvivorUI()
 
     // 一覧は最大6種類まで。所持数は全部数え、残りの数と詳細画面の案内を出す。
     int ownedCount = 0;
-    for (int i = 0; i < static_cast<int>(UpgradeId::Count); ++i)
-    {
+    for (int i = 0; i < static_cast<int>(UpgradeId::Count); ++i) {
         const auto id = static_cast<UpgradeId>(i);
         const int rank = m_progression.Rank(id);
-        if (rank > 0)
-        {
+        if (rank > 0) {
             const auto& definition = GetUpgradeDefinition(id);
-            if (ownedCount < 6)
-            {
+            if (ownedCount < 6) {
                 ImGui::Text("%s  Lv.%d / %d", Text(definition.name), rank, definition.maxRank);
             }
             ++ownedCount;
         }
     }
-    if (ownedCount == 0)
-    {
+    if (ownedCount == 0) {
         ImGui::TextDisabled("%s", Text(u8"強化はまだありません"));
     }
-    if (ownedCount > 6)
-    {
+    if (ownedCount > 6) {
         ImGui::Text(Text(u8"ほか%d種類（詳細ですべて表示）"), ownedCount - 6);
     }
 
     // 報酬を選んでいる途中に別のモーダル画面を重ねないよう、一時的にボタンを無効にする。
     ImGui::BeginDisabled(IsChoosingUpgrade());
-    if (ImGui::Button(Text(u8"Tab：効果の詳細を見る"), ImVec2(-1, 30)))
-    {
+    if (ImGui::Button(Text(u8"Tab：効果の詳細を見る"), ImVec2(-1, 30))) {
         m_showLoadout = true;
     }
     ImGui::EndDisabled();
@@ -262,24 +246,20 @@ void CPlayer::DrawSurvivorUI()
     // m_showLoadoutはGame::Updateでも参照され、開いている間はゲーム進行を止める。
     // ImGuiのモーダル表示だけではゲーム内の敵・弾・タイマーは停止しない。
     const char* detailsTitle = Text(u8"装備 / スキル詳細###SurvivorLoadoutDetails");
-    if (m_showLoadout && !ImGui::IsPopupOpen(detailsTitle))
-    {
+    if (m_showLoadout && !ImGui::IsPopupOpen(detailsTitle)) {
         ImGui::OpenPopup(detailsTitle);
     }
     ImGui::SetNextWindowPos(ImVec2(display.x * 0.5f, display.y * 0.5f), 0, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2((std::min)(760.0f, display.x - 32), (std::min)(720.0f, display.y - 40)));
-    if (ImGui::BeginPopupModal(detailsTitle,
-                               nullptr,
+    if (ImGui::BeginPopupModal(detailsTitle, nullptr,
                                ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove |
-                                   ImGuiWindowFlags_NoResize))
-    {
+                                   ImGuiWindowFlags_NoResize)) {
         // 閉じる場合もBegin/Endを通し、ImGui側のモーダル状態を確実に解除する。
-        if (!m_showLoadout)
-        {
+        if (!m_showLoadout) {
             ImGui::CloseCurrentPopup();
         }
-        ImGui::TextColored(
-            ImVec4(0.5f, 0.85f, 1, 1), "%s", Text(u8"ゲーム停止中 / Tab または下のボタンで戻る"));
+        ImGui::TextColored(ImVec4(0.5f, 0.85f, 1, 1), "%s",
+                           Text(u8"ゲーム停止中 / Tab または下のボタンで戻る"));
         ImGui::TextUnformatted(
             Text(u8"スクロールで全スキルを確認できます。数値は現在の強化レベルの効果です。"));
         ImGui::Separator();
@@ -289,33 +269,27 @@ void CPlayer::DrawSurvivorUI()
         ImGui::TextUnformatted(Text(u8"基本武器（最初から使用可能）"));
         ImGui::Text(Text(u8"通常弾：左クリック / ダメージ%d / %d発 / 平均発射間隔%.3f秒"),
                     1 + m_progression.Rank(UpgradeId::BulletPower),
-                    1 + m_progression.Rank(UpgradeId::MultiShot),
-                    m_BulletTime);
+                    1 + m_progression.Rank(UpgradeId::MultiShot), m_bulletTime);
         ImGui::Text(Text(u8"ミサイル：右クリック / ダメージ%d / %d発 / 平均発射間隔%.2f秒"),
-                    3 + 2 * m_progression.Rank(UpgradeId::MissilePower),
-                    curRocket,
-                    m_MissileTime);
-        if (ownedCount == 0)
-        {
+                    3 + 2 * m_progression.Rank(UpgradeId::MissilePower), m_currentRocketCount, m_missileTime);
+        if (ownedCount == 0) {
             ImGui::Spacing();
             ImGui::TextWrapped(
                 "%s", Text(u8"敵を倒してレベルアップするか、プレゼントを拾うと武器・スキルを獲得できます。"));
         }
 
         // 所持している項目だけ、一般的な説明と現在の具体的な性能をセットで表示する。
-        for (int i = 0; i < static_cast<int>(UpgradeId::Count); ++i)
-        {
+        for (int i = 0; i < static_cast<int>(UpgradeId::Count); ++i) {
             const auto id = static_cast<UpgradeId>(i);
             const int rank = m_progression.Rank(id);
-            if (rank <= 0)
-            {
+            if (rank <= 0) {
                 continue;
             }
             const auto& definition = GetUpgradeDefinition(id);
             ImGui::Spacing();
             ImGui::Separator();
-            ImGui::TextColored(
-                ImVec4(0.5f, 0.85f, 1, 1), "%s  Lv.%d / %d", Text(definition.name), rank, definition.maxRank);
+            ImGui::TextColored(ImVec4(0.5f, 0.85f, 1, 1), "%s  Lv.%d / %d", Text(definition.name), rank,
+                               definition.maxRank);
             ImGui::TextWrapped("%s", Text(definition.description));
             const auto effect = GetUpgradeEffectText(id, rank);
             ImGui::TextWrapped(Text(u8"現在の効果：%s"), effect.c_str());
@@ -323,8 +297,7 @@ void CPlayer::DrawSurvivorUI()
 
         // BeginChild/EndChild、BeginPopupModal/EndPopupは必ず対応させる。
         ImGui::EndChild();
-        if (ImGui::Button(Text(u8"閉じてゲームに戻る"), ImVec2(-1, 32)))
-        {
+        if (ImGui::Button(Text(u8"閉じてゲームに戻る"), ImVec2(-1, 32))) {
             m_showLoadout = false;
             ImGui::CloseCurrentPopup();
         }
@@ -333,10 +306,8 @@ void CPlayer::DrawSurvivorUI()
 
     // ----- 5. 画面下部の「獲得した報酬」通知 -----
     // 説明を読んでいる間に通知が消えないよう、一時停止中は表示時間も減らさない。
-    if (m_rewardNoticeTime > 0)
-    {
-        if (!IsGameplayPaused())
-        {
+    if (m_rewardNoticeTime > 0) {
+        if (!IsGameplayPaused()) {
             GameTime::CountDown(m_rewardNoticeTime, GameTime::UnscaledDeltaSeconds());
         }
         ImGui::SetNextWindowPos(ImVec2(display.x * 0.5f, display.y - 70), 0, ImVec2(0.5f, 1));
@@ -347,29 +318,24 @@ void CPlayer::DrawSurvivorUI()
 
     // ----- 6. レベルアップ時の最大3択 -----
     // ここから先は報酬の選択待ちがあるときだけ描画する。
-    if (!IsChoosingUpgrade())
-    {
+    if (!IsChoosingUpgrade()) {
         return;
     }
-    if (m_selectionDelay > 0)
-    {
+    if (m_selectionDelay > 0) {
         // 選択待ちはゲーム停止中も実時間で減らし、0秒で入力を解禁する。
         GameTime::CountDown(m_selectionDelay, GameTime::UnscaledDeltaSeconds());
     }
-    if (!ImGui::IsPopupOpen("SurvivorLevelUp"))
-    {
+    if (!ImGui::IsPopupOpen("SurvivorLevelUp")) {
         ImGui::OpenPopup("SurvivorLevelUp");
     }
     ImGui::SetNextWindowPos(ImVec2(display.x * 0.5f, display.y * 0.5f), 0, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2((std::min)(700.0f, display.x - 32), 0));
     // モーダル表示に加えてGame側でも更新を止め、選択中は攻撃・移動・時間経過を防ぐ。
-    if (ImGui::BeginPopupModal("SurvivorLevelUp",
-                               nullptr,
+    if (ImGui::BeginPopupModal("SurvivorLevelUp", nullptr,
                                ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
-                                   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar))
-    {
-        ImGui::TextColored(
-            ImVec4(0.5f, 0.85f, 1, 1), "%s  Lv.%d", Text(u8"レベルアップ！"), m_progression.Level());
+                                   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar)) {
+        ImGui::TextColored(ImVec4(0.5f, 0.85f, 1, 1), "%s  Lv.%d", Text(u8"レベルアップ！"),
+                           m_progression.Level());
         ImGui::TextUnformatted(Text(u8"武器・スキルを1つ選択。クリック、または数字キー 1 / 2 / 3"));
         ImGui::Text(Text(u8"選択待ち：%d 回（選択中はゲーム停止）"), m_progression.PendingChoices());
         ImGui::Separator();
@@ -378,27 +344,18 @@ void CPlayer::DrawSurvivorUI()
         int selected = -1;
         const auto& choices = m_progression.Choices();
         ImGui::BeginDisabled(m_selectionDelay > 0);
-        for (size_t i = 0; i < choices.size(); ++i)
-        {
+        for (size_t i = 0; i < choices.size(); ++i) {
             const auto& definition = GetUpgradeDefinition(choices[i]);
             // 各候補を独立したボタンとして識別できるよう、ImGui用のIDを付ける。
             ImGui::PushID(static_cast<int>(i));
             char label[160];
-            if (choices[i] == UpgradeId::Heal)
-            {
+            if (choices[i] == UpgradeId::Heal) {
                 snprintf(label, sizeof(label), "%d. %s", static_cast<int>(i) + 1, Text(definition.name));
+            } else {
+                snprintf(label, sizeof(label), "%d. %s  Lv.%d", static_cast<int>(i) + 1,
+                         Text(definition.name), m_progression.Rank(choices[i]) + 1);
             }
-            else
-            {
-                snprintf(label,
-                         sizeof(label),
-                         "%d. %s  Lv.%d",
-                         static_cast<int>(i) + 1,
-                         Text(definition.name),
-                         m_progression.Rank(choices[i]) + 1);
-            }
-            if (ImGui::Button(label, ImVec2(-1, 42)))
-            {
+            if (ImGui::Button(label, ImVec2(-1, 42))) {
                 selected = static_cast<int>(i);
             }
             ImGui::TextWrapped("%s", Text(definition.description));
@@ -413,8 +370,7 @@ void CPlayer::DrawSurvivorUI()
             const auto numberKey = static_cast<ImGuiKey>(ImGuiKey_1 + static_cast<int>(i));
             const auto keypadKey = static_cast<ImGuiKey>(ImGuiKey_Keypad1 + static_cast<int>(i));
             if (m_selectionDelay == 0 &&
-                (ImGui::IsKeyPressed(numberKey, false) || ImGui::IsKeyPressed(keypadKey, false)))
-            {
+                (ImGui::IsKeyPressed(numberKey, false) || ImGui::IsKeyPressed(keypadKey, false))) {
                 selected = static_cast<int>(i);
             }
             ImGui::PopID();
@@ -423,17 +379,14 @@ void CPlayer::DrawSurvivorUI()
 
         // 描画ループを抜けてから報酬を確定する。
         // Selectで候補配列が更新されるため、走査の途中では呼び出さない。
-        if (selected >= 0)
-        {
+        if (selected >= 0) {
             UpgradeId granted;
-            if (m_progression.Select(selected, granted))
-            {
+            if (m_progression.Select(selected, granted)) {
                 ApplyUpgradeEffects(granted, false);
                 m_selectionDelay = 0.2f;
 
                 // まとめて複数レベル上がった場合は閉じず、次の候補を同じ画面で表示する。
-                if (!IsChoosingUpgrade())
-                {
+                if (!IsChoosingUpgrade()) {
                     ImGui::CloseCurrentPopup();
                 }
             }

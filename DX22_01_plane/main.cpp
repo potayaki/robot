@@ -1,20 +1,22 @@
-#include    "main.h"
-#include    "Application.h"
+ï»¿/// @file main.cpp
+/// @brief ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã‚’é–‹å§‹ã—ã€ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ—ã‚’å‘¼ã³å‡ºã™å…¥å£ã€‚
+
+#include "main.h"
+#include "Application.h"
 
 //=======================================
-//ƒGƒ“ƒgƒŠ[ƒ|ƒCƒ“ƒg
+//ã‚¨ãƒ³ãƒˆãƒªãƒ¼ãƒã‚¤ãƒ³ãƒˆ
 //=======================================
-int main(void)
-{
+int main(void) {
 #if defined(DEBUG) || defined(_DEBUG)
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif//defined(DEBUG) || defined(_DEBUG)
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif //defined(DEBUG) || defined(_DEBUG)
 
-	//FreeConsole();
+    //FreeConsole();
 
-	// ƒAƒvƒŠƒP[ƒVƒ‡ƒ“Às
-	Application app(SCREEN_WIDTH, SCREEN_HEIGHT);
-	app.Run();
+    // ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³å®Ÿè¡Œ
+    Application app(SCREEN_WIDTH, SCREEN_HEIGHT);
+    app.Run();
 
-	return 0;
+    return 0;
 }

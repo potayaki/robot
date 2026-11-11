@@ -1,76 +1,57 @@
-#include	<filesystem>
-#include	<string>
-#include	<Windows.h>
+ï»¿/// @file utility.cpp
+/// @brief ãƒ¢ãƒ‡ãƒ«èª­è¾¼ãªã©ã‹ã‚‰ä½¿ã†è£œåŠ©é–¢æ•°ã€‚
+
+#include <filesystem>
+#include <string>
+#include <Windows.h>
 
 namespace utility {
-    // std::string —p‚ÌƒfƒBƒŒƒNƒgƒŠæ“¾ŠÖ”
+    // std::string ç”¨ã®ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªå–å¾—é–¢æ•°
     std::filesystem::path get_directory(const std::string& path) {
         return std::filesystem::path(path).parent_path();
     }
 
-    // std::u8string —p‚ÌƒfƒBƒŒƒNƒgƒŠæ“¾ŠÖ”
+    // std::u8string ç”¨ã®ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªå–å¾—é–¢æ•°
     std::filesystem::path get_directory(const std::u8string& path) {
         return std::filesystem::path(path).parent_path();
     }
 
-    // std::wstring —p‚ÌƒfƒBƒŒƒNƒgƒŠæ“¾ŠÖ”
+    // std::wstring ç”¨ã®ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªå–å¾—é–¢æ•°
     std::filesystem::path get_directory(const std::wstring& path) {
         return std::filesystem::path(path).parent_path();
     }
 
-	// ƒƒCƒh•¶š(utf16)‚ğ‚“|‚Š‚‰‚“‚É
-	std::string wide_to_multi_winapi(std::wstring const& src)
-	{
-		auto const dest_size = ::WideCharToMultiByte(
-			CP_ACP,
-			0U,
-			src.data(),
-			-1,
-			nullptr,
-			0,
-			nullptr,
-			nullptr);
-		std::vector<char> dest(dest_size, '\0');
-		if (::WideCharToMultiByte(
-			CP_ACP,
-			0U,
-			src.data(),
-			-1,
-			dest.data(),
-			static_cast<int>(dest.size()),
-			nullptr,
-			nullptr) == 0) {
-			throw std::system_error{ static_cast<int>(::GetLastError()), std::system_category() };
-		}
-		dest.resize(std::char_traits<char>::length(dest.data()));
-		dest.shrink_to_fit();
-		return std::string(dest.begin(), dest.end());
-	}
+    // ãƒ¯ã‚¤ãƒ‰æ–‡å­—(utf16)ã‚’ï½“ï¼ï½Šï½‰ï½“ã«
+    std::string wide_to_multi_winapi(std::wstring const& src) {
+        auto const dest_size =
+            ::WideCharToMultiByte(CP_ACP, 0U, src.data(), -1, nullptr, 0, nullptr, nullptr);
+        std::vector<char> dest(dest_size, '\0');
+        if (::WideCharToMultiByte(CP_ACP, 0U, src.data(), -1, dest.data(), static_cast<int>(dest.size()),
+                                  nullptr, nullptr) == 0) {
+            throw std::system_error{static_cast<int>(::GetLastError()), std::system_category()};
+        }
+        dest.resize(std::char_traits<char>::length(dest.data()));
+        dest.shrink_to_fit();
+        return std::string(dest.begin(), dest.end());
+    }
 
-	// utf-8‚ğƒƒCƒh•¶š(utf-16)‚É
-	std::wstring utf8_to_wide_winapi(std::string const& src)
-	{
-		auto const dest_size = ::MultiByteToWideChar(
-			CP_UTF8,			 // ƒ\[ƒX‘¤‚ªUTF-8
-			0U,
-			src.data(),
-			-1,
-			nullptr,
-			0U);
-		std::vector<wchar_t> dest(dest_size, L'\0');
-		if (::MultiByteToWideChar(CP_UTF8, 0U, src.data(), -1, dest.data(), static_cast<int>(dest.size())) == 0) {
-			throw std::system_error{ static_cast<int>(::GetLastError()), std::system_category() };
-		}
-		dest.resize(std::char_traits<wchar_t>::length(dest.data()));
-		dest.shrink_to_fit();
-		return std::wstring(dest.begin(), dest.end());
-	}
+    // utf-8ã‚’ãƒ¯ã‚¤ãƒ‰æ–‡å­—(utf-16)ã«
+    std::wstring utf8_to_wide_winapi(std::string const& src) {
+        auto const dest_size = ::MultiByteToWideChar(CP_UTF8, // ã‚½ãƒ¼ã‚¹å´ãŒUTF-8
+                                                     0U, src.data(), -1, nullptr, 0U);
+        std::vector<wchar_t> dest(dest_size, L'\0');
+        if (::MultiByteToWideChar(CP_UTF8, 0U, src.data(), -1, dest.data(), static_cast<int>(dest.size())) ==
+            0) {
+            throw std::system_error{static_cast<int>(::GetLastError()), std::system_category()};
+        }
+        dest.resize(std::char_traits<wchar_t>::length(dest.data()));
+        dest.shrink_to_fit();
+        return std::wstring(dest.begin(), dest.end());
+    }
 
-	// utf8‚ğS-JIS‚É
-	std::string utf8_to_multi_winapi(std::string const& src)
-	{
-		auto const wide = utf8_to_wide_winapi(src);
-		return wide_to_multi_winapi(wide);
-	}
-}
-
+    // utf8ã‚’S-JISã«
+    std::string utf8_to_multi_winapi(std::string const& src) {
+        auto const wide = utf8_to_wide_winapi(src);
+        return wide_to_multi_winapi(wide);
+    }
+} // namespace utility

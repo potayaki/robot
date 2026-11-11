@@ -1,105 +1,96 @@
-#include	"TestPlane.h"
+ï»¿/// @file TestPlane.cpp
+/// @brief å¹³é¢ãƒ¢ãƒ‡ãƒ«ã®é ‚ç‚¹ä½œæˆã¨æç”»ã€‚
+
+#include "TestPlane.h"
 
 using namespace DirectX::SimpleMath;
 
 //=======================================
-//‰Šú‰»ˆ—
+//åˆæœŸåŒ–å‡¦ç†
 //=======================================
-void TestPlane::Init()
-{
+void TestPlane::Init() {
+    // é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿
+    m_vertices.resize(4);
 
-	
+    m_vertices[0].position = Vector3(-10, 0, 10);
+    m_vertices[1].position = Vector3(10, 0, 10);
+    m_vertices[2].position = Vector3(-10, 0, -10);
+    m_vertices[3].position = Vector3(10, 0, -10);
 
-	// ’¸“_ƒf[ƒ^
-	m_Vertices.resize(4);
+    m_vertices[0].color = Color(1, 1, 1, 1);
+    m_vertices[1].color = Color(1, 1, 1, 1);
+    m_vertices[2].color = Color(1, 1, 1, 1);
+    m_vertices[3].color = Color(1, 1, 1, 1);
 
-	m_Vertices[0].position = Vector3(-10,  0,  10);
-	m_Vertices[1].position = Vector3( 10,  0,  10);
-	m_Vertices[2].position = Vector3(-10,  0, -10);
-	m_Vertices[3].position = Vector3( 10,  0, -10);
+    m_vertices[0].uv = Vector2(0, 0);
+    m_vertices[1].uv = Vector2(1, 0);
+    m_vertices[2].uv = Vector2(0, 1);
+    m_vertices[3].uv = Vector2(1, 1);
 
-	m_Vertices[0].color = Color(1, 1, 1, 1);
-	m_Vertices[1].color = Color(1, 1, 1, 1);
-	m_Vertices[2].color = Color(1, 1, 1, 1);
-	m_Vertices[3].color = Color(1, 1, 1, 1);
+    // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
+    m_vertexBuffer.Create(m_vertices);
 
-	m_Vertices[0].uv = Vector2(0, 0);
-	m_Vertices[1].uv = Vector2(1, 0);
-	m_Vertices[2].uv = Vector2(0, 1);
-	m_Vertices[3].uv = Vector2(1,1);
+    // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ãƒ‡ãƒ¼ã‚¿
+    m_indices.resize(4);
 
-	// ’¸“_ƒoƒbƒtƒ@¶¬
-	m_VertexBuffer.Create(m_Vertices);
+    m_indices[0] = 0;
+    m_indices[1] = 1;
+    m_indices[2] = 2;
+    m_indices[3] = 3;
 
-	// ƒCƒ“ƒfƒbƒNƒf[ƒ^
-	m_Indices.resize(4);
+    // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
+    m_indexBuffer.Create(m_indices);
 
-	m_Indices[0] = 0;
-	m_Indices[1] = 1;
-	m_Indices[2] = 2;
-	m_Indices[3] = 3;
+    // ã‚·ã‚§ãƒ¼ãƒ€ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç”Ÿæˆ
+    m_shader.Create("shader/unlitTextureVS.hlsl", "shader/unlitTexturePS.hlsl");
 
-	// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@¶¬
-	m_IndexBuffer.Create(m_Indices);
+    bool sts = m_texture.Load("assets/texture/field.jpg");
+    assert(sts == true);
 
-	// ƒVƒF[ƒ_ƒIƒuƒWƒFƒNƒg¶¬
-	m_Shader.Create("shader/unlitTextureVS.hlsl","shader/unlitTexturePS.hlsl");
-
-	bool sts = m_Texture.Load("assets/texture/field.jpg");
-	assert(sts == true);
-
-	m_Position.y = 10;
-	m_Scale.x = 3;
-	m_Scale.z = 3;
+    m_position.y = 10;
+    m_scale.x = 3;
+    m_scale.z = 3;
 }
 
 //=======================================
-//XVˆ—
+//æ›´æ–°å‡¦ç†
 //=======================================
-void TestPlane::Update()
-{
+void TestPlane::Update() {}
 
+//=======================================
+//æç”»å‡¦ç†
+//=======================================
+void TestPlane::Draw(Camera* cam) {
+    //ã‚«ãƒ¡ãƒ©ã‚’é¸æŠã™ã‚‹
+    cam->SetCamera();
+
+    // SRTæƒ…å ±ä½œæˆ
+    Matrix r = Matrix::CreateFromYawPitchRoll(m_rotation.y, m_rotation.x, m_rotation.z);
+    Matrix t = Matrix::CreateTranslation(m_position.x, m_position.y, m_position.z);
+    Matrix s = Matrix::CreateScale(m_scale.x, m_scale.y, m_scale.z);
+
+    Matrix worldmtx;
+    worldmtx = s * r * t;
+    Renderer::SetWorldMatrix(&worldmtx); // GPUã«ã‚»ãƒƒãƒˆ
+
+    // æç”»ã®å‡¦ç†
+    ID3D11DeviceContext* devicecontext;
+    devicecontext = Renderer::GetDeviceContext();
+
+    // ãƒˆãƒãƒ­ã‚¸ãƒ¼ã‚’ã‚»ãƒƒãƒˆï¼ˆãƒ—ãƒªãƒŸãƒ†ã‚£ãƒ–ã‚¿ã‚¤ãƒ—ï¼‰
+    devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+    m_shader.SetGPU();
+    m_vertexBuffer.SetGPU();
+    m_indexBuffer.SetGPU();
+    m_texture.SetGPU();
+
+    devicecontext->DrawIndexed(m_indices.size(), // æç”»ã™ã‚‹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+                               0, // æœ€åˆã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½ç½®
+                               0);
 }
 
 //=======================================
-//•`‰æˆ—
+//çµ‚äº†å‡¦ç†
 //=======================================
-void TestPlane::Draw(Camera* cam)
-{
-	//ƒJƒƒ‰‚ğ‘I‘ğ‚·‚é
-	cam->SetCamera();
-
-	// SRTî•ñì¬
-	Matrix r = Matrix::CreateFromYawPitchRoll(m_Rotation.y, m_Rotation.x, m_Rotation.z);
-	Matrix t = Matrix::CreateTranslation(m_Position.x, m_Position.y, m_Position.z);
-	Matrix s = Matrix::CreateScale(m_Scale.x, m_Scale.y, m_Scale.z);
-
-	Matrix worldmtx;
-	worldmtx = s * r * t;
-	Renderer::SetWorldMatrix(&worldmtx); // GPU‚ÉƒZƒbƒg
-
-	// •`‰æ‚Ìˆ—
-	ID3D11DeviceContext* devicecontext;
-	devicecontext = Renderer::GetDeviceContext();
-
-	// ƒgƒ|ƒƒW[‚ğƒZƒbƒgiƒvƒŠƒ~ƒeƒBƒuƒ^ƒCƒvj
-	devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-	m_Shader.SetGPU();
-	m_VertexBuffer.SetGPU();
-	m_IndexBuffer.SetGPU();
-	m_Texture.SetGPU();
-
-	devicecontext->DrawIndexed(
-		m_Indices.size(),	// •`‰æ‚·‚éƒCƒ“ƒfƒbƒNƒX”
-		0,					// Å‰‚ÌƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ÌˆÊ’u
-		0);
-}
-
-//=======================================
-//I—¹ˆ—
-//=======================================
-void TestPlane::Uninit()
-{
-
-}
+void TestPlane::Uninit() {}

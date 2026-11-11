@@ -1,16 +1,17 @@
-﻿#include "EyeTurretModel.h"
+﻿/// @file EyeTurretModel.cpp
+/// @brief 目型砲台を構成する球状メッシュと材質の描画。
+
+#include "EyeTurretModel.h"
 #include "Renderer.h"
 
 using namespace DirectX::SimpleMath;
 
-void EyeTurretModel::Init()
-{
+void EyeTurretModel::Init() {
     // FBXや外部の画像を使わず、滑らかな球と目専用のシェーダで白目・虹彩・瞳を描く。
     const auto mesh = EyeTurretShape::BuildSphere();
     std::vector<VERTEX_3D> vertices;
     vertices.reserve(mesh.positions.size());
-    for (const Vector3& position : mesh.positions)
-    {
+    for (const Vector3& position : mesh.positions) {
         VERTEX_3D vertex{};
         vertex.position = position;
         vertex.normal = position;
@@ -23,11 +24,8 @@ void EyeTurretModel::Init()
     m_shader.Create("shader/eyeTurretVS.hlsl", "shader/eyeTurretPS.hlsl");
 }
 
-void EyeTurretModel::Draw(Camera* camera, const Vector3& center, const Quaternion& rotation)
-{
-
-    if (camera == nullptr || m_indexCount == 0)
-    {
+void EyeTurretModel::Draw(Camera* camera, const Vector3& center, const Quaternion& rotation) {
+    if (camera == nullptr || m_indexCount == 0) {
         return;
     }
     ID3D11DeviceContext* context = Renderer::GetDeviceContext();
@@ -55,8 +53,7 @@ void EyeTurretModel::Draw(Camera* camera, const Vector3& center, const Quaternio
     context->OMSetDepthStencilState(previousDepth.Get(), previousStencilReference);
 }
 
-void EyeTurretModel::Uninit()
-{
+void EyeTurretModel::Uninit() {
     // プール終了時とデストラクタから重ねて呼ばれても安全に解放する。
     m_indexCount = 0;
     m_vertices = VertexBuffer<VERTEX_3D>{};

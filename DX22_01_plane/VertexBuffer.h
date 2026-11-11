@@ -1,61 +1,59 @@
+ï»¿/// @file VertexBuffer.h
+/// @brief ä»»æ„ã®é ‚ç‚¹å‹ã«å¯¾å¿œã™ã‚‹Direct3Dé ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã€‚
+
 #pragma once
-#include	<vector>
-#include	<wrl/client.h>
-#include	"renderer.h"
+#include <vector>
+#include <wrl/client.h>
+#include "renderer.h"
 
 using Microsoft::WRL::ComPtr;
 
 //-----------------------------------------------------------------------------
-//VertexBufferƒNƒ‰ƒX
+//VertexBufferã‚¯ãƒ©ã‚¹
 //-----------------------------------------------------------------------------
-template <typename T> class VertexBuffer{
-
-	ComPtr<ID3D11Buffer> m_VertexBuffer;
+template <typename T> class VertexBuffer {
+    /// æç”»é ‚ç‚¹ã‚’ä¿æŒã™ã‚‹GPUãƒãƒƒãƒ•ã‚¡ã€‚
+    ComPtr<ID3D11Buffer> m_vertexBuffer;
 
 public:
-	void Create(const std::vector<T>& vertices)
-	{
-		// ƒfƒoƒCƒXæ“¾
-		ID3D11Device* device = nullptr;
-		device = Renderer::GetDevice();
-		assert(device); //device‚Í‘¶İ‚·‚é‚±‚Æ‚ğŠm”F
+    void Create(const std::vector<T>& vertices) {
+        // ãƒ‡ãƒã‚¤ã‚¹å–å¾—
+        ID3D11Device* device = nullptr;
+        device = Renderer::GetDevice();
+        assert(device); //deviceã¯å­˜åœ¨ã™ã‚‹ã“ã¨ã‚’ç¢ºèª
 
-		// ’¸“_ƒoƒbƒtƒ@ì¬
-		bool sts = Renderer::CreateVertexBufferWrite(
-			sizeof(T),						// 1’¸“_“–‚½‚èƒoƒCƒg”
-			(unsigned int)vertices.size(),	// ’¸“_”
-			(void*)vertices.data(),			// ’¸“_ƒf[ƒ^Ši”[ƒƒ‚ƒŠæ“ªƒAƒhƒŒƒX
-			&m_VertexBuffer);				// ’¸“_ƒoƒbƒtƒ@
+        // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ä½œæˆ
+        bool sts =
+            Renderer::CreateVertexBufferWrite(sizeof(T), // 1é ‚ç‚¹å½“ãŸã‚Šãƒã‚¤ãƒˆæ•°
+                                              (unsigned int)vertices.size(), // é ‚ç‚¹æ•°
+                                              (void*)vertices.data(), // é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿æ ¼ç´ãƒ¡ãƒ¢ãƒªå…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
+                                              &m_vertexBuffer); // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡
 
-		assert(sts == true); //Œ‹‰Ê‚ğŠm”F
-	}
+        assert(sts == true); //çµæœã‚’ç¢ºèª
+    }
 
-	// GPU‚ÉƒZƒbƒg
-	void SetGPU()
-	{
-		// ƒfƒoƒCƒXƒRƒ“ƒeƒLƒXƒgæ“¾
-		ID3D11DeviceContext* devicecontext = nullptr;
-		devicecontext = Renderer::GetDeviceContext();
+    // GPUã«ã‚»ãƒƒãƒˆ
+    void SetGPU() {
+        // ãƒ‡ãƒã‚¤ã‚¹ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆå–å¾—
+        ID3D11DeviceContext* devicecontext = nullptr;
+        devicecontext = Renderer::GetDeviceContext();
 
-		// ’¸“_ƒoƒbƒtƒ@‚ğƒZƒbƒg‚·‚é
-		unsigned int stride = sizeof(T);
-		unsigned  offset = 0;
-		devicecontext->IASetVertexBuffers(0, 1, m_VertexBuffer.GetAddressOf(), &stride, &offset);
-	}
+        // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚’ã‚»ãƒƒãƒˆã™ã‚‹
+        unsigned int stride = sizeof(T);
+        unsigned offset = 0;
+        devicecontext->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+    }
 
-	// ’¸“_ƒoƒbƒtƒ@‚ğ‘‚«Š·‚¦‚é
-	void Modify(const std::vector<T>& vertices)
-	{
-		//’¸“_ƒf[ƒ^‘‚«Š·‚¦
-		D3D11_MAPPED_SUBRESOURCE msr;
-		HRESULT hr = Renderer::GetDeviceContext()->Map(
-			m_VertexBuffer.Get(), 
-			0,
-			D3D11_MAP_WRITE_DISCARD, 0, &msr);
+    // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚’æ›¸ãæ›ãˆã‚‹
+    void Modify(const std::vector<T>& vertices) {
+        //é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿æ›¸ãæ›ãˆ
+        D3D11_MAPPED_SUBRESOURCE msr;
+        HRESULT hr =
+            Renderer::GetDeviceContext()->Map(m_vertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
 
-		if (SUCCEEDED(hr)) {
-			memcpy(msr.pData, vertices.data(), vertices.size() * sizeof(T));
-			Renderer::GetDeviceContext()->Unmap(m_VertexBuffer.Get(), 0);
-		}
-	}
+        if (SUCCEEDED(hr)) {
+            memcpy(msr.pData, vertices.data(), vertices.size() * sizeof(T));
+            Renderer::GetDeviceContext()->Unmap(m_vertexBuffer.Get(), 0);
+        }
+    }
 };

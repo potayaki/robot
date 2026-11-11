@@ -1,16 +1,17 @@
-﻿#include "../DX22_01_plane/BulletHoming.h"
+﻿/// @file BulletHomingTests.cpp
+/// @brief 動作と境界条件を検証する BulletHomingTests の自動テスト。
+
+#include "../DX22_01_plane/BulletHoming.h"
 #include <SimpleMath.h>
 #include "../DX22_01_plane/AimCursor.h"
 #include <cassert>
 #include <iostream>
 
-using DirectX::SimpleMath::Vector3;
 using DirectX::SimpleMath::Vector2;
+using DirectX::SimpleMath::Vector3;
 
-namespace
-{
-    float AngleDegrees(Vector3 a, Vector3 b)
-    {
+namespace {
+    float AngleDegrees(Vector3 a, Vector3 b) {
         a.Normalize();
         b.Normalize();
         // 小さな旋回ではacosだと1付近の丸め誤差が増えるため、外積と内積から測る。
@@ -18,16 +19,14 @@ namespace
     }
 } // namespace
 
-int main()
-{
+int main() {
     const Vector3 zero(0, 0, 0);
     const Vector3 velocity(0, 0, 25);
     const Vector3 target(100, 60, 200);
     // 未取得は直進。レベルごとの旋回上限・弾速維持・高さ方向の誘導を確認。
     assert(BulletHoming::Turn(velocity, target, 0, 1.0f / 60.0f) == velocity);
     float previousAngle = 0;
-    for (int rank = 1; rank <= BulletHoming::MaxRank; ++rank)
-    {
+    for (int rank = 1; rank <= BulletHoming::MaxRank; ++rank) {
         const auto turned = BulletHoming::Turn(velocity, target, rank, 1.0f / 60.0f);
         const float angle = AngleDegrees(velocity, turned);
         assert(angle > previousAngle);
@@ -61,14 +60,14 @@ int main()
     const Vector3 outside(-30, 0, 30);
     const Vector3 insideNear(5, 0, 150);
     const Vector3 insideFar(-2, 0, 350);
-    const Vector3 candidates[] = { outside, insideFar, insideNear };
-    auto selectInCursor = [&](const AimCursor::Region& region, const Vector3& bulletPosition)
-    {
+    const Vector3 candidates[] = {outside, insideFar, insideNear};
+    auto selectInCursor = [&](const AimCursor::Region& region, const Vector3& bulletPosition) {
         BulletHoming::Search<Vector3> selection(velocity);
-        for (const auto& center : candidates)
-        {
+        for (const auto& center : candidates) {
             float score = 0;
-            if (region.TryGetBulletScore(center, 5, score)) selection.Consider(center - bulletPosition, score);
+            if (region.TryGetBulletScore(center, 5, score)) {
+                selection.Consider(center - bulletPosition, score);
+            }
         }
         return selection;
     };
@@ -88,8 +87,7 @@ int main()
 
     // 画面端でも、水平・垂直の境界が表示円と一致する（円外の四隅も除く）。
     const float focalLength = 360.0f / std::tan(AimCursor::FieldOfView * 0.5f);
-    const auto screenPoint = [&](float x, float y)
-    {
+    const auto screenPoint = [&](float x, float y) {
         return Vector3(x * 500.0f / focalLength, y * 500.0f / focalLength, 500.0f);
     };
     const AimCursor::Region edgeCursor(zero, Vector3(0, 0, 1), Vector2(500, 200), 720);
@@ -97,8 +95,7 @@ int main()
     float score = 0;
     assert(!edgeCursor.TryGetBulletScore(screenPoint(500, 200), 0, score));
     float previousRadius = 0;
-    for (int rank = 1; rank <= BulletHoming::MaxRank; ++rank)
-    {
+    for (int rank = 1; rank <= BulletHoming::MaxRank; ++rank) {
         assert(BulletHoming::CrosshairSize(rank) == 32.0f + 16.0f * (rank - 1));
         const float bulletRadius = BulletHoming::CursorRadius(rank);
         assert(bulletRadius > previousRadius);
@@ -136,17 +133,14 @@ int main()
     const Vector3 secondEnemy(0, 0, 300);
     bool retargeted = false;
     float nearestFirst = 1000;
-    for (int frame = 0; frame < 12; ++frame)
-    {
+    for (int frame = 0; frame < 12; ++frame) {
         BulletHoming::Search<Vector3> step(moving);
         step.Consider(firstEnemy - position, 4);
         step.Consider(secondEnemy - position, 9);
-        if (position.z > firstEnemy.z && step.Found() && step.Offset() == secondEnemy - position)
-        {
+        if (position.z > firstEnemy.z && step.Found() && step.Offset() == secondEnemy - position) {
             retargeted = true;
         }
-        if (step.Found())
-        {
+        if (step.Found()) {
             moving = BulletHoming::Turn(moving, step.Offset(), 1, 1.0f / 60.0f);
         }
         position += moving;
@@ -157,15 +151,14 @@ int main()
     BulletHoming::Search<Vector3> empty(moving);
     assert(!empty.Found());
     // 同じ0.25秒ならFPSが違っても同じ旋回角・同じ弾速になる。
-    for (int fps : {30, 60, 120, 144})
-    {
+    for (int fps : {30, 60, 120, 144}) {
         Vector3 heading = velocity;
         const float dt = 0.25f / (fps / 4);
-        for (int i = 0; i < fps / 4; ++i)
-        {
+        for (int i = 0; i < fps / 4; ++i) {
             heading = BulletHoming::Turn(heading, Vector3(1000, 0, 1000), 1, dt);
         }
-        assert(std::abs(AngleDegrees(velocity, heading) - BulletHoming::DegreesPerSecond(1) * 0.25f) < 0.002f);
+        assert(std::abs(AngleDegrees(velocity, heading) - BulletHoming::DegreesPerSecond(1) * 0.25f) <
+               0.002f);
         assert(std::abs(heading.Length() - velocity.Length()) < 0.0001f);
     }
     assert(BulletHoming::Turn(velocity, target, 5, 0.0f) == velocity);

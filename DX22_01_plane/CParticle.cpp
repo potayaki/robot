@@ -1,6 +1,9 @@
-﻿#include "CParticle.h"
+﻿/// @file CParticle.cpp
+/// @brief 火花などの粒子の移動、寿命、共有描画資源。
+
+#include "CParticle.h"
 #include "Game.h"
-#include"Renderer.h"
+#include "Renderer.h"
 #include <cmath>
 
 // static変数の実体を定義
@@ -19,8 +22,7 @@ CParticle::CParticle() {
         m_life = 1.0f;
     }
 
-    m_color = DirectX::SimpleMath::Color(1.0f, 1.0f, 1.0f, 1.0f );
-
+    m_color = DirectX::SimpleMath::Color(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 CParticle::~CParticle() {
@@ -38,23 +40,20 @@ void CParticle::Update() {
 
     if (m_type == Test) {
         // 速度の分だけ移動
-        
-        m_Position += m_velocity * deltaSeconds;
-        m_Position.y -= 0.5f * 72.0f * deltaSeconds * deltaSeconds;
-        m_velocity.y -= 72.0f * deltaSeconds; // 重力（距離/秒²）。
+
+        m_position += m_velocity * deltaSeconds;
+        m_position.y -= 0.5f * m_gravity * deltaSeconds * deltaSeconds;
+        m_velocity.y -= m_gravity * deltaSeconds; // 重力（距離/秒²）。
 
         // クルクル回転させる
-        m_Rotation.x += 6.0f * deltaSeconds;
-        m_Rotation.y += 6.0f * deltaSeconds;
-        
+        m_rotation.x += m_spinSpeed * deltaSeconds;
+        m_rotation.y += m_spinSpeed * deltaSeconds;
 
-    }
-    else if (m_type == Spark) {
+    } else if (m_type == Spark) {
         // 旧「毎フレーム0.95倍」を秒に応じた指数減衰へ変換する。
-        const float shrink = std::pow(0.95f, deltaSeconds * 60.0f);
-        m_Scale *= shrink;
+        const float shrink = std::pow(m_shrinkPerReferenceFrame, deltaSeconds * m_referenceFramesPerSecond);
+        m_scale *= shrink;
     }
-
 
     // 寿命を減らして、0になったら自分を消す
     GameTime::CountDown(m_life, deltaSeconds);
@@ -65,14 +64,14 @@ void CParticle::Update() {
 
 void CParticle::Draw(Camera* cam) {
     if (m_type == Test && m_body) {
-        m_body->SetPosition(m_Position.x, m_Position.y, m_Position.z);
-        m_body->SetRotation(m_Rotation);
-        m_body->SetScale(m_Scale.x, m_Scale.y, m_Scale.z); // ★ スケールを適用！
+        m_body->SetPosition(m_position.x, m_position.y, m_position.z);
+        m_body->SetRotation(m_rotation);
+        m_body->SetScale(m_scale.x, m_scale.y, m_scale.z); // ★ スケールを適用！
         m_body->Draw(cam);
     }
     //  Sparkの場合は、板（ビルボード）として画像を描く
     else if (m_type == Spark && m_sparkTexture) {
-        Renderer::SetBlendState(2); // 加算合成（光るモード）
+        Renderer::SetBlendState(BS_ADDITIVE); // 加算合成（光るモード）
 
         cam->SetCamera(0); // 3Dカメラを使用
         DirectX::SimpleMath::Matrix viewMtx = cam->GetViewMatrix();
@@ -81,8 +80,8 @@ void CParticle::Draw(Camera* cam) {
         DirectX::SimpleMath::Matrix billboardMtx = viewMtx.Invert();
         billboardMtx.Translation(DirectX::SimpleMath::Vector3::Zero);
 
-        DirectX::SimpleMath::Matrix s = DirectX::SimpleMath::Matrix::CreateScale(m_Scale);
-        DirectX::SimpleMath::Matrix t = DirectX::SimpleMath::Matrix::CreateTranslation(m_Position);
+        DirectX::SimpleMath::Matrix s = DirectX::SimpleMath::Matrix::CreateScale(m_scale);
+        DirectX::SimpleMath::Matrix t = DirectX::SimpleMath::Matrix::CreateTranslation(m_position);
         DirectX::SimpleMath::Matrix worldMtx = s * billboardMtx * t;
 
         Renderer::SetWorldMatrix(&worldMtx);
@@ -104,13 +103,11 @@ void CParticle::Draw(Camera* cam) {
         dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
         dc->DrawIndexed(4, 0, 0);
 
-        Renderer::SetBlendState(1); // 通常の半透明に戻す
+        Renderer::SetBlendState(BS_ALPHABLEND); // 通常の半透明に戻す
     }
 }
 
-void CParticle::Uninit() {
-
-}
+void CParticle::Uninit() {}
 
 void CParticle::Preload() {
     if (m_body == nullptr) {
@@ -132,7 +129,9 @@ void CParticle::Preload() {
         vertices[1].position = DirectX::SimpleMath::Vector3(0.5f, 0.5f, 0);
         vertices[2].position = DirectX::SimpleMath::Vector3(-0.5f, -0.5f, 0);
         vertices[3].position = DirectX::SimpleMath::Vector3(0.5f, -0.5f, 0);
-        for (int i = 0; i < 4; i++) vertices[i].color = DirectX::SimpleMath::Color(1, 1, 1, 1);
+        for (int i = 0; i < 4; i++) {
+            vertices[i].color = DirectX::SimpleMath::Color(1, 1, 1, 1);
+        }
         vertices[0].uv = DirectX::SimpleMath::Vector2(0, 0);
         vertices[1].uv = DirectX::SimpleMath::Vector2(1, 0);
         vertices[2].uv = DirectX::SimpleMath::Vector2(0, 1);
@@ -141,7 +140,7 @@ void CParticle::Preload() {
         m_sparkVB = new VertexBuffer<VERTEX_3D>();
         m_sparkVB->Create(vertices);
 
-        std::vector<unsigned int> indices = { 0, 1, 2, 3 };
+        std::vector<unsigned int> indices = {0, 1, 2, 3};
         m_sparkIB = new IndexBuffer();
         m_sparkIB->Create(indices);
 
@@ -151,5 +150,4 @@ void CParticle::Preload() {
         mtrl.TextureEnable = true;
         m_sparkMaterial->Create(mtrl);
     }
-
 }

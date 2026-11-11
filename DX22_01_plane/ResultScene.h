@@ -1,22 +1,27 @@
+﻿/// @file ResultScene.h
+/// @brief ゲーム終了後の結果画面。
+
 #pragma once
 #include "Scene.h"
 #include "Object.h"
 
-// ResultScene�N���X
-class ResultScene : public Scene
-{
+// ResultSceneクラス
+class ResultScene : public Scene {
 private:
-	std::vector<Object*> m_MySceneObjects; // ���̃V�[���̃I�u�W�F�N�g
+    /// このシーンのオブジェクト
+    std::vector<Object*> m_mySceneObjects;
 
-	void Init(); // ������
-	void Uninit(); // �I������
+    /// 使用前の状態と必要な資源を初期化する。
+    void Init(); // 初期化
+    /// 使用した資源を解放して終了する。
+    void Uninit(); // 終了処理
 
 public:
-	ResultScene(); // �R���X�g���N�^
-	~ResultScene(); // �f�X�g���N�^
+    ResultScene(); // コンストラクタ
+    ~ResultScene(); // デストラクタ
 
-	void Setscore(int c);//�X�R�A��ݒ�
+    void Setscore(int c); //スコアを設定
 
-	void Update(); // �X�V
+    /// 経過時間と入力に合わせて状態を更新する。
+    void Update(); // 更新
 };
-

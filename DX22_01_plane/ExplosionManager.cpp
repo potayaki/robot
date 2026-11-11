@@ -1,7 +1,10 @@
-﻿#include "ExplosionManager.h"
+﻿/// @file ExplosionManager.cpp
+/// @brief 再利用可能な爆発エフェクトの管理。
+
+#include "ExplosionManager.h"
 
 void ExplosionManager::Init() {
-    billboard::LoadTextures("explosion", "assets/texture/PNG/Explosion/Explosion",".png",1);
+    billboard::LoadTextures("explosion", "assets/texture/PNG/Explosion/Explosion", ".png", 1);
 
     for (int i = 0; i < POOL_SIZE; i++) {
         m_pool[i] = new billboard();

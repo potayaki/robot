@@ -1,27 +1,29 @@
-﻿#include <chrono>
+﻿/// @file Application.cpp
+/// @brief Windowsウィンドウの作成、メインループ、終了処理。
+
+#include <chrono>
 #include <thread>
 #include "Application.h"
 #include "Game.h"
 // レベルアップUIは製品ビルドでも操作できるようにする。
-#include"imgui_impl_win32.h"
-#include"imgui.h"
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-const auto ClassName = TEXT("2022 framework ひな型");     //ウィンドウクラス名
-const auto WindowName = TEXT("2023 framework ひな型");    //ウィンドウ名
+#include "imgui_impl_win32.h"
+#include "imgui.h"
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam,
+                                                             LPARAM lParam);
+const auto ClassName = TEXT("2022 framework ひな型"); //ウィンドウクラス名
+const auto WindowName = TEXT("2023 framework ひな型"); //ウィンドウ名
 
-
-HINSTANCE  Application::m_hInst;   // インスタンスハンドル
-HWND       Application::m_hWnd;    // ウィンドウハンドル
-uint32_t   Application::m_Width;   // ウィンドウの横幅
-uint32_t   Application::m_Height;  // ウィンドウの縦幅
+HINSTANCE Application::m_hInst; // インスタンスハンドル
+HWND Application::m_hWnd; // ウィンドウハンドル
+uint32_t Application::m_width; // ウィンドウの横幅
+uint32_t Application::m_height; // ウィンドウの縦幅
 
 //-----------------------------------------------------------------------------
 // コンストラクタ
 //-----------------------------------------------------------------------------
-Application::Application(uint32_t width, uint32_t height)
-{ 
-    m_Height = height;
-    m_Width = width;
+Application::Application(uint32_t width, uint32_t height) {
+    m_height = height;
+    m_width = width;
 
     timeBeginPeriod(1); //タイマー精度を1ミリ秒に設定
 }
@@ -29,19 +31,19 @@ Application::Application(uint32_t width, uint32_t height)
 //-----------------------------------------------------------------------------
 // デストラクタ
 //-----------------------------------------------------------------------------
-Application::~Application()
-{ 
+Application::~Application() {
     timeEndPeriod(1); // タイマー精度を元に戻す
 }
 
 //-----------------------------------------------------------------------------
 // 実行
 //-----------------------------------------------------------------------------
-void Application::Run()
-{
+void Application::Run() {
     //初期化
     bool okfg = InitApp();
-    if (okfg) { MainLoop(); }
+    if (okfg) {
+        MainLoop();
+    }
 
     UninitApp(); // 終了処理
 }
@@ -49,15 +51,12 @@ void Application::Run()
 //-----------------------------------------------------------------------------
 // 初期化処理
 //-----------------------------------------------------------------------------
-bool Application::InitApp()
-{
-
+bool Application::InitApp() {
     SetProcessDPIAware();
 
     // インスタンスハンドルを取得
     auto hInst = GetModuleHandle(nullptr);
-    if (hInst == nullptr)
-    {
+    if (hInst == nullptr) {
         return false;
     }
 
@@ -74,8 +73,7 @@ bool Application::InitApp()
     wc.hIconSm = LoadIcon(hInst, IDI_APPLICATION);
 
     // ウィンドウの登録
-    if (!RegisterClassEx(&wc))
-    {
+    if (!RegisterClassEx(&wc)) {
         return false;
     }
 
@@ -84,31 +82,20 @@ bool Application::InitApp()
 
     // ウィンドウのサイズを設定
     RECT rc = {};
-    rc.right = static_cast<LONG>(m_Width);
-    rc.bottom = static_cast<LONG>(m_Height);
+    rc.right = static_cast<LONG>(m_width);
+    rc.bottom = static_cast<LONG>(m_height);
 
     // ウィンドウサイズを調整
     auto style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
     AdjustWindowRect(&rc, style, FALSE);
 
     // ウィンドウを生成
-    m_hWnd = CreateWindowEx(
-        0,
-        //        WS_EX_TOPMOST,
-        ClassName,
-        WindowName,
-        style,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        rc.right - rc.left,
-        rc.bottom - rc.top,
-        nullptr,
-        nullptr,
-        m_hInst,
-        nullptr);
+    m_hWnd = CreateWindowEx(0,
+                            //        WS_EX_TOPMOST,
+                            ClassName, WindowName, style, CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left,
+                            rc.bottom - rc.top, nullptr, nullptr, m_hInst, nullptr);
 
-    if (m_hWnd == nullptr)
-    {
+    if (m_hWnd == nullptr) {
         return false;
     }
 
@@ -128,17 +115,14 @@ bool Application::InitApp()
 
     // 正常終了
     return true;
-
 }
 
 //-----------------------------------------------------------------------------
 // 終了処理
 //-----------------------------------------------------------------------------
-void Application::UninitApp()
-{
+void Application::UninitApp() {
     // ウィンドウの登録を解除
-    if (m_hInst != nullptr)
-    {
+    if (m_hInst != nullptr) {
         UnregisterClass(ClassName, m_hInst);
     }
 
@@ -149,8 +133,7 @@ void Application::UninitApp()
 //-----------------------------------------------------------------------------
 // メインループ
 //-----------------------------------------------------------------------------
-void Application::MainLoop()
-{
+void Application::MainLoop() {
     MSG msg{};
     Game::Init();
 
@@ -159,11 +142,11 @@ void Application::MainLoop()
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&previous);
 
-    while (true)
-    {
-        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-        {
-            if (msg.message == WM_QUIT) break;
+    while (true) {
+        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_QUIT) {
+                break;
+            }
             TranslateMessage(&msg);
             DispatchMessage(&msg);
             continue;
@@ -173,8 +156,7 @@ void Application::MainLoop()
         QueryPerformanceCounter(&current);
 
         // 最小化中も基準時刻を更新し、復帰時に停止時間をまとめて進めない。
-        if (IsIconic(m_hWnd))
-        {
+        if (IsIconic(m_hWnd)) {
             previous = current;
             Sleep(10);
             continue;
@@ -186,7 +168,9 @@ void Application::MainLoop()
             static_cast<double>(current.QuadPart - previous.QuadPart) / frequency.QuadPart;
 
         // 描画の上限は従来どおり60fps。ゲームの時間には固定値ではなく実測値を渡す。
-        if (elapsedSeconds < 1.0 / 60.0) continue;
+        if (elapsedSeconds < 1.0 / 60.0) {
+            continue;
+        }
         previous = current;
 
         Game::Update(elapsedSeconds);
@@ -199,105 +183,98 @@ void Application::MainLoop()
 //-----------------------------------------------------------------------------
 // ウィンドウプロシージャ
 //-----------------------------------------------------------------------------
-LRESULT CALLBACK Application::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
+LRESULT CALLBACK Application::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static bool isFullscreen = true;
     static bool isMessageBoxShowed = false;
-    if (ImGui::GetCurrentContext() && ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
+    if (ImGui::GetCurrentContext() && ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
         return true;
-
-    switch (uMsg)
-    {
-    case WM_DESTROY:// ウィンドウ破棄のメッセージ
-        PostQuitMessage(0);// 「WM_QUIT」メッセージを送る　→　アプリ終了
-        break;
-
-    case WM_CLOSE:  // 「x」ボタンが押されたら
-    {
-            DestroyWindow(hWnd);  // 「WM_DESTROY」メッセージを送る
-        int res = MessageBoxA(NULL, "終了しますか？", "確認", MB_OKCANCEL);
-        if (res == IDOK) {
-        }
     }
-    break;
 
-    case WM_KEYDOWN: //キー入力があったメッセージ
-        if (LOWORD(wParam) == VK_ESCAPE)
-        { //入力されたキーがESCAPEなら
-            PostMessage(hWnd, WM_CLOSE, wParam, lParam);//「WM_CLOSE」を送る
-        }
+    switch (uMsg) {
+        case WM_DESTROY: // ウィンドウ破棄のメッセージ
+            PostQuitMessage(0); // 「WM_QUIT」メッセージを送る　→　アプリ終了
+            break;
 
-        else if (LOWORD(wParam) == VK_F11)
+        case WM_CLOSE: // 「x」ボタンが押されたら
         {
-            isFullscreen = !isFullscreen;
-            if (isFullscreen) {
-                //フルスクリーンに切り替え
-                //g_pSwapChain->SetFullscreenState(TRUE, NULL);
-                //ShowWindow(hWnd, SW_MAXIMIZE);
-
-                // 疑似フルスクリーンモードに変更
-                SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_MINIMIZEBOX); // ウィンドウ枠を削除
-                // ディスプレイ解像度を取得
-                int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-                int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-                SetWindowPos(hWnd, HWND_TOP, 0, 0, screenWidth, screenHeight, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+            DestroyWindow(hWnd); // 「WM_DESTROY」メッセージを送る
+            int res = MessageBoxA(NULL, "終了しますか？", "確認", MB_OKCANCEL);
+            if (res == IDOK) {
             }
-            else {
-                //ウィンドウモードに戻す
-                //g_pSwapChain->SetFullscreenState(FALSE, NULL);
-                //ShowWindow(hWnd, SW_RESTORE);
+        } break;
 
-                // 通常ウィンドウに戻す
-                SetWindowLongPtr(hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW); // ウィンドウ枠を戻す
-                SetWindowPos(hWnd, HWND_TOP, 100, 100, m_Width, m_Height, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+        case WM_KEYDOWN: //キー入力があったメッセージ
+            if (LOWORD(wParam) == VK_ESCAPE) { //入力されたキーがESCAPEなら
+                PostMessage(hWnd, WM_CLOSE, wParam, lParam); //「WM_CLOSE」を送る
             }
-        }
-        break;
 
-    case WM_ACTIVATE:
-        if (wParam == WA_INACTIVE) {
-            // フルスクリーン表示かつメッセージボックス非表示なら
-            if (isFullscreen && !isMessageBoxShowed)
-            {
-                // ウインドウを最小化する（タスク切替時に背後に残る問題対策）
-                ShowWindow(hWnd, SW_MINIMIZE);
+            else if (LOWORD(wParam) == VK_F11) {
+                isFullscreen = !isFullscreen;
+                if (isFullscreen) {
+                    //フルスクリーンに切り替え
+                    //g_pSwapChain->SetFullscreenState(TRUE, NULL);
+                    //ShowWindow(hWnd, SW_MAXIMIZE);
+
+                    // 疑似フルスクリーンモードに変更
+                    SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_MINIMIZEBOX); // ウィンドウ枠を削除
+                    // ディスプレイ解像度を取得
+                    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+                    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+                    SetWindowPos(hWnd, HWND_TOP, 0, 0, screenWidth, screenHeight,
+                                 SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+                } else {
+                    //ウィンドウモードに戻す
+                    //g_pSwapChain->SetFullscreenState(FALSE, NULL);
+                    //ShowWindow(hWnd, SW_RESTORE);
+
+                    // 通常ウィンドウに戻す
+                    SetWindowLongPtr(hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW); // ウィンドウ枠を戻す
+                    SetWindowPos(hWnd, HWND_TOP, 100, 100, m_width, m_height,
+                                 SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+                }
             }
-        }
-        // 標準挙動を実行
-        return DefWindowProc(hWnd, uMsg, wParam, lParam);
+            break;
 
-    case WM_SIZE: //ウィンドウサイズに変更があったメッセージ
+        case WM_ACTIVATE:
+            if (wParam == WA_INACTIVE) {
+                // フルスクリーン表示かつメッセージボックス非表示なら
+                if (isFullscreen && !isMessageBoxShowed) {
+                    // ウインドウを最小化する（タスク切替時に背後に残る問題対策）
+                    ShowWindow(hWnd, SW_MINIMIZE);
+                }
+            }
+            // 標準挙動を実行
+            return DefWindowProc(hWnd, uMsg, wParam, lParam);
 
-        if (wParam != SIZE_MINIMIZED)
-        {
-            int width = LOWORD(lParam); //横幅
-            int height = HIWORD(lParam); //縦幅
-            Renderer::ResizeWindow(width, height);
-        }
-        break;
+        case WM_SIZE: //ウィンドウサイズに変更があったメッセージ
+
+            if (wParam != SIZE_MINIMIZED) {
+                int width = LOWORD(lParam); //横幅
+                int height = HIWORD(lParam); //縦幅
+                Renderer::ResizeWindow(width, height);
+            }
+            break;
 
         case WM_SETCURSOR: //カーソルの形を変更するメッセージ
-        if (LOWORD(lParam) == HTCLIENT) {// ウィンドウのクライアント領域内であれば
+            if (LOWORD(lParam) == HTCLIENT) { // ウィンドウのクライアント領域内であれば
 
 #ifdef _DEBUG
 
-
-            if (ImGui::GetIO().WantCaptureMouse) {
-                return DefWindowProc(hWnd, uMsg, wParam, lParam);
-            }
+                if (ImGui::GetIO().WantCaptureMouse) {
+                    return DefWindowProc(hWnd, uMsg, wParam, lParam);
+                }
 #endif // _DEBUG
 
-            SetCursor(nullptr);// カーソルを非表示にする
-            return TRUE;    // ウィンドウプロシージャで処理したことをOSに伝える
-        }
-        break;
+                SetCursor(nullptr); // カーソルを非表示にする
+                return TRUE; // ウィンドウプロシージャで処理したことをOSに伝える
+            }
+            break;
 
-    default:
-        // 受け取ったメッセージに対してデフォルトの処理を実行
-        return DefWindowProc(hWnd, uMsg, wParam, lParam);
-        break;
+        default:
+            // 受け取ったメッセージに対してデフォルトの処理を実行
+            return DefWindowProc(hWnd, uMsg, wParam, lParam);
+            break;
     }
 
     return 0;
 }
-

@@ -1,327 +1,292 @@
-#include	<vector>
-#include	<iostream>
-#include	<unordered_map>
-#include	<cassert>
-#include	"Texture.h"
-#include	"AssimpPerse.h"
+ï»¿/// @file AssimpPerse.cpp
+/// @brief Assimpã§èª­ã¿è¾¼ã‚“ã ç´ æã‚’ã‚²ãƒ¼ãƒ ç”¨ã®é ‚ç‚¹ãƒ»æè³ªã¸å¤‰æ›ã€‚
+
+#include <vector>
+#include <iostream>
+#include <unordered_map>
+#include <cassert>
+#include "Texture.h"
+#include "AssimpPerse.h"
 
 #pragma comment(lib, "assimp-vc143-mtd.lib")
 
-namespace AssimpPerse
-{
-	std::vector<std::vector<VERTEX>> g_vertices{};		// ’¸“_ƒf[ƒ^iƒƒbƒVƒ…’PˆÊj
-	std::vector<std::vector<unsigned int>> g_indices{};	// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^iƒƒbƒVƒ…’PˆÊj
-	std::vector<SUBSET> g_subsets{};					// ƒTƒuƒZƒbƒgî•ñ
-	std::vector<MATERIAL> g_materials{};				// ƒ}ƒeƒŠƒAƒ‹
-	std::vector<std::unique_ptr<Texture>> g_textures;	// ƒfƒBƒtƒ…[ƒYƒeƒNƒXƒ`ƒƒŒQ
+namespace AssimpPerse {
+    std::vector<std::vector<VERTEX>> g_vertices{}; // é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥å˜ä½ï¼‰
+    std::vector<std::vector<unsigned int>> g_indices{}; // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥å˜ä½ï¼‰
+    std::vector<SUBSET> g_subsets{}; // ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±
+    std::vector<MATERIAL> g_materials{}; // ãƒãƒ†ãƒªã‚¢ãƒ«
+    std::vector<std::unique_ptr<Texture>> g_textures; // ãƒ‡ã‚£ãƒ•ãƒ¥ãƒ¼ã‚ºãƒ†ã‚¯ã‚¹ãƒãƒ£ç¾¤
 
-	// ƒfƒBƒtƒ…[ƒYTxtureƒRƒ“ƒeƒi‚ğ•Ô‚·
-	std::vector<std::unique_ptr<Texture>> GetTextures()
-	{
-		return std::move(g_textures);
-	}
+    // ãƒ‡ã‚£ãƒ•ãƒ¥ãƒ¼ã‚ºTxtureã‚³ãƒ³ãƒ†ãƒŠã‚’è¿”ã™
+    std::vector<std::unique_ptr<Texture>> GetTextures() {
+        return std::move(g_textures);
+    }
 
-	// ƒ}ƒeƒŠƒAƒ‹î•ñ‚ğassimp‚ğg—p‚µ‚Äæ“¾‚·‚é
-	void GetMaterialData(const aiScene* pScene, std::string texturedirectory)
-	{
-		// ƒ}ƒeƒŠƒAƒ‹”•ªƒeƒNƒXƒ`ƒƒŠi”[ƒGƒŠƒA‚ğ—pˆÓ‚·‚é
-		g_textures.resize(pScene->mNumMaterials);
+    // ãƒãƒ†ãƒªã‚¢ãƒ«æƒ…å ±ã‚’assimpã‚’ä½¿ç”¨ã—ã¦å–å¾—ã™ã‚‹
+    void GetMaterialData(const aiScene* pScene, std::string texturedirectory) {
+        // ãƒãƒ†ãƒªã‚¢ãƒ«æ•°åˆ†ãƒ†ã‚¯ã‚¹ãƒãƒ£æ ¼ç´ã‚¨ãƒªã‚¢ã‚’ç”¨æ„ã™ã‚‹
+        g_textures.resize(pScene->mNumMaterials);
 
-		// ƒ}ƒeƒŠƒAƒ‹”•¶ƒ‹[ƒv
-		for (unsigned int m = 0; m < pScene->mNumMaterials; m++)
-		{
-			aiMaterial* material = pScene->mMaterials[m];
+        // ãƒãƒ†ãƒªã‚¢ãƒ«æ•°æ–‡ãƒ«ãƒ¼ãƒ—
+        for (unsigned int m = 0; m < pScene->mNumMaterials; m++) {
+            aiMaterial* material = pScene->mMaterials[m];
 
-			// ƒ}ƒeƒŠƒAƒ‹–¼æ“¾
-			std::string mtrlname = std::string(material->GetName().C_Str());
-			std::cout << mtrlname << std::endl;
+            // ãƒãƒ†ãƒªã‚¢ãƒ«åå–å¾—
+            std::string mtrlname = std::string(material->GetName().C_Str());
+            std::cout << mtrlname << std::endl;
 
-			// ƒ}ƒeƒŠƒAƒ‹î•ñ
-			aiColor4D ambient;
-			aiColor4D diffuse;
-			aiColor4D specular;
-			aiColor4D emission;
-			float shiness;
+            // ãƒãƒ†ãƒªã‚¢ãƒ«æƒ…å ±
+            aiColor4D ambient;
+            aiColor4D diffuse;
+            aiColor4D specular;
+            aiColor4D emission;
+            float shiness;
 
-			// ƒAƒ“ƒrƒGƒ“ƒg
-			if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &ambient)) {
-			}
-			else {
-				ambient = aiColor4D(0.0f, 0.0f, 0.0f, 0.0f);
-			}
+            // ã‚¢ãƒ³ãƒ“ã‚¨ãƒ³ãƒˆ
+            if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &ambient)) {
+            } else {
+                ambient = aiColor4D(0.0f, 0.0f, 0.0f, 0.0f);
+            }
 
-			// ƒfƒBƒtƒ…[ƒY
-			if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &diffuse)) {
-			}
-			else {
-				diffuse = aiColor4D(1.0f, 1.0f, 1.0f, 1.0f);
-			}
+            // ãƒ‡ã‚£ãƒ•ãƒ¥ãƒ¼ã‚º
+            if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &diffuse)) {
+            } else {
+                diffuse = aiColor4D(1.0f, 1.0f, 1.0f, 1.0f);
+            }
 
-			// ƒXƒyƒLƒ…ƒ‰
-			if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &specular)) {
-			}
-			else {
-				specular = aiColor4D(0.0f, 0.0f, 0.0f, 0.0f);
-			}
+            // ã‚¹ãƒšã‚­ãƒ¥ãƒ©
+            if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &specular)) {
+            } else {
+                specular = aiColor4D(0.0f, 0.0f, 0.0f, 0.0f);
+            }
 
-			// ƒGƒ~ƒbƒVƒ‡ƒ“
-			if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_EMISSIVE, &emission)) {
-			}
-			else {
-				emission = aiColor4D(0.0f, 0.0f, 0.0f, 0.0f);
-			}
+            // ã‚¨ãƒŸãƒƒã‚·ãƒ§ãƒ³
+            if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_EMISSIVE, &emission)) {
+            } else {
+                emission = aiColor4D(0.0f, 0.0f, 0.0f, 0.0f);
+            }
 
-			// ƒVƒƒƒCƒlƒX
-			if (AI_SUCCESS == aiGetMaterialFloat(material, AI_MATKEY_SHININESS, &shiness)) {
-			}
-			else {
-				shiness = 0.0f;
-			}
+            // ã‚·ãƒ£ã‚¤ãƒã‚¹
+            if (AI_SUCCESS == aiGetMaterialFloat(material, AI_MATKEY_SHININESS, &shiness)) {
+            } else {
+                shiness = 0.0f;
+            }
 
-			// ‚±‚Ìƒ}ƒeƒŠƒAƒ‹‚É•R‚Ã‚¢‚Ä‚¢‚éƒfƒBƒtƒ…[ƒYƒeƒNƒXƒ`ƒƒ”•ªƒ‹[ƒv
-			std::vector<std::string> texpaths{};
+            // ã“ã®ãƒãƒ†ãƒªã‚¢ãƒ«ã«ç´ã¥ã„ã¦ã„ã‚‹ãƒ‡ã‚£ãƒ•ãƒ¥ãƒ¼ã‚ºãƒ†ã‚¯ã‚¹ãƒãƒ£æ•°åˆ†ãƒ«ãƒ¼ãƒ—
+            std::vector<std::string> texpaths{};
 
-			for (unsigned int t = 0; t < material->GetTextureCount(aiTextureType_DIFFUSE); t++)
-			{
-				aiString path{};
+            for (unsigned int t = 0; t < material->GetTextureCount(aiTextureType_DIFFUSE); t++) {
+                aiString path{};
 
-				// t”Ô–Ú‚ÌƒeƒNƒXƒ`ƒƒƒpƒXæ“¾
-				if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, t), path))
-				{
-					// ƒeƒNƒXƒ`ƒƒƒpƒXæ“¾
-					std::string texpath = std::string(path.C_Str());
-					std::cout << texpath << std::endl;
+                // tç•ªç›®ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒ‘ã‚¹å–å¾—
+                if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, t), path)) {
+                    // ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒ‘ã‚¹å–å¾—
+                    std::string texpath = std::string(path.C_Str());
+                    std::cout << texpath << std::endl;
 
-					// ƒeƒNƒXƒ`ƒƒƒpƒX‚Éu:v‚ªŠÜ‚Ü‚ê‚Ä‚¢‚ê‚Îâ‘ÎƒpƒX‚È‚Ì‚ÅƒpƒX‚ğ‰ÁH‚·‚é
-					if (texpath.find(':') != std::string::npos) {
-						// ƒXƒ‰ƒbƒVƒ…‚Ü‚½‚ÍƒoƒbƒNƒXƒ‰ƒbƒVƒ…‚ªÅŒã‚ÉŒ»‚ê‚éˆÊ’u‚ğ’T‚·
-						size_t pos = texpath.find_last_of("/\\");
-						if (pos != std::string::npos)
-						{
-							// ÅŒã‚ÌƒXƒ‰ƒbƒVƒ…‚Ü‚½‚ÍƒoƒbƒNƒXƒ‰ƒbƒVƒ…‚ÌŸ‚©‚ç•¶š—ñ‚ğ•Ô‚·
-							texpath = texpath.substr(pos + 1);
-						}
-					}
-					texpaths.push_back(texpath);
+                    // ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒ‘ã‚¹ã«ã€Œ:ã€ãŒå«ã¾ã‚Œã¦ã„ã‚Œã°çµ¶å¯¾ãƒ‘ã‚¹ãªã®ã§ãƒ‘ã‚¹ã‚’åŠ å·¥ã™ã‚‹
+                    if (texpath.find(':') != std::string::npos) {
+                        // ã‚¹ãƒ©ãƒƒã‚·ãƒ¥ã¾ãŸã¯ãƒãƒƒã‚¯ã‚¹ãƒ©ãƒƒã‚·ãƒ¥ãŒæœ€å¾Œã«ç¾ã‚Œã‚‹ä½ç½®ã‚’æ¢ã™
+                        size_t pos = texpath.find_last_of("/\\");
+                        if (pos != std::string::npos) {
+                            // æœ€å¾Œã®ã‚¹ãƒ©ãƒƒã‚·ãƒ¥ã¾ãŸã¯ãƒãƒƒã‚¯ã‚¹ãƒ©ãƒƒã‚·ãƒ¥ã®æ¬¡ã‹ã‚‰æ–‡å­—åˆ—ã‚’è¿”ã™
+                            texpath = texpath.substr(pos + 1);
+                        }
+                    }
+                    texpaths.push_back(texpath);
 
-					// “à‘ ƒeƒNƒXƒ`ƒƒ‚©‚Ç‚¤‚©‚ğ”»’f‚·‚é
-					if (auto tex = pScene->GetEmbeddedTexture(path.C_Str())) {
+                    // å†…è”µãƒ†ã‚¯ã‚¹ãƒãƒ£ã‹ã©ã†ã‹ã‚’åˆ¤æ–­ã™ã‚‹
+                    if (auto tex = pScene->GetEmbeddedTexture(path.C_Str())) {
+                        std::unique_ptr<Texture> texture = std::make_unique<Texture>();
 
-						std::unique_ptr<Texture> texture = std::make_unique<Texture>();
+                        // å†…è”µãƒ†ã‚¯ã‚¹ãƒãƒ£ã®å ´åˆ
+                        bool sts = texture->LoadFromFemory(
+                            (unsigned char*)tex->pcData, // å…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
+                            tex->mWidth); // ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚µã‚¤ã‚ºï¼ˆãƒ¡ãƒ¢ãƒªã«ã‚ã‚‹å ´åˆå¹…ãŒã‚µã‚¤ã‚ºï¼‰
+                        if (sts) {
+                            g_textures[m] = std::move(texture);
+                        }
+                        std::cout << "Embedded" << std::endl;
 
-						// “à‘ ƒeƒNƒXƒ`ƒƒ‚Ìê‡
-						bool sts = texture->LoadFromFemory(
-							(unsigned char*)tex->pcData,			// æ“ªƒAƒhƒŒƒX
-							tex->mWidth);			// ƒeƒNƒXƒ`ƒƒƒTƒCƒYiƒƒ‚ƒŠ‚É‚ ‚éê‡•‚ªƒTƒCƒYj	
-						if (sts) {
-							g_textures[m] = std::move(texture);
-						}
-						std::cout << "Embedded" << std::endl;
+                    } else {
+                        // å¤–éƒ¨ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒ•ã‚¡ã‚¤ãƒ«ã®å ´åˆ
+                        std::unique_ptr<Texture> texture;
+                        texture = std::make_unique<Texture>();
 
-					}
-					else {
-						// ŠO•”ƒeƒNƒXƒ`ƒƒƒtƒ@ƒCƒ‹‚Ìê‡
-						std::unique_ptr<Texture> texture;
-						texture = std::make_unique<Texture>();
+                        std::string texname = texturedirectory + "/" + texpath;
 
-						std::string texname = texturedirectory + "/" + texpath;
+                        bool sts = texture->Load(texname);
+                        if (sts) {
+                            g_textures[m] = std::move(texture);
+                        }
 
-						bool sts = texture->Load(texname);
-						if (sts) {
-							g_textures[m] = std::move(texture);
-						}
+                        std::cout << "other Embedded" << std::endl;
+                    }
+                }
+                // ãƒ‡ã‚£ãƒ•ãƒ¥ãƒ¼ã‚ºãƒ†ã‚¯ã‚¹ãƒãƒ£ãŒãªã‹ã£ãŸå ´åˆ
+                else {
+                    // å¤–éƒ¨ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒ•ã‚¡ã‚¤ãƒ«ã®å ´åˆ
+                    std::unique_ptr<Texture> texture;
+                    texture = std::make_unique<Texture>();
+                    g_textures[m] = std::move(texture);
+                }
+            }
 
-						std::cout << "other Embedded" << std::endl;
-					}
-				}
-				// ƒfƒBƒtƒ…[ƒYƒeƒNƒXƒ`ƒƒ‚ª‚È‚©‚Á‚½ê‡
-				else
-				{
-					// ŠO•”ƒeƒNƒXƒ`ƒƒƒtƒ@ƒCƒ‹‚Ìê‡
-					std::unique_ptr<Texture> texture;
-					texture = std::make_unique<Texture>();
-					g_textures[m] = std::move(texture);
-				}
-			}
+            // ãƒãƒ†ãƒªã‚¢ãƒ«æƒ…å ±ã‚’ä¿å­˜
+            AssimpPerse::MATERIAL mtrl{};
+            mtrl.mtrlname = mtrlname;
+            mtrl.Ambient = ambient;
+            mtrl.Diffuse = diffuse;
+            mtrl.Specular = specular;
+            mtrl.Emission = emission;
+            mtrl.Shiness = shiness;
+            if (texpaths.size() == 0) {
+                mtrl.texturename = "";
+            } else {
+                mtrl.texturename = texpaths[0];
+            }
+            g_materials.push_back(mtrl);
+        }
+    }
 
-			// ƒ}ƒeƒŠƒAƒ‹î•ñ‚ğ•Û‘¶
-			AssimpPerse::MATERIAL mtrl{};
-			mtrl.mtrlname = mtrlname;
-			mtrl.Ambient = ambient;
-			mtrl.Diffuse = diffuse;
-			mtrl.Specular = specular;
-			mtrl.Emission = emission;
-			mtrl.Shiness = shiness;
-			if (texpaths.size() == 0)
-			{
-				mtrl.texturename = "";
-			}
-			else
-			{
-				mtrl.texturename = texpaths[0];
-			}
-			g_materials.push_back(mtrl);
-		}
-	}
+    void GetModelData(std::string filename, std::string texturedirectory) {
+        //ãƒ‡ãƒ¼ã‚¿ã‚’ä¸€åº¦ã‚¯ãƒªã‚¢
+        g_vertices.clear(); // é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿
+        g_indices.clear(); // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿
+        g_subsets.clear(); // ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±
+        g_materials.clear(); // ãƒãƒ†ãƒªã‚¢ãƒ«
+        g_textures.clear(); // ãƒ‡ã‚£ãƒ•ãƒ¥ãƒ¼ã‚ºãƒ†ã‚¯ã‚¹ãƒãƒ£ç¾¤
 
-	void GetModelData(std::string filename, std::string texturedirectory)
-	{
-		//ƒf[ƒ^‚ğˆê“xƒNƒŠƒA
-		g_vertices.clear();		// ’¸“_ƒf[ƒ^
-		g_indices.clear();		// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^
-		g_subsets.clear();		// ƒTƒuƒZƒbƒgî•ñ
-		g_materials.clear();	// ƒ}ƒeƒŠƒAƒ‹
-		g_textures.clear(); 	// ƒfƒBƒtƒ…[ƒYƒeƒNƒXƒ`ƒƒŒQ
+        // ã‚·ãƒ¼ãƒ³æƒ…å ±æ§‹ç¯‰
+        Assimp::Importer importer;
 
-		// ƒV[ƒ“î•ñ\’z
-		Assimp::Importer importer;
+        // ã‚·ãƒ¼ãƒ³æƒ…å ±ã‚’æ§‹ç¯‰
+        const aiScene* pScene = importer.ReadFile(filename.c_str(),
+                                                  aiProcess_ConvertToLeftHanded | // å·¦æ‰‹åº§æ¨™ç³»ã«å¤‰æ›ã™ã‚‹
+                                                      aiProcess_Triangulate); // ä¸‰è§’å½¢åŒ–ã™ã‚‹
 
-		// ƒV[ƒ“î•ñ‚ğ\’z
-		const aiScene* pScene = importer.ReadFile(
-			filename.c_str(),
-			aiProcess_ConvertToLeftHanded |	// ¶èÀ•WŒn‚É•ÏŠ·‚·‚é
-			aiProcess_Triangulate);			// OŠpŒ`‰»‚·‚é
+        if (pScene == nullptr) {
+            std::cout << "load error" << filename.c_str() << importer.GetErrorString() << std::endl;
+        }
+        assert(pScene != nullptr);
 
-		if (pScene == nullptr)
-		{
-			std::cout << "load error" << filename.c_str() << importer.GetErrorString() << std::endl;
-		}
-		assert(pScene != nullptr);
+        // ãƒãƒ†ãƒªã‚¢ãƒ«æƒ…å ±å–å¾—
+        GetMaterialData(pScene, texturedirectory);
 
-		// ƒ}ƒeƒŠƒAƒ‹î•ñæ“¾
-		GetMaterialData(pScene, texturedirectory);
+        // ãƒ¡ãƒƒã‚·ãƒ¥æ•°æ–‡ãƒ«ãƒ¼ãƒ—ï¼ˆãƒãƒ†ãƒªã‚¢ãƒ«æ¯ã«ãƒ¡ãƒƒã‚·ãƒ¥ã‚’åˆ†å‰²ã™ã‚‹ã‚ˆã†ã«æŒ‡å®šã—ã¦ã„ã‚‹ï¼‰
+        g_vertices.resize(pScene->mNumMeshes);
 
-		// ƒƒbƒVƒ…”•¶ƒ‹[ƒviƒ}ƒeƒŠƒAƒ‹–ˆ‚ÉƒƒbƒVƒ…‚ğ•ªŠ„‚·‚é‚æ‚¤‚Éw’è‚µ‚Ä‚¢‚éj
-		g_vertices.resize(pScene->mNumMeshes);
+        for (unsigned int m = 0; m < pScene->mNumMeshes; m++) {
+            aiMesh* mesh = pScene->mMeshes[m];
 
-		for (unsigned int m = 0; m < pScene->mNumMeshes; m++)
-		{
-			aiMesh* mesh = pScene->mMeshes[m];
+            // ãƒ¡ãƒƒã‚·ãƒ¥åå–å¾—
+            std::string meshname = std::string(mesh->mName.C_Str());
 
-			// ƒƒbƒVƒ…–¼æ“¾
-			std::string meshname = std::string(mesh->mName.C_Str());
+            //ã€€é ‚ç‚¹æ•°åˆ†ãƒ«ãƒ¼ãƒ—
+            for (unsigned int vidx = 0; vidx < mesh->mNumVertices; vidx++) {
+                // é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿
+                VERTEX v{};
+                v.meshname = meshname; // ãƒ¡ãƒƒã‚·ãƒ¥åã‚»ãƒƒãƒˆ
 
-			//@’¸“_”•ªƒ‹[ƒv
-			for (unsigned int vidx = 0; vidx < mesh->mNumVertices; vidx++)
-			{
-				// ’¸“_ƒf[ƒ^
-				VERTEX	v{};
-				v.meshname = meshname;		// ƒƒbƒVƒ…–¼ƒZƒbƒg
+                // åº§æ¨™
+                v.pos = mesh->mVertices[vidx];
 
-				// À•W		
-				v.pos = mesh->mVertices[vidx];
+                // ã“ã®é ‚ç‚¹ãŒä½¿ç”¨ã—ã¦ã„ã‚‹ãƒãƒ†ãƒªã‚¢ãƒ«ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ç•ªå·ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥å†…ã®ï¼‰
+                // ã‚’ä½¿ç”¨ã—ã¦ãƒãƒ†ãƒªã‚¢ãƒ«åã‚’ã‚»ãƒƒãƒˆ
+                v.materialindex = mesh->mMaterialIndex;
 
-				// ‚±‚Ì’¸“_‚ªg—p‚µ‚Ä‚¢‚éƒ}ƒeƒŠƒAƒ‹‚ÌƒCƒ“ƒfƒbƒNƒX”Ô†iƒƒbƒVƒ…“à‚Ìj
-				// ‚ğg—p‚µ‚Äƒ}ƒeƒŠƒAƒ‹–¼‚ğƒZƒbƒg
-				v.materialindex = mesh->mMaterialIndex;
+                v.mtrlname = g_materials[mesh->mMaterialIndex].mtrlname;
 
-				v.mtrlname = g_materials[mesh->mMaterialIndex].mtrlname;
+                // æ³•ç·šã‚ã‚Šï¼Ÿ
+                if (mesh->HasNormals()) {
+                    v.normal = mesh->mNormals[vidx];
+                } else {
+                    v.normal = aiVector3D(0.0f, 0.0f, 0.0f);
+                }
 
-				// –@ü‚ ‚èH
-				if (mesh->HasNormals()) {
-					v.normal = mesh->mNormals[vidx];
-				}
-				else
-				{
-					v.normal = aiVector3D(0.0f, 0.0f, 0.0f);
-				}
+                // é ‚ç‚¹ã‚«ãƒ©ãƒ¼ï¼Ÿï¼ˆï¼ç•ªç›®ï¼‰
+                if (mesh->HasVertexColors(0)) {
+                    v.color = mesh->mColors[0][vidx];
+                } else {
+                    v.color = aiColor4D(1.0f, 1.0f, 1.0f, 1.0f);
+                }
 
-				// ’¸“_ƒJƒ‰[Hi‚O”Ô–Új
-				if (mesh->HasVertexColors(0)) {
-					v.color = mesh->mColors[0][vidx];
-				}
-				else
-				{
-					v.color = aiColor4D(1.0f, 1.0f, 1.0f, 1.0f);
-				}
+                // ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚ã‚Šï¼Ÿï¼ˆï¼ç•ªç›®ï¼‰
+                if (mesh->HasTextureCoords(0)) {
+                    v.texcoord = mesh->mTextureCoords[0][vidx];
+                } else {
+                    v.texcoord = aiVector3D(0.0f, 0.0f, 0.0f);
+                }
 
-				// ƒeƒNƒXƒ`ƒƒ‚ ‚èHi‚O”Ô–Új
-				if (mesh->HasTextureCoords(0)) {
-					v.texcoord = mesh->mTextureCoords[0][vidx];
-				}
-				else
-				{
-					v.texcoord = aiVector3D(0.0f, 0.0f, 0.0f);
-				}
+                // é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã‚’è¿½åŠ 
+                g_vertices[m].push_back(v);
+            }
+        }
 
-				// ’¸“_ƒf[ƒ^‚ğ’Ç‰Á
-				g_vertices[m].push_back(v);
-			}
-		}
+        // ãƒ¡ãƒƒã‚·ãƒ¥æ•°æ–‡ãƒ«ãƒ¼ãƒ—
+        // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ä½œæˆ
+        g_indices.resize(pScene->mNumMeshes);
+        for (unsigned int m = 0; m < pScene->mNumMeshes; m++) {
+            aiMesh* mesh = pScene->mMeshes[m];
 
-		// ƒƒbƒVƒ…”•¶ƒ‹[ƒv
-		// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^ì¬
-		g_indices.resize(pScene->mNumMeshes);
-		for (unsigned int m = 0; m < pScene->mNumMeshes; m++)
-		{
-			aiMesh* mesh = pScene->mMeshes[m];
+            // ãƒ¡ãƒƒã‚·ãƒ¥åå–å¾—
+            std::string meshname = std::string(mesh->mName.C_Str());
 
-			// ƒƒbƒVƒ…–¼æ“¾
-			std::string meshname = std::string(mesh->mName.C_Str());
+            // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°åˆ†ãƒ«ãƒ¼ãƒ—
+            for (unsigned int fidx = 0; fidx < mesh->mNumFaces; fidx++) {
+                aiFace face = mesh->mFaces[fidx];
 
-			// ƒCƒ“ƒfƒbƒNƒX”•ªƒ‹[ƒv
-			for (unsigned int fidx = 0; fidx < mesh->mNumFaces; fidx++)
-			{
-				aiFace face = mesh->mFaces[fidx];
+                assert(face.mNumIndices == 3); // ä¸‰è§’å½¢ã®ã¿å¯¾å¿œ
 
-				assert(face.mNumIndices == 3);	// OŠpŒ`‚Ì‚İ‘Î‰
+                // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’è¿½åŠ 
+                for (unsigned int i = 0; i < face.mNumIndices; i++) {
+                    g_indices[m].push_back(face.mIndices[i]);
+                }
+            }
+        }
 
-				// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^‚ğ’Ç‰Á
-				for (unsigned int i = 0; i < face.mNumIndices; i++)
-				{
-					g_indices[m].push_back(face.mIndices[i]);
-				}
-			}
-		}
+        // ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±ã‚’ç”Ÿæˆ
+        g_subsets.resize(pScene->mNumMeshes);
+        for (unsigned int m = 0; m < g_subsets.size(); m++) {
+            g_subsets[m].IndexNum = (unsigned int)g_indices[m].size();
+            g_subsets[m].VertexNum = (unsigned int)g_vertices[m].size();
+            g_subsets[m].VertexBase = 0;
+            g_subsets[m].IndexBase = 0;
+            g_subsets[m].meshname = g_vertices[m][0].meshname;
+            g_subsets[m].mtrlname = g_vertices[m][0].mtrlname;
+            g_subsets[m].materialindex = g_vertices[m][0].materialindex;
+        }
 
-		// ƒTƒuƒZƒbƒgî•ñ‚ğ¶¬
-		g_subsets.resize(pScene->mNumMeshes);
-		for (unsigned int m = 0; m < g_subsets.size(); m++)
-		{
-			g_subsets[m].IndexNum = (unsigned int)g_indices[m].size();
-			g_subsets[m].VertexNum = (unsigned int)g_vertices[m].size();
-			g_subsets[m].VertexBase = 0;
-			g_subsets[m].IndexBase = 0;
-			g_subsets[m].meshname = g_vertices[m][0].meshname;
-			g_subsets[m].mtrlname = g_vertices[m][0].mtrlname;
-			g_subsets[m].materialindex = g_vertices[m][0].materialindex;
-		}
+        // ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±ã‚’ç›¸å¯¾çš„ãªã‚‚ã®ã«ã™ã‚‹
+        for (int m = 0; m < g_subsets.size(); m++) {
+            // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã®ãƒ™ãƒ¼ã‚¹ã‚’è¨ˆç®—
+            g_subsets[m].VertexBase = 0;
+            for (int i = m - 1; i >= 0; i--) {
+                g_subsets[m].VertexBase += g_subsets[i].VertexNum;
+            }
 
-		// ƒTƒuƒZƒbƒgî•ñ‚ğ‘Š‘Î“I‚È‚à‚Ì‚É‚·‚é	
-		for (int m = 0; m < g_subsets.size(); m++)
-		{
-			// ’¸“_ƒoƒbƒtƒ@‚Ìƒx[ƒX‚ğŒvZ
-			g_subsets[m].VertexBase = 0;
-			for (int i = m - 1; i >= 0; i--) {
-				g_subsets[m].VertexBase += g_subsets[i].VertexNum;
-			}
+            // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ãƒ™ãƒ¼ã‚¹ã‚’è¨ˆç®—
+            g_subsets[m].IndexBase = 0;
+            for (int i = m - 1; i >= 0; i--) {
+                g_subsets[m].IndexBase += g_subsets[i].IndexNum;
+            }
+        }
+    }
 
-			// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚Ìƒx[ƒX‚ğŒvZ
-			g_subsets[m].IndexBase = 0;
-			for (int i = m - 1; i >= 0; i--) {
-				g_subsets[m].IndexBase += g_subsets[i].IndexNum;
-			}
-		}
-	}
+    // ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±
+    std::vector<SUBSET> GetSubsets() {
+        return g_subsets;
+    }
 
-	// ƒTƒuƒZƒbƒgî•ñ
-	std::vector<SUBSET> GetSubsets()
-	{
-		return g_subsets;
-	}
+    std::vector<std::vector<VERTEX>> GetVertices() {
+        return g_vertices; // é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥å˜ä½ï¼‰
+    }
 
-	std::vector<std::vector<VERTEX>> GetVertices()
-	{
-		return g_vertices; // ’¸“_ƒf[ƒ^iƒƒbƒVƒ…’PˆÊj
-	}
+    std::vector<std::vector<unsigned int>> GetIndices() {
+        return g_indices; // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥å˜ä½ï¼‰
+    }
 
-	std::vector<std::vector<unsigned int>> GetIndices()
-	{
-		return g_indices; // ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^iƒƒbƒVƒ…’PˆÊj
-	}
-
-	std::vector<MATERIAL> GetMaterials()
-	{
-		return g_materials; // ƒ}ƒeƒŠƒAƒ‹
-	}
-}
+    std::vector<MATERIAL> GetMaterials() {
+        return g_materials; // ãƒãƒ†ãƒªã‚¢ãƒ«
+    }
+} // namespace AssimpPerse

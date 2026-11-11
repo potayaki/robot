@@ -1,3 +1,6 @@
+﻿/// @file SurvivorProgressionTests.cpp
+/// @brief 動作と境界条件を検証する SurvivorProgressionTests の自動テスト。
+
 #include "../DX22_01_plane/SurvivorProgression.h"
 #include <cassert>
 #include "../DX22_01_plane/BulletHoming.h"
@@ -78,7 +81,9 @@ int main() {
     for (int i = 0; i < 200; ++i) {
         const auto item = chest.GrantPresent();
         assert(chest.PendingChoices() == 1 && chest.Level() == 2);
-        if (item != UpgradeId::Heal) assert(chest.Rank(item) <= GetUpgradeDefinition(item).maxRank);
+        if (item != UpgradeId::Heal) {
+            assert(chest.Rank(item) <= GetUpgradeDefinition(item).maxRank);
+        }
         for (auto choice : chest.Choices()) {
             assert(choice == UpgradeId::Heal || chest.Rank(choice) < GetUpgradeDefinition(choice).maxRank);
         }
@@ -93,17 +98,21 @@ int main() {
     }
     assert(GetUpgradeDefinition(UpgradeId::BulletHoming).maxRank == 5);
     assert(chest.Rank(UpgradeId::BulletHoming) == 5); // プレゼントの共通抽選にも含まれる。
-    assert(GetUpgradeEffectText(UpgradeId::BulletHoming, 1).find(
-        std::to_string(static_cast<int>(BulletHoming::DegreesPerSecond(1)))) != std::string::npos);
-    assert(GetUpgradeEffectText(UpgradeId::BulletHoming, 5).find(
-        std::to_string(static_cast<int>(BulletHoming::DegreesPerSecond(5)))) != std::string::npos);
+    assert(GetUpgradeEffectText(UpgradeId::BulletHoming, 1)
+               .find(std::to_string(static_cast<int>(BulletHoming::DegreesPerSecond(1)))) !=
+           std::string::npos);
+    assert(GetUpgradeEffectText(UpgradeId::BulletHoming, 5)
+               .find(std::to_string(static_cast<int>(BulletHoming::DegreesPerSecond(5)))) !=
+           std::string::npos);
     assert(GetUpgradeEffectText(UpgradeId::RapidFire, 1).find("0.085") != std::string::npos);
     assert(chest.Choices().size() == 1 && chest.Choices()[0] == UpgradeId::Heal);
     assert(chest.Select(0, reward) && reward == UpgradeId::Heal);
 
     // Fractional XP bonuses must accumulate even when each kill awards only one XP.
     SurvivorProgression bonus(91);
-    while (bonus.Rank(UpgradeId::Experience) == 0) bonus.GrantPresent();
+    while (bonus.Rank(UpgradeId::Experience) == 0) {
+        bonus.GrantPresent();
+    }
     bonus.AddExperience(1);
     assert(bonus.Experience() == 120);
 

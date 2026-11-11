@@ -1,30 +1,33 @@
-﻿#include "CollisionDebugDraw.h"
+﻿/// @file CollisionDebugDraw.cpp
+/// @brief 当たり判定をテクスチャなしの線で表示するデバッグ描画。
+
+#include "CollisionDebugDraw.h"
 #ifdef _DEBUG
 #include <cmath>
 
 using namespace DirectX::SimpleMath;
 
-void CollisionDebugDraw::Init()
-{
+void CollisionDebugDraw::Init() {
     Uninit();
     constexpr unsigned segments = 64;
     std::vector<VERTEX_3D> vertices;
     vertices.reserve(3 * segments * 2);
 
     // XY・YZ・XZ平面の3つの円で球を示す。面の塗りつぶしや三角形の対角線は描かない。
-    for (unsigned plane = 0; plane < 3; ++plane)
-    {
-        for (unsigned segment = 0; segment < segments; ++segment)
-        {
-            for (unsigned endpoint = 0; endpoint < 2; ++endpoint)
-            {
+    for (unsigned plane = 0; plane < 3; ++plane) {
+        for (unsigned segment = 0; segment < segments; ++segment) {
+            for (unsigned endpoint = 0; endpoint < 2; ++endpoint) {
                 const float angle = DirectX::XM_2PI * (segment + endpoint) / segments;
                 const float c = std::cos(angle);
                 const float s = std::sin(angle);
                 VERTEX_3D vertex{};
-                if (plane == 0) vertex.position = Vector3(c, s, 0);
-                else if (plane == 1) vertex.position = Vector3(0, c, s);
-                else vertex.position = Vector3(c, 0, s);
+                if (plane == 0) {
+                    vertex.position = Vector3(c, s, 0);
+                } else if (plane == 1) {
+                    vertex.position = Vector3(0, c, s);
+                } else {
+                    vertex.position = Vector3(c, 0, s);
+                }
                 vertex.color = Color(1, 1, 1, 1);
                 vertices.push_back(vertex);
             }
@@ -35,27 +38,34 @@ void CollisionDebugDraw::Init()
     m_shader.Create("shader/debugCollisionVS.hlsl", "shader/debugCollisionPS.hlsl");
 
     // モデルごとのマテリアルがb4を差し替えるため、線の色も専用バッファで明示的に設定する。
-    if (!Renderer::CreateConstantBuffer(sizeof(MATERIAL), m_materialBuffer.GetAddressOf())) return;
+    if (!Renderer::CreateConstantBuffer(sizeof(MATERIAL), m_materialBuffer.GetAddressOf())) {
+        return;
+    }
 
     // 判定がモデルに埋まっていても読めるように重ねる。深度を書かず、HUDより先に描く。
     D3D11_DEPTH_STENCIL_DESC depth{};
     depth.DepthEnable = FALSE;
     depth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
     depth.DepthFunc = D3D11_COMPARISON_ALWAYS;
-    if (FAILED(Renderer::GetDevice()->CreateDepthStencilState(&depth, m_depth.GetAddressOf()))) return;
+    if (FAILED(Renderer::GetDevice()->CreateDepthStencilState(&depth, m_depth.GetAddressOf()))) {
+        return;
+    }
 
     D3D11_RASTERIZER_DESC rasterizer{};
     rasterizer.FillMode = D3D11_FILL_SOLID;
     rasterizer.CullMode = D3D11_CULL_NONE;
     rasterizer.DepthClipEnable = TRUE;
     rasterizer.MultisampleEnable = TRUE;
-    if (FAILED(Renderer::GetDevice()->CreateRasterizerState(&rasterizer, m_rasterizer.GetAddressOf()))) return;
+    if (FAILED(Renderer::GetDevice()->CreateRasterizerState(&rasterizer, m_rasterizer.GetAddressOf()))) {
+        return;
+    }
     m_ready = true;
 }
 
-void CollisionDebugDraw::Draw(Camera* camera, const std::vector<Sphere>& spheres)
-{
-    if (!m_ready || !camera || spheres.empty()) return;
+void CollisionDebugDraw::Draw(Camera* camera, const std::vector<Sphere>& spheres) {
+    if (!m_ready || !camera || spheres.empty()) {
+        return;
+    }
     auto context = Renderer::GetDeviceContext();
 
     // 線用の設定を後続のミニマップやUIへ残さないよう、変更する描画状態を保存する。
@@ -81,10 +91,12 @@ void CollisionDebugDraw::Draw(Camera* camera, const std::vector<Sphere>& spheres
     m_vertices.SetGPU();
     context->VSSetConstantBuffers(4, 1, m_materialBuffer.GetAddressOf());
 
-    for (const auto& sphere : spheres)
-    {
-        if (sphere.shape.radius <= 0.0f) continue;
-        Matrix world = Matrix::CreateScale(sphere.shape.radius) * Matrix::CreateTranslation(sphere.shape.center);
+    for (const auto& sphere : spheres) {
+        if (sphere.shape.radius <= 0.0f) {
+            continue;
+        }
+        Matrix world =
+            Matrix::CreateScale(sphere.shape.radius) * Matrix::CreateTranslation(sphere.shape.center);
         Renderer::SetWorldMatrix(&world);
         MATERIAL material{};
         material.Diffuse = sphere.color;
@@ -100,8 +112,7 @@ void CollisionDebugDraw::Draw(Camera* camera, const std::vector<Sphere>& spheres
     context->VSSetConstantBuffers(4, 1, previousMaterial.GetAddressOf());
 }
 
-void CollisionDebugDraw::Uninit()
-{
+void CollisionDebugDraw::Uninit() {
     m_ready = false;
     m_vertexCount = 0;
     m_shader = Shader{};

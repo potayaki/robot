@@ -1,241 +1,224 @@
-﻿#include	"TestCube.h"
-#include"Object.h"
+﻿/// @file TestCube.cpp
+/// @brief 単純な立方体モデルの頂点作成と描画。
+
+#include "TestCube.h"
+#include "Object.h"
 using namespace DirectX::SimpleMath;
 
 //=======================================
 //初期化処理
 //=======================================
 void TestCube::Init() {
-	// 頂点データ
-	m_Vertices.resize(32);
-	m_Vertices[0].position = Vector3(-10, 10, 10);
-	m_Vertices[1].position = Vector3(10, 10, 10);
-	m_Vertices[2].position = Vector3(-10, 10, -10);
-	m_Vertices[3].position = Vector3(10, 10, -10);
+    // 頂点データ
+    m_vertices.resize(32);
+    m_vertices[0].position = Vector3(-10, 10, 10);
+    m_vertices[1].position = Vector3(10, 10, 10);
+    m_vertices[2].position = Vector3(-10, 10, -10);
+    m_vertices[3].position = Vector3(10, 10, -10);
 
-	m_Vertices[0].color = Color(1, 1, 1, 1);
-	m_Vertices[1].color = Color(1, 1, 1, 1);
-	m_Vertices[2].color = Color(1, 1, 1, 1);
-	m_Vertices[3].color = Color(1, 1, 1, 1);
+    m_vertices[0].color = Color(1, 1, 1, 1);
+    m_vertices[1].color = Color(1, 1, 1, 1);
+    m_vertices[2].color = Color(1, 1, 1, 1);
+    m_vertices[3].color = Color(1, 1, 1, 1);
 
-	m_Vertices[0].uv = Vector2(0, 0);
-	m_Vertices[1].uv = Vector2(0.33f, 0);
-	m_Vertices[2].uv = Vector2(0, 0.5f);
-	m_Vertices[3].uv = Vector2(0.33f, 0.5f);
+    m_vertices[0].uv = Vector2(0, 0);
+    m_vertices[1].uv = Vector2(0.33f, 0);
+    m_vertices[2].uv = Vector2(0, 0.5f);
+    m_vertices[3].uv = Vector2(0.33f, 0.5f);
 
-	m_Vertices[0].normal = Vector3(0, 1, 0);
-	m_Vertices[1].normal = Vector3(0, 1, 0);
-	m_Vertices[2].normal = Vector3(0, 1, 0);
-	m_Vertices[3].normal = Vector3(0, 1, 0);
+    m_vertices[0].normal = Vector3(0, 1, 0);
+    m_vertices[1].normal = Vector3(0, 1, 0);
+    m_vertices[2].normal = Vector3(0, 1, 0);
+    m_vertices[3].normal = Vector3(0, 1, 0);
 
-	m_Vertices[4].position = Vector3(-10, 10, -10);
-	m_Vertices[5].position = Vector3(10, 10, -10);
-	m_Vertices[6].position = Vector3(-10, -10, -10);
-	m_Vertices[7].position = Vector3(10, -10, -10);
+    m_vertices[4].position = Vector3(-10, 10, -10);
+    m_vertices[5].position = Vector3(10, 10, -10);
+    m_vertices[6].position = Vector3(-10, -10, -10);
+    m_vertices[7].position = Vector3(10, -10, -10);
 
-	m_Vertices[4].color = Color(1, 1, 1, 1);
-	m_Vertices[5].color = Color(1, 1, 1, 1);
-	m_Vertices[6].color = Color(1, 1, 1, 1);
-	m_Vertices[7].color = Color(1, 1, 1, 1);
+    m_vertices[4].color = Color(1, 1, 1, 1);
+    m_vertices[5].color = Color(1, 1, 1, 1);
+    m_vertices[6].color = Color(1, 1, 1, 1);
+    m_vertices[7].color = Color(1, 1, 1, 1);
 
-	m_Vertices[4].uv = Vector2(0.33f, 0);
-	m_Vertices[5].uv = Vector2(0.66f, 0);
-	m_Vertices[6].uv = Vector2(0.33f, 0.5f);
-	m_Vertices[7].uv = Vector2(0.66f, 0.5f);
+    m_vertices[4].uv = Vector2(0.33f, 0);
+    m_vertices[5].uv = Vector2(0.66f, 0);
+    m_vertices[6].uv = Vector2(0.33f, 0.5f);
+    m_vertices[7].uv = Vector2(0.66f, 0.5f);
 
-	m_Vertices[4].normal = Vector3(0, 0, -1);
-	m_Vertices[5].normal = Vector3(0, 0, -1);
-	m_Vertices[6].normal = Vector3(0, 0, -1);
-	m_Vertices[7].normal = Vector3(0, 0, -1);
+    m_vertices[4].normal = Vector3(0, 0, -1);
+    m_vertices[5].normal = Vector3(0, 0, -1);
+    m_vertices[6].normal = Vector3(0, 0, -1);
+    m_vertices[7].normal = Vector3(0, 0, -1);
 
-	m_Vertices[8].position = Vector3(-10, 10, 10);
-	m_Vertices[9].position = Vector3(-10, 10, -10);
-	m_Vertices[10].position = Vector3(-10, -10, -10);
-	m_Vertices[11].position = Vector3(-10, -10, 10);
+    m_vertices[8].position = Vector3(-10, 10, 10);
+    m_vertices[9].position = Vector3(-10, 10, -10);
+    m_vertices[10].position = Vector3(-10, -10, -10);
+    m_vertices[11].position = Vector3(-10, -10, 10);
 
-	m_Vertices[8].color = Color(1, 1, 1, 1);
-	m_Vertices[9].color = Color(1, 1, 1, 1);
-	m_Vertices[10].color = Color(1, 1, 1, 1);
-	m_Vertices[11].color = Color(1, 1, 1, 1);
+    m_vertices[8].color = Color(1, 1, 1, 1);
+    m_vertices[9].color = Color(1, 1, 1, 1);
+    m_vertices[10].color = Color(1, 1, 1, 1);
+    m_vertices[11].color = Color(1, 1, 1, 1);
 
-	m_Vertices[9].uv = Vector2(0.66f, 0);
-	m_Vertices[8].uv = Vector2(1, 0);
-	m_Vertices[10].uv = Vector2(0.66f, 0.5f);
-	m_Vertices[11].uv = Vector2(1, 0.5f);
+    m_vertices[9].uv = Vector2(0.66f, 0);
+    m_vertices[8].uv = Vector2(1, 0);
+    m_vertices[10].uv = Vector2(0.66f, 0.5f);
+    m_vertices[11].uv = Vector2(1, 0.5f);
 
-	m_Vertices[8].normal = Vector3(-1, 0, 0);
-	m_Vertices[9].normal = Vector3(-1, 0, 0);
-	m_Vertices[10].normal = Vector3(-1, 0, 0);
-	m_Vertices[11].normal = Vector3(-1, 0, 0);
+    m_vertices[8].normal = Vector3(-1, 0, 0);
+    m_vertices[9].normal = Vector3(-1, 0, 0);
+    m_vertices[10].normal = Vector3(-1, 0, 0);
+    m_vertices[11].normal = Vector3(-1, 0, 0);
 
-	m_Vertices[12].position = Vector3(10, 10, 10);
-	m_Vertices[13].position = Vector3(-10, 10, 10);
-	m_Vertices[14].position = Vector3(-10, -10, 10);
-	m_Vertices[15].position = Vector3(10, -10, 10);
+    m_vertices[12].position = Vector3(10, 10, 10);
+    m_vertices[13].position = Vector3(-10, 10, 10);
+    m_vertices[14].position = Vector3(-10, -10, 10);
+    m_vertices[15].position = Vector3(10, -10, 10);
 
-	m_Vertices[12].color = Color(1, 1, 1, 1);
-	m_Vertices[13].color = Color(1, 1, 1, 1);
-	m_Vertices[14].color = Color(1, 1, 1, 1);
-	m_Vertices[15].color = Color(1, 1, 1, 1);
+    m_vertices[12].color = Color(1, 1, 1, 1);
+    m_vertices[13].color = Color(1, 1, 1, 1);
+    m_vertices[14].color = Color(1, 1, 1, 1);
+    m_vertices[15].color = Color(1, 1, 1, 1);
 
-	m_Vertices[13].uv = Vector2(0.33f, 0.5f);
-	m_Vertices[12].uv = Vector2(0.66f, 0.5f);
-	m_Vertices[14].uv = Vector2(0.33f, 1);
-	m_Vertices[15].uv = Vector2(0.66f, 1);
+    m_vertices[13].uv = Vector2(0.33f, 0.5f);
+    m_vertices[12].uv = Vector2(0.66f, 0.5f);
+    m_vertices[14].uv = Vector2(0.33f, 1);
+    m_vertices[15].uv = Vector2(0.66f, 1);
 
-	m_Vertices[12].normal = Vector3(0, 0, 1);
-	m_Vertices[13].normal = Vector3(0, 0, 1);
-	m_Vertices[14].normal = Vector3(0, 0, 1);
-	m_Vertices[15].normal = Vector3(0, 0, 1);
+    m_vertices[12].normal = Vector3(0, 0, 1);
+    m_vertices[13].normal = Vector3(0, 0, 1);
+    m_vertices[14].normal = Vector3(0, 0, 1);
+    m_vertices[15].normal = Vector3(0, 0, 1);
 
-	m_Vertices[16].position = Vector3(10, 10, -10);
-	m_Vertices[17].position = Vector3(10, 10, 10);
-	m_Vertices[18].position = Vector3(10, -10, 10);
-	m_Vertices[19].position = Vector3(10, -10, -10);
+    m_vertices[16].position = Vector3(10, 10, -10);
+    m_vertices[17].position = Vector3(10, 10, 10);
+    m_vertices[18].position = Vector3(10, -10, 10);
+    m_vertices[19].position = Vector3(10, -10, -10);
 
-	m_Vertices[16].color = Color(1, 1, 1, 1);
-	m_Vertices[17].color = Color(1, 1, 1, 1);
-	m_Vertices[18].color = Color(1, 1, 1, 1);
-	m_Vertices[19].color = Color(1, 1, 1, 1);
+    m_vertices[16].color = Color(1, 1, 1, 1);
+    m_vertices[17].color = Color(1, 1, 1, 1);
+    m_vertices[18].color = Color(1, 1, 1, 1);
+    m_vertices[19].color = Color(1, 1, 1, 1);
 
-	m_Vertices[17].uv = Vector2(0, 0.5f);
-	m_Vertices[16].uv = Vector2(0.33f, 0.5f);
-	m_Vertices[18].uv = Vector2(0, 1);
-	m_Vertices[19].uv = Vector2(0.33f, 1);
+    m_vertices[17].uv = Vector2(0, 0.5f);
+    m_vertices[16].uv = Vector2(0.33f, 0.5f);
+    m_vertices[18].uv = Vector2(0, 1);
+    m_vertices[19].uv = Vector2(0.33f, 1);
 
-	m_Vertices[16].normal = Vector3(1, 0, 0);
-	m_Vertices[17].normal = Vector3(1, 0, 0);
-	m_Vertices[18].normal = Vector3(1, 0, 0);
-	m_Vertices[19].normal = Vector3(1, 0, 0);
+    m_vertices[16].normal = Vector3(1, 0, 0);
+    m_vertices[17].normal = Vector3(1, 0, 0);
+    m_vertices[18].normal = Vector3(1, 0, 0);
+    m_vertices[19].normal = Vector3(1, 0, 0);
 
+    m_vertices[20].position = Vector3(-10, -10, 10);
+    m_vertices[21].position = Vector3(10, -10, 10);
+    m_vertices[22].position = Vector3(10, -10, -10);
+    m_vertices[23].position = Vector3(-10, -10, -10);
 
+    m_vertices[20].color = Color(1, 1, 1, 1);
+    m_vertices[21].color = Color(1, 1, 1, 1);
+    m_vertices[22].color = Color(1, 1, 1, 1);
+    m_vertices[23].color = Color(1, 1, 1, 1);
 
+    m_vertices[21].uv = Vector2(0.66f, 0.5f);
+    m_vertices[20].uv = Vector2(1, 0.5f);
+    m_vertices[22].uv = Vector2(0.66f, 1);
+    m_vertices[23].uv = Vector2(1, 1);
 
-	m_Vertices[20].position = Vector3(-10, -10, 10);
-	m_Vertices[21].position = Vector3(10, -10, 10);
-	m_Vertices[22].position = Vector3(10, -10, -10);
-	m_Vertices[23].position = Vector3(-10, -10, -10);
+    m_vertices[20].normal = Vector3(0, -1, 0);
+    m_vertices[21].normal = Vector3(0, -1, 0);
+    m_vertices[22].normal = Vector3(0, -1, 0);
+    m_vertices[23].normal = Vector3(0, -1, 0);
+    // 頂点バッファ生成
+    m_vertexBuffer.Create(m_vertices);
 
-	m_Vertices[20].color = Color(1, 1, 1, 1);
-	m_Vertices[21].color = Color(1, 1, 1, 1);
-	m_Vertices[22].color = Color(1, 1, 1, 1);
-	m_Vertices[23].color = Color(1, 1, 1, 1);
+    // インデックデータ
+    m_indices.resize(40);
 
-	m_Vertices[21].uv = Vector2(0.66f, 0.5f);
-	m_Vertices[20].uv = Vector2(1, 0.5f);
-	m_Vertices[22].uv = Vector2(0.66f, 1);
-	m_Vertices[23].uv = Vector2(1, 1);
+    m_indices = {0,  1,  2,  1,  3,  2,  4,  5,  6,  5,  7,  6,  8,  9,  10, 8,  10, 11,
+                 12, 13, 14, 12, 14, 15, 16, 17, 19, 17, 18, 19, 20, 23, 21, 21, 23, 22};
 
-	m_Vertices[20].normal = Vector3(0, -1, 0);
-	m_Vertices[21].normal = Vector3(0, -1, 0);
-	m_Vertices[22].normal = Vector3(0, -1, 0);
-	m_Vertices[23].normal = Vector3(0, -1, 0);
-	// 頂点バッファ生成
-	m_VertexBuffer.Create(m_Vertices);
+    // インデックスバッファ生成
+    m_indexBuffer.Create(m_indices);
 
-	// インデックデータ
-	m_Indices.resize(40);
+    // シェーダオブジェクト生成
+    m_shader.Create("shader/litTextureVS.hlsl", "shader/litTexturePS.hlsl");
 
-	m_Indices = {
-		0,1,2,
-		1,3,2,
-		4,5,6,
-		5,7,6,
-		8,9,10,
-		8,10,11,
-		12,13,14,
-		12,14,15,
-		16,17,19,
-		17,18,19,
-		20,23,21,
-		21,23,22
-	};
+    bool sts = m_texture.Load("assets/texture/dice.png");
+    assert(sts == true);
 
-	// インデックスバッファ生成
-	m_IndexBuffer.Create(m_Indices);
-
-	// シェーダオブジェクト生成
-	m_Shader.Create("shader/litTextureVS.hlsl", "shader/litTexturePS.hlsl");
-
-	bool sts = m_texture.Load("assets/texture/dice.png");
-	assert(sts == true);
-
-    m_Material = std::make_unique<Material>();
+    m_material = std::make_unique<Material>();
     MATERIAL mtrl;
     mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f); // 真っ白
     mtrl.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);
     mtrl.TextureEnable = true;
-    m_Material->Create(mtrl);
+    m_material->Create(mtrl);
 
-	float Scalesize = 0.3f;
-	m_Scale = Vector3(Scalesize);
-	m_Position = Vector3(-15.0f,10.0f,10.0f);
+    float Scalesize = 0.3f;
+    m_scale = Vector3(Scalesize);
+    m_position = Vector3(-15.0f, 10.0f, 10.0f);
 }
 
 //=======================================
 //更新処理
 //=======================================
 void TestCube::Update() {
-	//m_Rotation.x += 0.01f;
-	//m_Rotation.y += 0.01f;
-	//m_Rotation.z += 0.01f;
+    //m_Rotation.x += 0.01f;
+    //m_Rotation.y += 0.01f;
+    //m_Rotation.z += 0.01f;
 }
 
 //=======================================
 //描画処理
 //=======================================
 void TestCube::Draw(Camera* cam) {
-	//カメラを選択する
-	cam->SetCamera();
+    //カメラを選択する
+    cam->SetCamera();
 
-	// SRT情報作成
-	Matrix r = Matrix::CreateFromYawPitchRoll(m_Rotation.y, m_Rotation.x, m_Rotation.z);
-	Matrix t = Matrix::CreateTranslation(m_Position.x, m_Position.y, m_Position.z);
-	Matrix s = Matrix::CreateScale(m_Scale.x, m_Scale.y, m_Scale.z);
+    // SRT情報作成
+    Matrix r = Matrix::CreateFromYawPitchRoll(m_rotation.y, m_rotation.x, m_rotation.z);
+    Matrix t = Matrix::CreateTranslation(m_position.x, m_position.y, m_position.z);
+    Matrix s = Matrix::CreateScale(m_scale.x, m_scale.y, m_scale.z);
 
-	Matrix worldmtx;
-	worldmtx = s * r * t;
-	Renderer::SetWorldMatrix(&worldmtx); // GPUにセット
+    Matrix worldmtx;
+    worldmtx = s * r * t;
+    Renderer::SetWorldMatrix(&worldmtx); // GPUにセット
 
-	// 描画の処理
-	ID3D11DeviceContext* devicecontext;
-	devicecontext = Renderer::GetDeviceContext();
+    // 描画の処理
+    ID3D11DeviceContext* devicecontext;
+    devicecontext = Renderer::GetDeviceContext();
 
-	// トポロジーをセット（プリミティブタイプ）
-	devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);//頂点の結び方の規則
+    // トポロジーをセット（プリミティブタイプ）
+    devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); //頂点の結び方の規則
 
-	m_Shader.SetGPU();
-	m_VertexBuffer.SetGPU();
-	m_IndexBuffer.SetGPU();
-	m_texture.SetGPU();
+    m_shader.SetGPU();
+    m_vertexBuffer.SetGPU();
+    m_indexBuffer.SetGPU();
+    m_texture.SetGPU();
 
-    if (m_Material) {
-        m_Material->SetGPU();
+    if (m_material) {
+        m_material->SetGPU();
     }
 
-	devicecontext->DrawIndexed(
-		m_Indices.size(),	// 描画するインデックス数
-		0,					// 最初のインデックスバッファの位置
-		0);
+    devicecontext->DrawIndexed(m_indices.size(), // 描画するインデックス数
+                               0, // 最初のインデックスバッファの位置
+                               0);
 }
 
 //=======================================
 //終了処理
 //=======================================
-void TestCube::Uninit() {
-
-}
+void TestCube::Uninit() {}
 
 void TestCube::SetMaterial(DirectX::SimpleMath::Color col) {
-	for(auto & a : m_Vertices) {
-		a.color = col;
-	}
-	m_VertexBuffer.Create(m_Vertices);
+    for (auto& a : m_vertices) {
+        a.color = col;
+    }
+    m_vertexBuffer.Create(m_vertices);
 }
 
 void TestCube::SetTexture(std::string texture) {
-		bool sts = m_texture.Load(texture);
-	assert(sts == true);
+    bool sts = m_texture.Load(texture);
+    assert(sts == true);
 }
-
-

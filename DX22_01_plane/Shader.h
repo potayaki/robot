@@ -1,20 +1,26 @@
+ï»¿/// @file Shader.h
+/// @brief é ‚ç‚¹ãƒ»ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã®èª­è¾¼ã¨æç”»æ™‚ã®è¨­å®šã€‚
+
 #pragma once
-#include	<wrl/client.h>
-#include	<string>
-#include	<d3d11.h>
+#include <wrl/client.h>
+#include <string>
+#include <d3d11.h>
 
 using Microsoft::WRL::ComPtr;
 
 //-----------------------------------------------------------------------------
-//ShaderƒNƒ‰ƒX
+//Shaderã‚¯ãƒ©ã‚¹
 //-----------------------------------------------------------------------------
-class Shader{
+class Shader {
 public:
-	void Create(std::string vs, std::string ps);
-	void SetGPU();
-private:
-	ComPtr<ID3D11VertexShader> m_pVertexShader;		// ’¸“_ƒVƒF[ƒ_[
-	ComPtr<ID3D11PixelShader>  m_pPixelShader;		// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[
-	ComPtr<ID3D11InputLayout>  m_pVertexLayout;		// ’¸“_ƒŒƒCƒAƒEƒg
-};
+    void Create(std::string vs, std::string ps);
+    void SetGPU();
 
+private:
+    /// é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼
+    ComPtr<ID3D11VertexShader> m_pVertexShader;
+    /// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼
+    ComPtr<ID3D11PixelShader> m_pPixelShader;
+    /// é ‚ç‚¹ãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆ
+    ComPtr<ID3D11InputLayout> m_pVertexLayout;
+};

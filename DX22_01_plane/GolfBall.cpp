@@ -1,237 +1,224 @@
+ï»¿/// @file GolfBall.cpp
+/// @brief ã‚´ãƒ«ãƒ•ç”¨ãƒœãƒ¼ãƒ«ã®ç§»å‹•ã€æ¥åœ°ã€è¡çªã€æç”»ã€‚
+
 #include "GolfBall.h"
-#include"Collision.h"
+#include "Collision.h"
 #include "Game.h"
-#include"Ground.h"
-#include"Pole.h"
+#include "Ground.h"
+#include "Pole.h"
 
 using namespace std;
 
 using namespace DirectX::SimpleMath;
 
 //=======================================
-//‰Šú‰»ˆ—
+//åˆæœŸåŒ–å‡¦ç†
 //=======================================
-void GolfBall::Init()
-{
-	// ƒƒbƒVƒ…“Ç‚İ‚İ
-	StaticMesh staticmesh;
+void GolfBall::Init() {
+    // ãƒ¡ãƒƒã‚·ãƒ¥èª­ã¿è¾¼ã¿
+    StaticMesh staticmesh;
 
-	//3Dƒ‚ƒfƒ‹ƒf[ƒ^
-	std::u8string modelFile = u8"assets/model/golfball/golf_ball.obj";
+    //3Dãƒ¢ãƒ‡ãƒ«ãƒ‡ãƒ¼ã‚¿
+    std::u8string modelFile = u8"assets/model/golfball/golf_ball.obj";
 
-	//ƒeƒNƒXƒ`ƒƒƒfƒBƒŒƒNƒgƒŠ
-	std::string texDirectory = "assets/model/golfball/golf_ball.mtl";
+    //ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª
+    std::string texDirectory = "assets/model/golfball/golf_ball.mtl";
 
-	//Mesh‚ğ“Ç‚İ‚Ş
-	std::string tmpStr1(reinterpret_cast<const char*>(modelFile.c_str()), modelFile.size());
-	staticmesh.Load(tmpStr1, texDirectory);
+    //Meshã‚’èª­ã¿è¾¼ã‚€
+    std::string tmpStr1(reinterpret_cast<const char*>(modelFile.c_str()), modelFile.size());
+    staticmesh.Load(tmpStr1, texDirectory);
 
-	m_MeshRenderer.Init(staticmesh);
+    m_meshRenderer.Init(staticmesh);
 
-	// ƒVƒF[ƒ_ƒIƒuƒWƒFƒNƒg¶¬
-	m_Shader.Create("shader/litTextureVS.hlsl", "shader/litTexturePS.hlsl");
+    // ã‚·ã‚§ãƒ¼ãƒ€ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç”Ÿæˆ
+    m_shader.Create("shader/litTextureVS.hlsl", "shader/litTexturePS.hlsl");
 
-	// ƒTƒuƒZƒbƒgî•ñæ“¾
-	m_subsets = staticmesh.GetSubsets();
+    // ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±å–å¾—
+    m_subsets = staticmesh.GetSubsets();
 
-	// ƒeƒNƒXƒ`ƒƒî•ñæ“¾
-	m_Textures = staticmesh.GetTextures();
+    // ãƒ†ã‚¯ã‚¹ãƒãƒ£æƒ…å ±å–å¾—
+    m_textures = staticmesh.GetTextures();
 
-	// ƒ}ƒeƒŠƒAƒ‹î•ñæ“¾	
-	std::vector<MATERIAL> materials = staticmesh.GetMaterials();
+    // ãƒãƒ†ãƒªã‚¢ãƒ«æƒ…å ±å–å¾—
+    std::vector<MATERIAL> materials = staticmesh.GetMaterials();
 
-	// ƒ}ƒeƒŠƒAƒ‹”•ªƒ‹[ƒv
-	for (int i = 0; i < materials.size(); i++)
-	{
-		// ƒ}ƒeƒŠƒAƒ‹ƒIƒuƒWƒFƒNƒg¶¬
-		std::unique_ptr<Material> m = std::make_unique<Material>();
+    // ãƒãƒ†ãƒªã‚¢ãƒ«æ•°åˆ†ãƒ«ãƒ¼ãƒ—
+    for (int i = 0; i < materials.size(); i++) {
+        // ãƒãƒ†ãƒªã‚¢ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç”Ÿæˆ
+        std::unique_ptr<Material> m = std::make_unique<Material>();
 
-		// ƒ}ƒeƒŠƒAƒ‹î•ñ‚ğƒZƒbƒg
-		m->Create(materials[i]);
+        // ãƒãƒ†ãƒªã‚¢ãƒ«æƒ…å ±ã‚’ã‚»ãƒƒãƒˆ
+        m->Create(materials[i]);
 
-		// ƒ}ƒeƒŠƒAƒ‹ƒIƒuƒWƒFƒNƒg‚ğ”z—ñ‚É’Ç‰Á
-		m_Materials.push_back(std::move(m));
-	}
+        // ãƒãƒ†ãƒªã‚¢ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’é…åˆ—ã«è¿½åŠ 
+        m_materials.push_back(std::move(m));
+    }
 
-	//ƒ‚ƒfƒ‹‚É‚æ‚Á‚ÄƒXƒP[ƒ‹‚ğ’²®
-	m_Scale.x = 1;
-	m_Scale.y = 1;
-	m_Scale.z = 1;
+    //ãƒ¢ãƒ‡ãƒ«ã«ã‚ˆã£ã¦ã‚¹ã‚±ãƒ¼ãƒ«ã‚’èª¿æ•´
+    m_scale.x = 1;
+    m_scale.y = 1;
+    m_scale.z = 1;
 
-	m_Velocity.x = 3.0f;
-
-}
-
-
-
-//=======================================
-//XVˆ—
-//=======================================
-void GolfBall::Update()
-{
-	if (m_state != 0)return;//Ã~ó‘Ô‚È‚çUpdateI—¹
-	Vector3 oldPos = m_Position;
-
-	if (m_Velocity.LengthSquared() < 0.3f) {//‚±‚Ì”šˆÈ‰º‚É‚È‚Á‚½‚ç‹­§ƒXƒgƒbƒv
-		//m_Velocity = Vector3(0.0f, 0.0f, 0.0f);
-		m_StopCount++;
-	}
-	else {
-		m_StopCount = 0;
-		//Œ¸‘¬“x(‚PƒtƒŒ[ƒ€‚Å‚Ì‚Ç‚ê‚­‚ç‚¢Œ¸‘¬‚·‚é‚©)
-		float decelerationPower = 0.03f;
-		Vector3 deceleration = -m_Velocity;//‘¬“x‚Ì‹tƒxƒNƒgƒ‹‚ğŒvZ
-		deceleration.Normalize();//ƒxƒNƒgƒ‹‚ğ³‹K‰»
-		m_Acceleration = deceleration * decelerationPower;
-
-		m_Velocity += m_Acceleration;
-	}
-
-	//10ƒtƒŒ[ƒ€˜A‘±‚Å“®‚©‚È‚¯‚ê‚ÎÃ~ó‘Ô‚É‘JˆÚ
-	if (m_StopCount > 10) {
-		m_Velocity = Vector3(0.0f, 0.0f, 0.0f);
-		m_state = 1;
-	}
-	//d—Í
-	const float gravity = 0.1f;
-	m_Velocity.y -= gravity;
-	//‘¬“x‚Éd—Í‚ğ‰ÁZ
-	m_Position += m_Velocity;
-
-	float radius = 1.5f;//ƒ{[ƒ‹ƒ‚ƒfƒ‹‚Ì’¼Œn
-
-	//Ground‚Ì’¸“_ƒf[ƒ^‚ğæ“¾
-	vector<Ground*>grounds = Game::GetInstance()->GetObjects<Ground>();
-	vector<VERTEX_3D>vertices;
-	for (auto& g : grounds) {//GroundƒIƒuƒWƒFƒNƒg‚Ì”ƒ‹[ƒv
-		vector<VERTEX_3D>vecs = g->GetVertices();
-		for (auto& v : vecs) {//’¸“_‚Ì”ƒ‹[ƒv
-			vertices.emplace_back(v);
-		}
-	}
-
-	float moveDistance = 9999;//ˆÚ“®‹——£
-	Vector3 contactPoint;//ÚG“_
-	Vector3 normal;
-
-	//’n–Ê‚Æ‚Ì“–‚½‚è”»’è
-	for (int i = 0; i < vertices.size(); i += 3) {
-		Collision::Polygon collisionPolygon = { vertices[i + 0].position,vertices[i + 1].position,vertices[i + 2].position, };
-		Vector3 cp;
-		Collision::Segment collisionsegment = { oldPos,m_Position };
-		Collision::Sphere collisinSphere = { m_Position,radius };
-
-		if (Collision::CheckHit(collisionsegment,collisionPolygon,cp)) {
-			float md = 0;
-			Vector3 np = Collision::moveSphere(collisionsegment, radius, collisionPolygon, cp, md);
-
-			if (moveDistance > md) {
-				moveDistance = md;
-				m_Position = np;
-				contactPoint = cp;
-				normal = Collision::GetNormal(collisionPolygon);
-			}
-		}
-		else if (Collision::CheckHit(collisinSphere,collisionPolygon,cp)) {
-			Vector3 np = Collision::moveSphere(collisinSphere, collisionPolygon, cp);
-			float md = (np - oldPos).Length();
-			if (moveDistance > md) {
-				moveDistance = md;
-				m_Position = np;
-				contactPoint = cp;
-				normal = Collision::GetNormal(collisionPolygon);
-			}
-		}
-	}
-	if (moveDistance != 9999) {
-		float velocitynormal = Collision::Dot(m_Velocity, normal);
-		Vector3 v1 = velocitynormal * normal;
-		Vector3 v2 = m_Velocity - v1;
-
-		const float restitution = 0.02f;
-		const float friction = 0.90f;
-		Vector3 reflectedVelocity = v2 * friction - v1 * restitution;
-
-		m_Velocity = reflectedVelocity;
-	}
-	if (m_Position.y < -1000) {//‚à‚µ‚à‰º‚É—‚¿‚½‚ÉƒŠƒXƒ|[ƒ“‚·‚é—p
-		m_Position = Vector3(0.0f, 50.0f, 0.0f);//ƒŠƒXƒ|[ƒ“’n“_
-		m_Velocity = Vector3(0.0f, 0.0f, 0.0f);//‘¬“x‚ğ‚O‚É
-	}
-
-	//Pole‚ÌˆÊ’u‚ğæ“¾
-	vector<Pole*> pole = Game::GetInstance()->GetObjects<Pole>();
-	if (pole.size()>0) {
-		Vector3 polepos = pole[0]->GetPosition();
-		Collision::Sphere balcollision = { m_Position,radius };//ƒSƒ‹ƒtƒ{[ƒ‹‚Ì“–‚½‚è”»’è
-		Collision::Sphere polecollision = { polepos,1.5f};//ƒ|[ƒ‹‚Ì“–‚½‚è”»’è
-		if (Collision::CheckHit(balcollision,polecollision)) {
-			m_state = 2;//ƒJƒbƒvƒCƒ“
-		}
-	}
-
+    m_velocity.x = 3.0f;
 }
 
 //=======================================
-//•`‰æˆ—
+//æ›´æ–°å‡¦ç†
 //=======================================
-void GolfBall::Draw(Camera* cam)
-{
-	//ƒJƒƒ‰‚ğ‘I‘ğ‚·‚é
-	cam->SetCamera();
+void GolfBall::Update() {
+    if (m_state != 0) {
+        return; //é™æ­¢çŠ¶æ…‹ãªã‚‰Updateçµ‚äº†
+    }
+    Vector3 oldPos = m_position;
 
-	cam->SetTarget(m_Position);
+    if (m_velocity.LengthSquared() < 0.3f) { //ã“ã®æ•°å­—ä»¥ä¸‹ã«ãªã£ãŸã‚‰å¼·åˆ¶ã‚¹ãƒˆãƒƒãƒ—
+        //m_Velocity = Vector3(0.0f, 0.0f, 0.0f);
+        m_stopCount++;
+    } else {
+        m_stopCount = 0;
+        //æ¸›é€Ÿåº¦(ï¼‘ãƒ•ãƒ¬ãƒ¼ãƒ ã§ã®ã©ã‚Œãã‚‰ã„æ¸›é€Ÿã™ã‚‹ã‹)
+        float decelerationPower = 0.03f;
+        Vector3 deceleration = -m_velocity; //é€Ÿåº¦ã®é€†ãƒ™ã‚¯ãƒˆãƒ«ã‚’è¨ˆç®—
+        deceleration.Normalize(); //ãƒ™ã‚¯ãƒˆãƒ«ã‚’æ­£è¦åŒ–
+        m_acceleration = deceleration * decelerationPower;
 
-	// SRTî•ñì¬
-	Matrix r = Matrix::CreateFromYawPitchRoll(m_Rotation.y, m_Rotation.x, m_Rotation.z);
-	Matrix t = Matrix::CreateTranslation(m_Position.x, m_Position.y, m_Position.z);
-	Matrix s = Matrix::CreateScale(m_Scale.x, m_Scale.y, m_Scale.z);
+        m_velocity += m_acceleration;
+    }
 
-	Matrix worldmtx;
-	worldmtx = s * r * t;
-	Renderer::SetWorldMatrix(&worldmtx); // GPU‚ÉƒZƒbƒg
+    //10ãƒ•ãƒ¬ãƒ¼ãƒ é€£ç¶šã§å‹•ã‹ãªã‘ã‚Œã°é™æ­¢çŠ¶æ…‹ã«é·ç§»
+    if (m_stopCount > 10) {
+        m_velocity = Vector3(0.0f, 0.0f, 0.0f);
+        m_state = 1;
+    }
+    //é‡åŠ›
+    const float gravity = 0.1f;
+    m_velocity.y -= gravity;
+    //é€Ÿåº¦ã«é‡åŠ›ã‚’åŠ ç®—
+    m_position += m_velocity;
 
-	m_Shader.SetGPU();
+    float radius = 1.5f; //ãƒœãƒ¼ãƒ«ãƒ¢ãƒ‡ãƒ«ã®ç›´ç³»
 
-	// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@E’¸“_ƒoƒbƒtƒ@‚ğƒZƒbƒg
-	m_MeshRenderer.BeforeDraw();
+    //Groundã®é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—
+    vector<Ground*> grounds = Game::GetInstance()->GetObjects<Ground>();
+    vector<VERTEX_3D> vertices;
+    for (auto& g : grounds) { //Groundã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®æ•°ãƒ«ãƒ¼ãƒ—
+        vector<VERTEX_3D> vecs = g->GetVertices();
+        for (auto& v : vecs) { //é ‚ç‚¹ã®æ•°ãƒ«ãƒ¼ãƒ—
+            vertices.emplace_back(v);
+        }
+    }
 
-	//ƒ}ƒeƒŠƒAƒ‹”•ªƒ‹[ƒv 
-	for (int i = 0; i < m_subsets.size(); i++)
-	{
-		// ƒ}ƒeƒŠƒAƒ‹‚ğƒZƒbƒg(ƒTƒuƒZƒbƒgî•ñ‚Ì’†‚É‚ ‚éƒ}ƒeƒŠƒAƒ‹ƒCƒ“ƒfƒbƒNƒX‚ğg—p)
-		m_Materials[m_subsets[i].MaterialIdx]->SetGPU();
+    float moveDistance = 9999; //ç§»å‹•è·é›¢
+    Vector3 contactPoint; //æ¥è§¦ç‚¹
+    Vector3 normal;
 
-		if (m_Materials[m_subsets[i].MaterialIdx]->isTextureEnable())
-		{
-			m_Textures[m_subsets[i].MaterialIdx]->SetGPU();
-		}
+    //åœ°é¢ã¨ã®å½“ãŸã‚Šåˆ¤å®š
+    for (int i = 0; i < vertices.size(); i += 3) {
+        Collision::Polygon collisionPolygon = {
+            vertices[i + 0].position,
+            vertices[i + 1].position,
+            vertices[i + 2].position,
+        };
+        Vector3 cp;
+        Collision::Segment collisionsegment = {oldPos, m_position};
+        Collision::Sphere collisinSphere = {m_position, radius};
 
-		m_MeshRenderer.DrawSubset(
-			m_subsets[i].IndexNum,		// •`‰æ‚·‚éƒCƒ“ƒfƒbƒNƒX”
-			m_subsets[i].IndexBase,		// Å‰‚ÌƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ÌˆÊ’u	
-			m_subsets[i].VertexBase);	// ’¸“_ƒoƒbƒtƒ@‚ÌÅ‰‚©‚çg—p
-	}
+        if (Collision::CheckHit(collisionsegment, collisionPolygon, cp)) {
+            float md = 0;
+            Vector3 np = Collision::moveSphere(collisionsegment, radius, collisionPolygon, cp, md);
+
+            if (moveDistance > md) {
+                moveDistance = md;
+                m_position = np;
+                contactPoint = cp;
+                normal = Collision::GetNormal(collisionPolygon);
+            }
+        } else if (Collision::CheckHit(collisinSphere, collisionPolygon, cp)) {
+            Vector3 np = Collision::moveSphere(collisinSphere, collisionPolygon, cp);
+            float md = (np - oldPos).Length();
+            if (moveDistance > md) {
+                moveDistance = md;
+                m_position = np;
+                contactPoint = cp;
+                normal = Collision::GetNormal(collisionPolygon);
+            }
+        }
+    }
+    if (moveDistance != 9999) {
+        float velocitynormal = Collision::Dot(m_velocity, normal);
+        Vector3 v1 = velocitynormal * normal;
+        Vector3 v2 = m_velocity - v1;
+
+        const float restitution = 0.02f;
+        const float friction = 0.90f;
+        Vector3 reflectedVelocity = v2 * friction - v1 * restitution;
+
+        m_velocity = reflectedVelocity;
+    }
+    if (m_position.y < -1000) { //ã‚‚ã—ã‚‚ä¸‹ã«è½ã¡ãŸæ™‚ã«ãƒªã‚¹ãƒãƒ¼ãƒ³ã™ã‚‹ç”¨
+        m_position = Vector3(0.0f, 50.0f, 0.0f); //ãƒªã‚¹ãƒãƒ¼ãƒ³åœ°ç‚¹
+        m_velocity = Vector3(0.0f, 0.0f, 0.0f); //é€Ÿåº¦ã‚’ï¼ã«
+    }
+
+    //Poleã®ä½ç½®ã‚’å–å¾—
+    vector<Pole*> pole = Game::GetInstance()->GetObjects<Pole>();
+    if (pole.size() > 0) {
+        Vector3 polepos = pole[0]->GetPosition();
+        Collision::Sphere balcollision = {m_position, radius}; //ã‚´ãƒ«ãƒ•ãƒœãƒ¼ãƒ«ã®å½“ãŸã‚Šåˆ¤å®š
+        Collision::Sphere polecollision = {polepos, 1.5f}; //ãƒãƒ¼ãƒ«ã®å½“ãŸã‚Šåˆ¤å®š
+        if (Collision::CheckHit(balcollision, polecollision)) {
+            m_state = 2; //ã‚«ãƒƒãƒ—ã‚¤ãƒ³
+        }
+    }
 }
 
 //=======================================
-//I—¹ˆ—
+//æç”»å‡¦ç†
 //=======================================
-void GolfBall::Uninit()
-{
+void GolfBall::Draw(Camera* cam) {
+    //ã‚«ãƒ¡ãƒ©ã‚’é¸æŠã™ã‚‹
+    cam->SetCamera();
 
+    cam->SetTarget(m_position);
+
+    // SRTæƒ…å ±ä½œæˆ
+    Matrix r = Matrix::CreateFromYawPitchRoll(m_rotation.y, m_rotation.x, m_rotation.z);
+    Matrix t = Matrix::CreateTranslation(m_position.x, m_position.y, m_position.z);
+    Matrix s = Matrix::CreateScale(m_scale.x, m_scale.y, m_scale.z);
+
+    Matrix worldmtx;
+    worldmtx = s * r * t;
+    Renderer::SetWorldMatrix(&worldmtx); // GPUã«ã‚»ãƒƒãƒˆ
+
+    m_shader.SetGPU();
+
+    // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ãƒ»é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚’ã‚»ãƒƒãƒˆ
+    m_meshRenderer.BeforeDraw();
+
+    //ãƒãƒ†ãƒªã‚¢ãƒ«æ•°åˆ†ãƒ«ãƒ¼ãƒ—
+    for (int i = 0; i < m_subsets.size(); i++) {
+        // ãƒãƒ†ãƒªã‚¢ãƒ«ã‚’ã‚»ãƒƒãƒˆ(ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±ã®ä¸­ã«ã‚ã‚‹ãƒãƒ†ãƒªã‚¢ãƒ«ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’ä½¿ç”¨)
+        m_materials[m_subsets[i].MaterialIdx]->SetGPU();
+
+        if (m_materials[m_subsets[i].MaterialIdx]->isTextureEnable()) {
+            m_textures[m_subsets[i].MaterialIdx]->SetGPU();
+        }
+
+        m_meshRenderer.DrawSubset(m_subsets[i].IndexNum, // æç”»ã™ã‚‹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+                                  m_subsets[i].IndexBase, // æœ€åˆã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½ç½®
+                                  m_subsets[i].VertexBase); // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã®æœ€åˆã‹ã‚‰ä½¿ç”¨
+    }
 }
+
+//=======================================
+//çµ‚äº†å‡¦ç†
+//=======================================
+void GolfBall::Uninit() {}
 
 void GolfBall::SetColor(DirectX::SimpleMath::Color col) {
-	// ‚Á‚Ä‚¢‚é‚·‚×‚Ä‚Ìƒ}ƒeƒŠƒAƒ‹‚ÌF‚ğ•Ï‚¦‚é
-	for (auto& mat : m_Materials) {
-		// ‚³‚Á‚«Material.h‚Åì‚Á‚½ŠÖ”‚ğŒÄ‚Ô
-		mat->SetColor(col.x, col.y, col.z, col.w);
-	}
+    // æŒã£ã¦ã„ã‚‹ã™ã¹ã¦ã®ãƒãƒ†ãƒªã‚¢ãƒ«ã®è‰²ã‚’å¤‰ãˆã‚‹
+    for (auto& mat : m_materials) {
+        // ã•ã£ãMaterial.hã§ä½œã£ãŸé–¢æ•°ã‚’å‘¼ã¶
+        mat->SetColor(col.x, col.y, col.z, col.w);
+    }
 }
-
-
-
-
-
-

@@ -1,87 +1,77 @@
-#include	"StaticMesh.h"
-#include	"AssimpPerse.h"
+ï»¿/// @file StaticMesh.cpp
+/// @brief Assimpã®é™çš„ãƒ¢ãƒ‡ãƒ«ã‹ã‚‰ä½œã‚‹é ‚ç‚¹ã€æè³ªã€ãƒ†ã‚¯ã‚¹ãƒãƒ£ã€‚
 
-void StaticMesh::Load(std::string filename, std::string texturedirectory)
-{
-	std::vector<AssimpPerse::SUBSET> subsets{};					// ƒTƒuƒZƒbƒgî•ñ
-	std::vector<std::vector<AssimpPerse::VERTEX>> vertices{};	// ’¸“_ƒf[ƒ^iƒƒbƒVƒ…’PˆÊj
-	std::vector<std::vector<unsigned int>> indices{};			// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^iƒƒbƒVƒ…’PˆÊj
-	std::vector<AssimpPerse::MATERIAL> materials{};				// ƒ}ƒeƒŠƒAƒ‹
-	std::vector<std::unique_ptr<Texture>> embededtextures{};	// “à‘ ƒeƒNƒXƒ`ƒƒŒQ
+#include "StaticMesh.h"
+#include "AssimpPerse.h"
 
-	// assimp‚ğg—p‚µ‚Äƒ‚ƒfƒ‹ƒf[ƒ^‚ğæ“¾
-	AssimpPerse::GetModelData(filename, texturedirectory);
+void StaticMesh::Load(std::string filename, std::string texturedirectory) {
+    std::vector<AssimpPerse::SUBSET> subsets{}; // ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±
+    std::vector<std::vector<AssimpPerse::VERTEX>> vertices{}; // é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥å˜ä½ï¼‰
+    std::vector<std::vector<unsigned int>> indices{}; // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥å˜ä½ï¼‰
+    std::vector<AssimpPerse::MATERIAL> materials{}; // ãƒãƒ†ãƒªã‚¢ãƒ«
+    std::vector<std::unique_ptr<Texture>> embededtextures{}; // å†…è”µãƒ†ã‚¯ã‚¹ãƒãƒ£ç¾¤
 
-	subsets = AssimpPerse::GetSubsets();		// ƒTƒuƒZƒbƒgî•ñæ“¾
-	vertices = AssimpPerse::GetVertices();		// ’¸“_ƒf[ƒ^iƒƒbƒVƒ…’PˆÊj
-	indices = AssimpPerse::GetIndices();		// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^iƒƒbƒVƒ…’PˆÊj
-	materials = AssimpPerse::GetMaterials();	// ƒ}ƒeƒŠƒAƒ‹î•ñæ“¾
+    // assimpã‚’ä½¿ç”¨ã—ã¦ãƒ¢ãƒ‡ãƒ«ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—
+    AssimpPerse::GetModelData(filename, texturedirectory);
 
-	m_textures = AssimpPerse::GetTextures();	// ƒeƒNƒXƒ`ƒƒî•ñæ“¾	
+    subsets = AssimpPerse::GetSubsets(); // ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±å–å¾—
+    vertices = AssimpPerse::GetVertices(); // é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥å˜ä½ï¼‰
+    indices = AssimpPerse::GetIndices(); // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥å˜ä½ï¼‰
+    materials = AssimpPerse::GetMaterials(); // ãƒãƒ†ãƒªã‚¢ãƒ«æƒ…å ±å–å¾—
 
-	// ’¸“_ƒf[ƒ^ì¬
-	for (const auto& mv : vertices)
-	{
-		for (auto& v : mv)
-		{
-			VERTEX_3D vertex{};
-			vertex.position = DirectX::SimpleMath::Vector3(v.pos.x, v.pos.y, v.pos.z);
-			vertex.normal = DirectX::SimpleMath::Vector3(v.normal.x, v.normal.y, v.normal.z);
-			vertex.uv = DirectX::SimpleMath::Vector2(v.texcoord.x, v.texcoord.y);
-			vertex.color = DirectX::SimpleMath::Color(v.color.r, v.color.g, v.color.b, v.color.a);
+    m_textures = AssimpPerse::GetTextures(); // ãƒ†ã‚¯ã‚¹ãƒãƒ£æƒ…å ±å–å¾—
 
-			m_vertices.emplace_back(vertex);
-		}
-	}
+    // é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ä½œæˆ
+    for (const auto& mv : vertices) {
+        for (auto& v : mv) {
+            VERTEX_3D vertex{};
+            vertex.position = DirectX::SimpleMath::Vector3(v.pos.x, v.pos.y, v.pos.z);
+            vertex.normal = DirectX::SimpleMath::Vector3(v.normal.x, v.normal.y, v.normal.z);
+            vertex.uv = DirectX::SimpleMath::Vector2(v.texcoord.x, v.texcoord.y);
+            vertex.color = DirectX::SimpleMath::Color(v.color.r, v.color.g, v.color.b, v.color.a);
 
-	// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^ì¬
-	for (const auto& mi : indices)
-	{
-		for (auto& index : mi)
-		{
-			m_indices.emplace_back(index);
-		}
-	}
+            m_vertices.emplace_back(vertex);
+        }
+    }
 
-	// ƒTƒuƒZƒbƒgƒf[ƒ^ì¬
-	for (const auto& sub : subsets)
-	{
-		SUBSET subset{};
-		subset.VertexBase = sub.VertexBase; // ’¸“_‚ÌŠJnˆÊ’u
-		subset.VertexNum = sub.VertexNum; // ƒTƒuƒZƒbƒg“à‚Ì’¸“_”
-		subset.IndexBase = sub.IndexBase;  // ƒCƒ“ƒfƒbƒNƒX‚ÌŠJnˆÊ’u
-		subset.IndexNum = sub.IndexNum; // ƒTƒuƒZƒbƒg“à‚ÌƒCƒ“ƒfƒbƒNƒX”
-		subset.MtrlName = sub.mtrlname; // ƒ}ƒeƒŠƒAƒ‹–¼
-		subset.MaterialIdx = sub.materialindex; // ƒ}ƒeƒŠƒAƒ‹”z—ñ‚ÌƒCƒ“ƒfƒbƒNƒX
-		m_subsets.emplace_back(subset);
-	}
+    // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ä½œæˆ
+    for (const auto& mi : indices) {
+        for (auto& index : mi) {
+            m_indices.emplace_back(index);
+        }
+    }
 
-	// ƒ}ƒeƒŠƒAƒ‹ƒf[ƒ^ì¬
-	for (const auto& m : materials)
-	{
-		MATERIAL material{};
-		material.Ambient = DirectX::SimpleMath::Color(
-			m.Ambient.r, m.Ambient.g, m.Ambient.b, m.Ambient.a);
-		material.Diffuse = DirectX::SimpleMath::Color(
-			m.Diffuse.r, m.Diffuse.g, m.Diffuse.b, m.Diffuse.a);
+    // ã‚µãƒ–ã‚»ãƒƒãƒˆãƒ‡ãƒ¼ã‚¿ä½œæˆ
+    for (const auto& sub : subsets) {
+        SUBSET subset{};
+        subset.VertexBase = sub.VertexBase; // é ‚ç‚¹ã®é–‹å§‹ä½ç½®
+        subset.VertexNum = sub.VertexNum; // ã‚µãƒ–ã‚»ãƒƒãƒˆå†…ã®é ‚ç‚¹æ•°
+        subset.IndexBase = sub.IndexBase; // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã®é–‹å§‹ä½ç½®
+        subset.IndexNum = sub.IndexNum; // ã‚µãƒ–ã‚»ãƒƒãƒˆå†…ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+        subset.MtrlName = sub.mtrlname; // ãƒãƒ†ãƒªã‚¢ãƒ«å
+        subset.MaterialIdx = sub.materialindex; // ãƒãƒ†ãƒªã‚¢ãƒ«é…åˆ—ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
+        m_subsets.emplace_back(subset);
+    }
 
-		material.Speclar = DirectX::SimpleMath::Color(
-			m.Specular.r, m.Specular.g, m.Specular.b, m.Specular.a);
-		material.Emmision = DirectX::SimpleMath::Color(
-			m.Emission.r, m.Emission.g, m.Emission.b, m.Emission.a);
-		material.Shiness = m.Shiness;
+    // ãƒãƒ†ãƒªã‚¢ãƒ«ãƒ‡ãƒ¼ã‚¿ä½œæˆ
+    for (const auto& m : materials) {
+        MATERIAL material{};
+        material.Ambient = DirectX::SimpleMath::Color(m.Ambient.r, m.Ambient.g, m.Ambient.b, m.Ambient.a);
+        material.Diffuse = DirectX::SimpleMath::Color(m.Diffuse.r, m.Diffuse.g, m.Diffuse.b, m.Diffuse.a);
 
-		if (m.texturename.empty())
-		{
-			material.TextureEnable = FALSE;
-			m_texturenames.emplace_back("");
-		}
-		else
-		{
-			material.TextureEnable = TRUE;
-			m_texturenames.emplace_back(m.texturename);
-		}
+        material.Speclar = DirectX::SimpleMath::Color(m.Specular.r, m.Specular.g, m.Specular.b, m.Specular.a);
+        material.Emmision =
+            DirectX::SimpleMath::Color(m.Emission.r, m.Emission.g, m.Emission.b, m.Emission.a);
+        material.Shiness = m.Shiness;
 
-		m_materials.emplace_back(material);
-	}
+        if (m.texturename.empty()) {
+            material.TextureEnable = FALSE;
+            m_texturenames.emplace_back("");
+        } else {
+            material.TextureEnable = TRUE;
+            m_texturenames.emplace_back(m.texturename);
+        }
+
+        m_materials.emplace_back(material);
+    }
 }

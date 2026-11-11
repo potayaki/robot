@@ -1,4 +1,7 @@
-﻿#include "EnemyTarget.h"
+﻿/// @file EnemyTarget.cpp
+/// @brief 敵の共通インターフェースと撃破時の経験値・ドロップ処理。
+
+#include "EnemyTarget.h"
 #include "Game.h"
 #include "CPlayer.h"
 #include "Ground.h"
@@ -7,20 +10,17 @@
 #include <algorithm>
 #include <cstdlib>
 
-void EnemyTarget::Defeat(int experience, int presentChance)
-{
+void EnemyTarget::Defeat(int experience, int presentChance) {
     // 敵の種類によらず共通の撃破処理。経験値とドロップ率は呼び出し側で指定する。
     // 同じフレームの複数の弾・範囲攻撃でも、報酬を一度だけ確定する。
-    if (IsDead())
-    {
+    if (IsDead()) {
         return;
     }
     Destroy();
 
     // 報酬を渡せるプレイヤーがいなければ、敵の消滅だけで処理を終える。
     auto players = Game::GetInstance()->GetObjects<CPlayer>();
-    if (players.empty() || players[0]->GetHp() <= 0)
-    {
+    if (players.empty() || players[0]->GetHp() <= 0) {
         return;
     }
     CPlayer* player = players[0];
@@ -29,15 +29,13 @@ void EnemyTarget::Defeat(int experience, int presentChance)
     const auto grounds = Game::GetInstance()->GetObjects<Ground>();
     const float groundY = grounds.empty() ? -5.0f : grounds[0]->GetPosition().y;
     const bool dropSpanner = rand() % 100 < std::clamp(CSpanner::m_spawnChancePercent, 0, 100);
-    if (dropSpanner)
-    {
+    if (dropSpanner) {
         auto spanner = Game::GetInstance()->AddObject<CSpanner>();
-        spanner->SetPosition(m_Position.x, groundY, m_Position.z);
+        spanner->SetPosition(m_position.x, groundY, m_position.z);
     }
 
     // 通常抽選に加え10体ごとに確定ドロップし、序盤でもプレゼントを試せるようにする。
-    if (rand() % 100 >= presentChance && player->GetKills() % 10 != 0)
-    {
+    if (rand() % 100 >= presentChance && player->GetKills() % 10 != 0) {
         return;
     }
 
@@ -45,5 +43,5 @@ void EnemyTarget::Defeat(int experience, int presentChance)
     auto present = Game::GetInstance()->AddObject<CPresentBox>();
 
     // 空中の敵を倒した場合も、拾える地面の高さに報酬を配置する。
-    present->SetPosition(m_Position.x + (dropSpanner ? 25.0f : 0.0f), groundY + 10.0f, m_Position.z);
+    present->SetPosition(m_position.x + (dropSpanner ? 25.0f : 0.0f), groundY + 10.0f, m_position.z);
 }

@@ -1,3 +1,6 @@
+﻿/// @file Pole.h
+/// @brief ゴルフの目標を示すポールモデル。
+
 #pragma once
 #include "Object.h"
 #include "Texture.h"
@@ -7,31 +10,36 @@
 #include "Material.h"
 
 //-----------------------------------------------------------------------------
-// Pole�N���X
+// Poleクラス
 //-----------------------------------------------------------------------------
-class Pole :public Object
-{
+class Pole : public Object {
 private:
+    // 描画の為の情報（メッシュに関わる情報）
+    /// 頂点バッファ・インデックスバッファ・インデックス数
+    MeshRenderer m_meshRenderer;
 
-	// �`��ׂ̈̏��i���b�V���Ɋւ����j
-	MeshRenderer m_MeshRenderer; // ���_�o�b�t�@�E�C���f�b�N�X�o�b�t�@�E�C���f�b�N�X��
+    // 描画の為の情報（見た目に関わる部分）
+    /// サブセットごとの色と反射特性を保持する材質一覧。
+    std::vector<std::unique_ptr<Material>> m_materials;
+    /// 材質ごとに分けた描画範囲と使用するインデックスの情報。
+    std::vector<SUBSET> m_subsets;
+    /// テクスチャ
+    std::vector<std::unique_ptr<Texture>> m_textures;
 
-	// �`��ׂ̈̏��i�����ڂɊւ�镔���j
-	std::vector<std::unique_ptr<Material>> m_Materials;
-	std::vector<SUBSET> m_subsets;
-	std::vector<std::unique_ptr<Texture>> m_Textures; // �e�N�X�`��
-
-	int m_State = 0; // 0:��\���E1:�����I���E2:�p���[�I��
+    /// 0:非表示・1:方向選択・2:パワー選択
+    int m_state = 0;
 
 public:
+    /// 使用前の状態と必要な資源を初期化する。
+    void Init();
+    /// 経過時間と入力に合わせて状態を更新する。
+    void Update();
+    /// 現在の状態を画面へ描画する。
+    void Draw(Camera* cam);
+    /// 使用した資源を解放して終了する。
+    void Uninit();
 
-	void Init();
-	void Update();
-	void Draw(Camera* cam);
-	void Uninit();
-
-	// �ʒu�̐ݒ�
-	void SetPosition(float x, float y, float z);
-	void SetPosition(DirectX::SimpleMath::Vector3 pos);
+    // 位置の設定
+    void SetPosition(float x, float y, float z);
+    void SetPosition(DirectX::SimpleMath::Vector3 pos);
 };
-

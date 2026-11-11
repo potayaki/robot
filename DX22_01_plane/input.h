@@ -1,23 +1,26 @@
-﻿#pragma once
-#include <d3d11.h>  // DirectX11を使うためのヘッダーファイル
-#include <DirectXMath.h> // DirextXの数学関連のヘッダーファイル
-#include<Windows.h>
-#include <Xinput.h> //XInputを使うためのヘッダーファイル
-#pragma comment (lib, "xinput.lib") //XInputを使うために必要
+﻿/// @file input.h
+/// @brief キーボード、マウス、ゲームパッドの入力状態と振動。
 
-#define XINPUT_A              0x1000
-#define XINPUT_B              0x2000
-#define XINPUT_X              0x4000
-#define XINPUT_Y              0x8000
-#define XINPUT_UP             0x0001
-#define XINPUT_DOWN           0x0002
-#define XINPUT_LEFT           0x0004
-#define XINPUT_RIGHT          0x0008
-#define XINPUT_START          0x0010
-#define XINPUT_BACK           0x0020
-#define XINPUT_LEFT_THUMB     0x0040 //左スティック押し込み
-#define XINPUT_RIGHT_THUMB    0x0080 //右スティック押し込み
-#define XINPUT_LEFT_SHOULDER  0x0100 //L
+#pragma once
+#include <d3d11.h> // DirectX11を使うためのヘッダーファイル
+#include <DirectXMath.h> // DirextXの数学関連のヘッダーファイル
+#include <Windows.h>
+#include <Xinput.h> //XInputを使うためのヘッダーファイル
+#pragma comment(lib, "xinput.lib") //XInputを使うために必要
+
+#define XINPUT_A 0x1000
+#define XINPUT_B 0x2000
+#define XINPUT_X 0x4000
+#define XINPUT_Y 0x8000
+#define XINPUT_UP 0x0001
+#define XINPUT_DOWN 0x0002
+#define XINPUT_LEFT 0x0004
+#define XINPUT_RIGHT 0x0008
+#define XINPUT_START 0x0010
+#define XINPUT_BACK 0x0020
+#define XINPUT_LEFT_THUMB 0x0040 //左スティック押し込み
+#define XINPUT_RIGHT_THUMB 0x0080 //右スティック押し込み
+#define XINPUT_LEFT_SHOULDER 0x0100 //L
 #define XINPUT_RIGHT_SHOULDER 0x0200 //R
 
 #define VK_0 0x30
@@ -59,57 +62,60 @@
 
 class Input {
 private:
-	//自身のインスタンス
-	static Input* m_Instance;
+    //自身のインスタンス
+    /// システム全体で共有するインスタンス。
+    static Input* m_instance;
 
-	//キー入力情報を保存する変数
-	BYTE keyState[256];
-	BYTE keyState_old[256];
+    //キー入力情報を保存する変数
+    /// 今回の更新で取得した全キーの押下状態。
+    BYTE m_keyState[256];
+    /// 前回のキー状態。押した瞬間・離した瞬間の判定に使用する。
+    BYTE m_previousKeyState[256];
 
-	//コントローラー入力情報を保存する変数
-	XINPUT_STATE controllerState;
-	XINPUT_STATE controllerState_old;
+    //コントローラー入力情報を保存する変数
+    /// 今回取得したゲームパッドのボタンとスティック状態。
+    XINPUT_STATE m_controllerState;
+    /// 前回のゲームパッド状態。入力の変化を判定する。
+    XINPUT_STATE m_previousControllerState;
 
-	float VibrationTime; //振動継続時間をカウントする変数
+    /// 振動継続時間をカウントする変数
+    float m_vibrationTime;
 
-    static POINT m_MousePosition; //マウスの座標を保存する変数
-
-    
+    /// マウスの座標を保存する変数
+    static POINT m_mousePosition;
 
 public:
-
-	//Input(); //コンストラクタ
-	//~Input(); //デストラクタ
-	static void Create(); //作成
-	static void Update();
+    //Input(); //コンストラクタ
+    //~Input(); //デストラクタ
+    static void Create(); //作成
+    /// 経過時間と入力に合わせて状態を更新する。
+    static void Update();
     static void ConsumeTriggers(); // 同じ描画フレーム内の2回目以降は押下イベントを繰り返さない。 //更新
-	static void Release(); //解放
+    static void Release(); //解放
 
-	//キー入力
-	static bool GetKeyPress(int key);   //プレス(押している間ずっと)
-	static bool GetKeyTrigger(int key); //トリガー(押し始めた時)
-	static bool GetKeyRelease(int key); //リリース(押し終わった時)
+    //キー入力
+    static bool GetKeyPress(int key); //プレス(押している間ずっと)
+    static bool GetKeyTrigger(int key); //トリガー(押し始めた時)
+    static bool GetKeyRelease(int key); //リリース(押し終わった時)
 
-	//アナログスティック(コントローラー)
-	static DirectX::XMFLOAT2 GetLeftAnalogStick(void);
-	static DirectX::XMFLOAT2 GetRightAnalogStick(void);
+    //アナログスティック(コントローラー)
+    static DirectX::XMFLOAT2 GetLeftAnalogStick(void);
+    static DirectX::XMFLOAT2 GetRightAnalogStick(void);
 
-	//トリガー(コントローラー)
-	static float GetLeftTrigger(void);
-	static float GetRightTrigger(void);
+    //トリガー(コントローラー)
+    static float GetLeftTrigger(void);
+    static float GetRightTrigger(void);
 
-	//ボタン入力(コントローラー)
-	static bool GetButtonPress(WORD btn);   //プレス(押している間ずっと)
-	static bool GetButtonTrigger(WORD btn); //トリガー(押し始めた時)
-	static bool GetButtonRelease(WORD btn); //リリース(押し終わった時)
+    //ボタン入力(コントローラー)
+    static bool GetButtonPress(WORD btn); //プレス(押している間ずっと)
+    static bool GetButtonTrigger(WORD btn); //トリガー(押し始めた時)
+    static bool GetButtonRelease(WORD btn); //リリース(押し終わった時)
 
-	//振動(コントローラー)
-	//flame：振動を継続する時間(単位：フレーム)
-	//power：振動の強さ(0～1)
-	static void SetVibration(float seconds = 1.0f / 60.0f, float powor = 1);
+    //振動(コントローラー)
+    //flame：振動を継続する時間(単位：フレーム)
+    //power：振動の強さ(0～1)
+    static void SetVibration(float seconds = 1.0f / 60.0f, float powor = 1);
 
     //マウスの座標を取得する関数
     static DirectX::XMFLOAT2 GetMousePosition();
-
 };
-

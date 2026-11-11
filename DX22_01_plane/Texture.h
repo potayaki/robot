@@ -1,29 +1,39 @@
+ï»¿/// @file Texture.h
+/// @brief ç”»åƒã®èª­è¾¼ã€ãƒŸãƒƒãƒ—ãƒãƒƒãƒ—ç”Ÿæˆã€ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã¸ã®è¨­å®šã€‚
+
 #pragma once
 
-#include	<d3d11.h>
-#include	<string>
-#include	<wrl/client.h> // ComPtr‚Ì’è‹`‚ğŠÜ‚Şƒwƒbƒ_ƒtƒ@ƒCƒ‹
-#include	<filesystem>
+#include <d3d11.h>
+#include <string>
+#include <wrl/client.h> // ComPtrã®å®šç¾©ã‚’å«ã‚€ãƒ˜ãƒƒãƒ€ãƒ•ã‚¡ã‚¤ãƒ«
+#include <filesystem>
 
 using Microsoft::WRL::ComPtr;
 
 //-----------------------------------------------------------------------------
-//TextureƒNƒ‰ƒX
+//Textureã‚¯ãƒ©ã‚¹
 //-----------------------------------------------------------------------------
-class Texture
-{
-	std::string m_texname{}; // ƒtƒ@ƒCƒ‹–¼
-	ComPtr<ID3D11ShaderResourceView> m_srv{}; // ƒVƒF[ƒ_[ƒŠƒ\[ƒXƒrƒ…[
+class Texture {
+    /// ãƒ•ã‚¡ã‚¤ãƒ«å
+    std::string m_texname{};
+    /// ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ãƒªã‚½ãƒ¼ã‚¹ãƒ“ãƒ¥ãƒ¼
+    ComPtr<ID3D11ShaderResourceView> m_srv{};
 
-	int m_width; // •
-	int m_height; // ‚‚³
-	int m_bpp; // BPP
+    /// å¹…
+    int m_width;
+    /// é«˜ã•
+    int m_height;
+    /// BPP
+    int m_bpp;
+
 public:
-	bool Load(const std::string& filename);
-	bool LoadFromFemory(const unsigned char* data,int len);
+    bool Load(const std::string& filename);
+    bool LoadFromFemory(const unsigned char* data, int len);
 
-	void SetGPU();
+    void SetGPU();
 
-	// ‹ó‚ÌØ‘Ö‚É2–‡‚Ì‰æ‘œ‚ğ“¯‚ÉQÆ‚·‚é‚½‚ß‚Ì“Ç‚İæ‚èê—pƒrƒ…[B
-	ID3D11ShaderResourceView* GetShaderResourceView() const { return m_srv.Get(); }
+    // ç©ºã®åˆ‡æ›¿æ™‚ã«2æšã®ç”»åƒã‚’åŒæ™‚ã«å‚ç…§ã™ã‚‹ãŸã‚ã®èª­ã¿å–ã‚Šå°‚ç”¨ãƒ“ãƒ¥ãƒ¼ã€‚
+    ID3D11ShaderResourceView* GetShaderResourceView() const {
+        return m_srv.Get();
+    }
 };

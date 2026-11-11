@@ -1,4 +1,7 @@
-﻿#include "BoarModel.h"
+﻿/// @file BoarModel.cpp
+/// @brief Boarのモデル、テクスチャ、突進予測線の描画。
+
+#include "BoarModel.h"
 #include "Renderer.h"
 #include "Shader.h"
 #include "Texture.h"
@@ -8,75 +11,90 @@
 using namespace DirectX::SimpleMath;
 using Microsoft::WRL::ComPtr;
 
-namespace
-{
+namespace {
     constexpr size_t MaxBones = 64;
-    struct SkinVertex
-    {
+
+    struct SkinVertex {
+        /// 位置・法線・色・UVをまとめた描画用頂点。
         VERTEX_3D vertex;
+        /// 頂点の変形に使用する骨の情報。
         std::array<unsigned, 4> bones;
+        /// 各ボーンが頂点に与える影響度。スキニングの重みに使用する。
         std::array<float, 4> weights;
     };
+
     static_assert(sizeof(SkinVertex) == 80);
 
-    Matrix ToDirectX(const aiMatrix4x4& m)
-    {
-        return Matrix(m.a1, m.b1, m.c1, m.d1, m.a2, m.b2, m.c2, m.d2,
-                      m.a3, m.b3, m.c3, m.d3, m.a4, m.b4, m.c4, m.d4);
+    Matrix ToDirectX(const aiMatrix4x4& m) {
+        return Matrix(m.a1, m.b1, m.c1, m.d1, m.a2, m.b2, m.c2, m.d2, m.a3, m.b3, m.c3, m.d3, m.a4, m.b4,
+                      m.c4, m.d4);
     }
 
-    bool CreateConstantBuffer(UINT bytes, ComPtr<ID3D11Buffer>& buffer)
-    {
+    bool CreateConstantBuffer(UINT bytes, ComPtr<ID3D11Buffer>& buffer) {
         D3D11_BUFFER_DESC desc{};
         desc.ByteWidth = bytes;
         desc.Usage = D3D11_USAGE_DEFAULT;
         desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
         return SUCCEEDED(Renderer::GetDevice()->CreateBuffer(&desc, nullptr, buffer.GetAddressOf()));
     }
-}
+} // namespace
 
-struct BoarModel::Resources
-{
+struct BoarModel::Resources {
+    /// 描画頂点を保持するGPUバッファ。
     VertexBuffer<SkinVertex> vertices;
+    /// モデルに使用するベースカラー画像。
     Texture albedo;
+    /// 頂点の座標変換を担当するGPUシェーダー。
     ComPtr<ID3D11VertexShader> vertexShader;
+    /// 描画ピクセルの色を計算するGPUシェーダー。
     ComPtr<ID3D11PixelShader> pixelShader;
+    /// 頂点データの各項目とシェーダー入力の対応定義。
     ComPtr<ID3D11InputLayout> layout;
-    ComPtr<ID3D11Buffer> bones, material;
+    /// スキニング用のボーン行列をGPUへ送る定数バッファ。
+    ComPtr<ID3D11Buffer> bones;
+    /// Boarの材質をGPUへ送る定数バッファ。
+    ComPtr<ID3D11Buffer> material;
+    /// 描画対象となる頂点の数。
     unsigned vertexCount = 0;
+    /// 素材の水平な中心位置。描画の原点を合わせるために使用する。
     Vector3 baseCenter{};
+    /// 素材の最下点の高さ。モデルの足元を地面へ合わせるために使用する。
     float bottom = 0;
 
     // 予測線も共有する。描く直前に頂点を入れ替えるため、Boarごとのバッファは不要。
+    /// 突進の予測線を描くシェーダー。
     Shader telegraphShader;
+    /// 描画頂点を保持するGPUバッファ。
     VertexBuffer<VERTEX_3D> telegraphBuffer;
+    /// 突進の予測線の形状を作る頂点一覧。
     std::vector<VERTEX_3D> telegraphVertices;
+    /// 突進の予測線を両面から描くための描画設定。
     ComPtr<ID3D11RasterizerState> telegraphRasterizer;
 };
 
-bool BoarModel::Init()
-{
+bool BoarModel::Init() {
     m_resources.reset();
     std::string error;
-    if (!m_rig.Load("assets/model/Boar/Boar.glb", error))
-    {
+    if (!m_rig.Load("assets/model/Boar/Boar.glb", error)) {
         std::cerr << "Boar: " << error << '\n';
         return false;
     }
     static std::weak_ptr<Resources> cached;
-    if (auto resources = cached.lock())
-    {
+    if (auto resources = cached.lock()) {
         m_resources = resources;
         return true;
     }
-    if (m_rig.GetMatrices().size() > MaxBones) return false;
+    if (m_rig.GetMatrices().size() > MaxBones) {
+        return false;
+    }
     auto resources = std::make_shared<Resources>();
     const auto& image = m_rig.GetAlbedo();
-    if (!resources->albedo.LoadFromFemory(image.data(), static_cast<int>(image.size()))) return false;
+    if (!resources->albedo.LoadFromFemory(image.data(), static_cast<int>(image.size()))) {
+        return false;
+    }
 
     std::vector<SkinVertex> vertices;
-    for (const auto& source : m_rig.GetVertices())
-    {
+    for (const auto& source : m_rig.GetVertices()) {
         SkinVertex vertex{};
         vertex.vertex.position = Vector3(source.position.x, source.position.y, source.position.z);
         vertex.vertex.normal = Vector3(source.normal.x, source.normal.y, source.normal.z);
@@ -90,7 +108,8 @@ bool BoarModel::Init()
     resources->vertexCount = static_cast<unsigned>(vertices.size());
     const auto bounds = m_rig.GetBounds();
     resources->bottom = bounds.min.y;
-    resources->baseCenter = Vector3((bounds.min.x + bounds.max.x) * 0.5f, 0, (bounds.min.z + bounds.max.z) * 0.5f);
+    resources->baseCenter =
+        Vector3((bounds.min.x + bounds.max.x) * 0.5f, 0, (bounds.min.z + bounds.max.z) * 0.5f);
 
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -98,13 +117,20 @@ bool BoarModel::Init()
         {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 40, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"BLENDINDICES", 0, DXGI_FORMAT_R32G32B32A32_UINT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"BLENDWEIGHT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 64, D3D11_INPUT_PER_VERTEX_DATA, 0}
-    };
-    if (FAILED(Renderer::CreateVertexShader(resources->vertexShader.GetAddressOf(), resources->layout.GetAddressOf(),
-        layout, 6, "shader/boarVS.hlsl"))) return false;
-    if (FAILED(Renderer::CreatePixelShader(resources->pixelShader.GetAddressOf(), "shader/litTexturePS.hlsl"))) return false;
+        {"BLENDWEIGHT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 64, D3D11_INPUT_PER_VERTEX_DATA, 0}};
+    if (FAILED(Renderer::CreateVertexShader(resources->vertexShader.GetAddressOf(),
+                                            resources->layout.GetAddressOf(), layout, 6,
+                                            "shader/boarVS.hlsl"))) {
+        return false;
+    }
+    if (FAILED(
+            Renderer::CreatePixelShader(resources->pixelShader.GetAddressOf(), "shader/litTexturePS.hlsl"))) {
+        return false;
+    }
     if (!CreateConstantBuffer(sizeof(Matrix) * MaxBones, resources->bones) ||
-        !CreateConstantBuffer(sizeof(MATERIAL), resources->material)) return false;
+        !CreateConstantBuffer(sizeof(MATERIAL), resources->material)) {
+        return false;
+    }
     MATERIAL material{};
     material.Diffuse = Color(1, 1, 1, 1);
     material.TextureEnable = TRUE;
@@ -118,35 +144,45 @@ bool BoarModel::Init()
     rasterizer.CullMode = D3D11_CULL_NONE;
     rasterizer.DepthClipEnable = TRUE;
     rasterizer.MultisampleEnable = TRUE;
-    if (FAILED(Renderer::GetDevice()->CreateRasterizerState(&rasterizer, resources->telegraphRasterizer.GetAddressOf()))) return false;
+    if (FAILED(Renderer::GetDevice()->CreateRasterizerState(&rasterizer,
+                                                            resources->telegraphRasterizer.GetAddressOf()))) {
+        return false;
+    }
     m_resources = resources;
     cached = resources;
     return true;
 }
 
-void BoarModel::Update(BoarMotion motion, float deltaSeconds, float progress)
-{
-    if (!m_resources) return;
+void BoarModel::Update(BoarMotion motion, float deltaSeconds, float progress) {
+    if (!m_resources) {
+        return;
+    }
     m_motion = motion;
     m_rig.Update(motion, deltaSeconds, progress);
 }
 
-void BoarModel::Draw(Camera* camera, const Vector3& feet, float yaw, float scale)
-{
-    if (!m_resources || !camera) return;
+void BoarModel::Draw(Camera* camera, const Vector3& feet, float yaw, float scale) {
+    if (!m_resources || !camera) {
+        return;
+    }
     camera->SetCamera();
     const auto& resources = *m_resources;
 
     // 元モデルは-Zが正面。足元を地面へ合わせ、ゲーム内の+Zへ向きを補正する。
     float bottom = resources.bottom;
-    if (m_motion == BoarMotion::Death) bottom = (std::min)(bottom, m_rig.GetBounds().min.y);
+    if (m_motion == BoarMotion::Death) {
+        bottom = (std::min)(bottom, m_rig.GetBounds().min.y);
+    }
     Matrix world = Matrix::CreateTranslation(-resources.baseCenter.x, -bottom, -resources.baseCenter.z) *
-        Matrix::CreateScale(scale) * Matrix::CreateRotationY(yaw + DirectX::XM_PI) * Matrix::CreateTranslation(feet);
+                   Matrix::CreateScale(scale) * Matrix::CreateRotationY(yaw + DirectX::XM_PI) *
+                   Matrix::CreateTranslation(feet);
     Renderer::SetWorldMatrix(&world);
 
     std::array<Matrix, MaxBones> matrices;
     matrices.fill(Matrix::Identity);
-    for (size_t i = 0; i < m_rig.GetMatrices().size(); ++i) matrices[i] = ToDirectX(m_rig.GetMatrices()[i]).Transpose();
+    for (size_t i = 0; i < m_rig.GetMatrices().size(); ++i) {
+        matrices[i] = ToDirectX(m_rig.GetMatrices()[i]).Transpose();
+    }
     auto context = Renderer::GetDeviceContext();
     ComPtr<ID3D11Buffer> previousVertexMaterial, previousPixelMaterial, previousBones;
     context->VSGetConstantBuffers(4, 1, previousVertexMaterial.GetAddressOf());
@@ -170,28 +206,31 @@ void BoarModel::Draw(Camera* camera, const Vector3& feet, float yaw, float scale
     context->VSSetConstantBuffers(6, 1, previousBones.GetAddressOf());
 }
 
-void BoarModel::DrawTelegraph(Camera* camera, Vector3 start, Vector3 end,
-                              float groundY, float halfWidth, float progress)
-{
-    if (!m_resources || !camera) return;
+void BoarModel::DrawTelegraph(Camera* camera, Vector3 start, Vector3 end, float groundY, float halfWidth,
+                              float progress) {
+    if (!m_resources || !camera) {
+        return;
+    }
     camera->SetCamera();
     start.y = end.y = groundY + 0.15f; // 地面と重なってちらつかないよう、少しだけ上へ出す。
     Vector3 direction = end - start;
-    if (direction.LengthSquared() < 0.001f) return;
+    if (direction.LengthSquared() < 0.001f) {
+        return;
+    }
     direction.Normalize();
     const Vector3 side(direction.z, 0, -direction.x);
     auto& vertices = m_resources->telegraphVertices;
-    auto put = [&](unsigned index, const Vector3& position, const Color& color)
-    {
+    auto put = [&](unsigned index, const Vector3& position, const Color& color) {
         vertices[index].position = position;
         vertices[index].color = color;
     };
-    auto strip = [&](unsigned first, float width, const Color& color)
-    {
+    auto strip = [&](unsigned first, float width, const Color& color) {
         const Vector3 offset = side * width;
         const Vector3 corners[] = {start - offset, start + offset, end - offset, end + offset};
         const unsigned indices[] = {0, 1, 2, 2, 1, 3};
-        for (unsigned i = 0; i < 6; ++i) put(first + i, corners[indices[i]], color);
+        for (unsigned i = 0; i < 6; ++i) {
+            put(first + i, corners[indices[i]], color);
+        }
     };
     const float alpha = 0.20f + 0.15f * progress;
     strip(0, halfWidth, Color(1.0f, 0.02f, 0.02f, alpha));

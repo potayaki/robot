@@ -1,20 +1,25 @@
+﻿/// @file TitleScene.h
+/// @brief タイトル画面とステージ開始への切り替え。
+
 #pragma once
 #include "Scene.h"
 #include "Object.h"
 
-// TitleScene�N���X
-class TitleScene : public Scene
-{
+// TitleSceneクラス
+class TitleScene : public Scene {
 private:
-	std::vector<Object*> m_MySceneObjects; // ���̃V�[���̃I�u�W�F�N�g
+    /// このシーンのオブジェクト
+    std::vector<Object*> m_mySceneObjects;
 
-	void Init(); // ������
-	void Uninit(); // �I������
+    /// 使用前の状態と必要な資源を初期化する。
+    void Init(); // 初期化
+    /// 使用した資源を解放して終了する。
+    void Uninit(); // 終了処理
 
 public:
-	TitleScene(); // �R���X�g���N�^
-	~TitleScene(); // �f�X�g���N�^
+    TitleScene(); // コンストラクタ
+    ~TitleScene(); // デストラクタ
 
-	void Update(); // �X�V
+    /// 経過時間と入力に合わせて状態を更新する。
+    void Update(); // 更新
 };
-
