@@ -5,8 +5,9 @@ $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer
 $installation = & $vswhere -latest -version '[17.0,18.0)' -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if (-not $installation) { throw 'Visual Studio 2022 with the v143 C++ toolset is required.' }
 $vcvars = Join-Path $installation 'VC/Auxiliary/Build/vcvars64.bat'
-$assimpRoot = 'C:\assimp\assimp\5.2.5'
-if (-not (Test-Path "$assimpRoot/include/assimp/Importer.hpp")) { throw "Assimp 5.2.5 is missing: $assimpRoot" }
+$assimpRoot = @('C:\assimp\5.2.5', 'C:\assimp\assimp\5.2.5') |
+    Where-Object { Test-Path "$_/include/assimp/Importer.hpp" } | Select-Object -First 1
+if (-not $assimpRoot) { throw 'Assimp 5.2.5 is missing.' }
 
 $cases = @(
     @{ Name = 'RobotAnimationTests'; Sources = @('RobotAnimationRig.cpp') },

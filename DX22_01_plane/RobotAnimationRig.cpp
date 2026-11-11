@@ -227,7 +227,34 @@ void RobotAnimationRig::Evaluate()
         hierarchy[i] = node.parent < 0 ? local : hierarchy[node.parent] * local;
         m_globals[i] = m_inverseRoot * hierarchy[i];
     }
+    ApplyLowerBodyScale();
     ApplyUpperBodyAim();
+}
+
+void RobotAnimationRig::SetLowerBodyScale(float scale)
+{
+    if (!std::isfinite(scale)) return;
+    m_lowerBodyScale = std::clamp(scale, 1.0f, 1.6f);
+    if (!m_globals.empty()) Evaluate();
+}
+
+void RobotAnimationRig::ApplyLowerBodyScale()
+{
+    if (m_lowerBodyScale == 1.0f || m_upperBodyNode < 0) return;
+
+    // 足元を基準にSK_Mech_Bottomの骨格とメッシュを一緒に拡大する。
+    // 頂点だけ拡大すると、IKが使う脚の長さと見た目が一致しなくなる。
+    aiMatrix4x4 lowerScale;
+    aiMatrix4x4::Scaling(aiVector3D(m_lowerBodyScale), lowerScale);
+
+    // 上半身は接続位置だけ追従させる。頭・胴・武器のサイズや照準回転は変えない。
+    const auto pivot = m_globals[m_upperBodyNode] * aiVector3D();
+    aiMatrix4x4 upperOffset;
+    aiMatrix4x4::Translation(pivot * (m_lowerBodyScale - 1.0f), upperOffset);
+    for (size_t i = 0; i < m_nodes.size(); ++i)
+    {
+        m_globals[i] = (m_nodes[i].upperBody ? upperOffset : lowerScale) * m_globals[i];
+    }
 }
 
 void RobotAnimationRig::ApplyUpperBodyAim()

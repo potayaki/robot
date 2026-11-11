@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
+#include <cstdlib>
+#include <limits>
 #ifdef _MSC_VER
 #include <crtdbg.h>
 #endif
@@ -12,15 +14,172 @@ aiMatrix4x4 World(aiVector3D position, float yaw = 0)
     return aiMatrix4x4(aiVector3D(0.025f), aiQuaternion(aiVector3D(0, 1, 0), yaw), position);
 }
 
+void CheckStrideAndStopping(const RobotAnimationRig& original)
+{
+    for (int fps : {30, 60, 144})
+    {
+        const float dt = 1.0f / fps;
+        // 足を上げた直後・途中・着地直前のいずれで操作を離しても、Idleへ戻らない。
+        for (int phase = 0; phase < 12; ++phase)
+        {
+            auto rig = original;
+            RobotSpiderIK ik;
+            assert(ik.Init(rig));
+            aiVector3D position(0, -5, 0);
+            ik.Update(rig, dt, World(position), -5, true);
+            const int frames = fps * 2 + phase * fps / 60;
+            for (int frame = 0; frame < frames; ++frame)
+            {
+                position.z += 60.0f * dt;
+                rig.Update(RobotMotion::Idle, dt);
+                ik.Update(rig, dt, World(position), -5, true);
+            }
+            const auto stopped = ik.GetFeet();
+            for (int frame = 0; frame < fps; ++frame)
+            {
+                rig.Update(RobotMotion::Idle, dt);
+                ik.Update(rig, dt, World(position), -5, true);
+                for (size_t i = 0; i < stopped.size(); ++i)
+                {
+                    const auto& foot = ik.GetFeet()[i];
+                    assert(foot.stepNumber == stopped[i].stepNumber);
+                    assert(std::abs(foot.position.x - stopped[i].position.x) < 0.001f);
+                    assert(std::abs(foot.position.z - stopped[i].position.z) < 0.001f);
+                    assert((ik.GetSolvedContacts()[i] - foot.position).Length() < 0.15f);
+                    if (frame > fps / 4)
+                    {
+                        assert(!foot.swinging);
+                        assert(std::abs(foot.position.y + 5.0f) < 0.001f);
+                    }
+                }
+            }
+        }
+
+        auto rig = original;
+        RobotSpiderIK ik;
+        assert(ik.Init(rig));
+        aiVector3D position(0, -5, 0);
+        ik.Update(rig, dt, World(position), -5, true);
+        float totalStride = 0.0f;
+        unsigned steps = 0;
+        for (int frame = 0; frame < fps * 5; ++frame)
+        {
+            const auto previous = ik.GetFeet();
+            position.z += 60.0f * dt;
+            rig.Update(RobotMotion::Idle, dt);
+            ik.Update(rig, dt, World(position), -5, true);
+            if (frame < fps) continue;
+            for (size_t i = 0; i < previous.size(); ++i)
+            {
+                const auto& foot = ik.GetFeet()[i];
+                if (foot.stepNumber == previous[i].stepNumber) continue;
+                totalStride += (foot.target - foot.start).Length();
+                ++steps;
+            }
+        }
+        const float averageStride = totalStride / steps;
+        const float stepsPerSecondPerFoot = steps / (4.0f * 6.0f);
+        std::cout << fps << "fps stride=" << averageStride
+            << " steps/foot/second=" << stepsPerSecondPerFoot << '\n';
+        assert(averageStride >= 19.0f && averageStride <= 21.0f);
+        assert(stepsPerSecondPerFoot > 2.5f && stepsPerSecondPerFoot < 3.3f);
+    }
+}
+
+void CheckLiveSettings(const RobotAnimationRig& original)
+{
+    auto rig = original;
+    RobotSpiderIK ik;
+    ik.settings.stanceWidth = 0.70f;
+    ik.settings.bodyHeight = 1.8f;
+    assert(ik.Init(rig));
+    const auto world = World(aiVector3D(0, -5, 0));
+    for (int frame = 0; frame < 30; ++frame)
+    {
+        rig.Update(RobotMotion::Idle, 1.0f / 60);
+        ik.Update(rig, 1.0f / 60, world, -5, true);
+    }
+    const auto narrow = ik.GetFeet();
+    const auto originalSettings = ik.settings;
+    const auto clockBefore = rig.GetTime();
+
+    // ゲーム更新を呼ばずに設定を変更する。一時停止中でも足が外側へ広がる。
+    auto wideSettings = originalSettings;
+    wideSettings.stanceWidth = 0.90f;
+    wideSettings.bodyHeight = 0.4f;
+    ik.ApplySettings(rig, wideSettings);
+    const auto wide = ik.GetFeet();
+    for (size_t i = 0; i < wide.size(); ++i)
+    {
+        const auto oldRadius = aiVector3D(narrow[i].position.x, 0, narrow[i].position.z).Length();
+        const auto newRadius = aiVector3D(wide[i].position.x, 0, wide[i].position.z).Length();
+        assert(newRadius > oldRadius + 1.0f);
+        assert(wide[i].stepNumber == narrow[i].stepNumber);
+        assert(wide[i].progress == narrow[i].progress);
+        assert((ik.GetSolvedContacts()[i] - wide[i].position).Length() < 0.15f);
+    }
+    assert(rig.GetTime() == clockBefore);
+    for (int repeat = 0; repeat < 50; ++repeat) ik.ApplySettings(rig, wideSettings);
+    for (size_t i = 0; i < wide.size(); ++i)
+        assert((ik.GetFeet()[i].position - wide[i].position).Length() < 0.0001f);
+
+    // 往復操作で拡大が累積しない。歩幅だけを変更しても、停止中の接地点は動かない。
+    ik.ApplySettings(rig, originalSettings);
+    auto strideSettings = originalSettings;
+    strideSettings.strideLength = 24.0f;
+    ik.ApplySettings(rig, strideSettings);
+    for (size_t i = 0; i < narrow.size(); ++i)
+        assert((ik.GetFeet()[i].position - narrow[i].position).Length() < 0.001f);
+
+    // 歩行途中でも足をリセットせず、現在の一歩を継続できる。
+    aiVector3D position(0, -5, 0);
+    ik.ApplySettings(rig, originalSettings);
+    for (int frame = 0; frame < 11; ++frame)
+    {
+        position.z += 1.0f;
+        rig.Update(RobotMotion::Idle, 1.0f / 60);
+        ik.Update(rig, 1.0f / 60, World(position), -5, true);
+    }
+    const auto moving = ik.GetFeet();
+    ik.ApplySettings(rig, wideSettings);
+    for (size_t i = 0; i < moving.size(); ++i)
+    {
+        const auto& foot = ik.GetFeet()[i];
+        assert(foot.swinging == moving[i].swinging);
+        assert(foot.progress == moving[i].progress);
+        assert(foot.stepNumber == moving[i].stepNumber);
+        const auto shift = foot.position - moving[i].position;
+        assert((foot.target - moving[i].target - shift).Length() < 0.001f);
+    }
+
+    // 手入力でも範囲外やNaNの設定が骨行列へ混ざらない。
+    auto invalid = wideSettings;
+    invalid.strideLength = -100.0f;
+    invalid.stanceWidth = std::numeric_limits<float>::quiet_NaN();
+    invalid.bodyHeight = 100.0f;
+    invalid.stepHeight = -100.0f;
+    ik.ApplySettings(rig, invalid);
+    assert(ik.settings.strideLength == 8.0f);
+    assert(ik.settings.stanceWidth == RobotSpiderIK::Settings{}.stanceWidth);
+    assert(ik.settings.bodyHeight == 2.5f && ik.settings.stepHeight == 0.2f);
+    for (const auto& matrix : rig.GetMatrices()) for (int row = 0; row < 4; ++row)
+        for (int col = 0; col < 4; ++col) assert(std::isfinite(matrix[row][col]));
+    std::cout << "Live stance/height preview, no drift, paused clock and setting bounds passed.\n";
+}
+
 int main()
 {
 #ifdef _MSC_VER
     _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
     _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+    _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
 #endif
     RobotAnimationRig original;
     std::string error;
     assert(original.Load("DX22_01_plane/assets/model/Player", error));
+    original.SetLowerBodyScale(1.40f);
+    CheckStrideAndStopping(original);
+    CheckLiveSettings(original);
     const int joints[][4] = {{3,4,5,6}, {9,10,11,12}, {15,16,17,18},
         {27,28,29,30}, {33,34,35,36}, {39,40,41,42}};
     const auto rest = original.GetMatrices();
@@ -53,7 +212,8 @@ int main()
                 const auto& foot = ik.GetFeet()[i];
                 support += !foot.swinging;
                 if (foot.swinging && foot.position.y > -4.9f) ++lifted;
-                maxError = (std::max)(maxError, (ik.GetSolvedContacts()[i] - foot.position).Length());
+                const float contactError = (ik.GetSolvedContacts()[i] - foot.position).Length();
+                maxError = (std::max)(maxError, contactError);
                 if (frame > 0 && !foot.swinging && !previousFeet[i].swinging &&
                     foot.stepNumber == previousFeet[i].stepNumber)
                     maxSlide = (std::max)(maxSlide, (ik.GetSolvedContacts()[i] - previousContacts[i]).Length());

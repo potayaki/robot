@@ -1,12 +1,16 @@
 ﻿#include "PlayerRobotModel.h"
 #include <iostream>
+#ifdef _DEBUG
+#include "imgui.h"
+#endif
 
 using namespace DirectX::SimpleMath;
 
 namespace
 {
-    // 素材の高さ約789・脚の幅約1086を、高さ約20・幅約27へ縮小する。
+    // 機体全体の基準倍率。下半身だけの拡大は骨格側に適用し、上半身のサイズを保つ。
     constexpr float RobotScale = 0.025f;
+    constexpr float LowerBodyScale = 1.40f; // 腰と6本脚を拡大。上半身のサイズは変えず、IKの脚の長さにも反映する。
     constexpr float PlayerCollisionRadius = 10.0f;
 
     Matrix ToDirectX(const aiMatrix4x4& m)
@@ -48,6 +52,7 @@ void PlayerRobotModel::Init()
         return;
     }
     if (m_rig.GetMatrices().size() > MaxBones) return;
+    m_rig.SetLowerBodyScale(LowerBodyScale);
     m_ikReady = m_spiderIK.Init(m_rig);
     if (!m_ikReady) std::cerr << "Player six-leg IK could not find the expected joints.\n";
     // FBX内の画像参照は配布フォルダと一致しないため、付属のBase Colorを直接指定する。
@@ -89,6 +94,51 @@ void PlayerRobotModel::Advance(RobotMotion motion, float deltaSeconds, float pla
     if (useIK) m_spiderIK.Update(m_rig, deltaSeconds, ToAssimp(GetWorldMatrix()), groundY, grounded);
     else m_spiderIK.Reset(); // Legacy clip previews can return to IK without stale planted feet.
 }
+
+#ifdef _DEBUG
+void PlayerRobotModel::DrawIKDebugUI()
+{
+    if (!m_ready || !m_ikReady || m_debris.IsActive()) return;
+    const auto text = [](const char8_t* value) { return reinterpret_cast<const char*>(value); };
+    auto tuning = m_spiderIK.settings;
+    bool changed = false;
+
+    ImGui::PushID("SpiderIK");
+    ImGui::Separator();
+    ImGui::TextUnformatted(text(u8"6本脚のIK調整"));
+    changed |= ImGui::SliderFloat(text(u8"歩幅"), &tuning.strideLength, 8.0f, 24.0f,
+        "%.1f", ImGuiSliderFlags_AlwaysClamp);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s", text(u8"同じ足の着地から次の着地までの距離。大きくすると、ゆっくり大股で歩きます。"));
+
+    changed |= ImGui::SliderFloat(text(u8"足の開き"), &tuning.stanceWidth, 0.65f, 1.05f,
+        "%.2f", ImGuiSliderFlags_AlwaysClamp);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s", text(u8"大きいほど足先を外へ広げます。1.00が素材の元の接地幅です。停止中も反映されます。"));
+
+    changed |= ImGui::SliderFloat(text(u8"腰の高さ"), &tuning.bodyHeight, -0.5f, 2.5f,
+        "%.2f", ImGuiSliderFlags_AlwaysClamp);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s", text(u8"足先を接地させたまま腰を上下します。足の開きと組み合わせて脚の傾きを調整します。"));
+
+    changed |= ImGui::SliderFloat(text(u8"足を上げる高さ"), &tuning.stepHeight, 0.2f, 2.0f,
+        "%.2f", ImGuiSliderFlags_AlwaysClamp);
+    if (ImGui::Button(text(u8"IK設定を初期値に戻す")))
+    {
+        tuning = RobotSpiderIK::Settings{};
+        changed = true;
+    }
+    // ゲームの更新を進めずに骨行列だけ作り直すため、一時停止中も姿勢を確認できる。
+    if (changed) m_spiderIK.ApplySettings(m_rig, tuning);
+
+    ImGui::TextWrapped("%s", text(u8"変更は実行中のみ有効です。足の開き・腰の高さは一時停止中も確認できます。"));
+    if (m_spiderIK.GetContactError() > 0.3f)
+    {
+        ImGui::TextWrapped("%s", text(u8"脚の届く範囲を超えています。歩幅・足の開き・腰の高さの組み合わせを調整してください。"));
+    }
+    ImGui::PopID();
+}
+#endif
 
 void PlayerRobotModel::BeginBreakApart(float groundY)
 {

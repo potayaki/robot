@@ -59,12 +59,16 @@ private:
     int m_upperBodyNode = -1;
     float m_upperBodyYaw = 0.0f; // 下半身を基準にした照準方向の差（ラジアン）。
     float m_upperBodyPitch = 0.0f; // 上を狙うほど正になる仰角（ラジアン）。
+    float m_lowerBodyScale = 1.0f;
     int FindNode(const std::string& name) const;
     void Evaluate();
+    void ApplyLowerBodyScale();
     void ApplyUpperBodyAim();
 
 public:
     bool Load(const std::string& directory, std::string& error);
+    // IKのInitより前に指定する。脚と腰だけ拡大し、上半身・武器の大きさは保つ。
+    void SetLowerBodyScale(float scale);
     void Update(RobotMotion motion, float deltaSeconds, float playbackRate = 1.0f,
                 float upperBodyYaw = 0.0f, float upperBodyPitch = 0.0f);
     const std::vector<Part>& GetParts() const { return m_parts; }

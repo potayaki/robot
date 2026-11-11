@@ -62,6 +62,13 @@ void CPlayer::DrawSurvivorDebugUI()
         ImGui::Combo("Animation preview", &m_debugRobotMotion,
                      "Automatic\0Idle\0Forward\0Backward\0Left\0Right\0");
         ImGui::TextWrapped("%s", Text(u8"Automaticで通常操作に戻ります。一時停止中は再生も止まります。"));
+        // クリップのプレビュー中はIKを使わないため、Automaticに戻してから調整する。
+        ImGui::BeginDisabled(m_debugRobotMotion != 0 || m_hp <= 0);
+        if (m_body) m_body->DrawIKDebugUI();
+        ImGui::EndDisabled();
+        if (m_debugRobotMotion != 0)
+            ImGui::TextWrapped("%s", Text(u8"IKを調整するにはAnimation previewをAutomaticにしてください。"));
+        ImGui::Separator();
         // HPを通常の死亡判定へ渡すため、無敵中でも演出だけを簡単に確認できる。
         if (ImGui::Button(Text(u8"死亡演出を確認（HP 0）"))) SetHP(0);
         ImGui::SameLine();

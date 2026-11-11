@@ -41,6 +41,27 @@ void CheckUpperBodyAim(const RobotAnimationRig& original)
     visit(scene->mRootNode, false);
     assert(top > 0 && upperBody.size() == original.GetMatrices().size());
 
+    // 下半身の拡大後も上半身・武器は平行移動だけで、全頂点間の距離を保つ。
+    // 各歩行クリップで再評価しても倍率が消えたり、二重に掛かったりしないことを確認する。
+    for (auto motion : {RobotMotion::Idle, RobotMotion::Forward, RobotMotion::Left})
+    {
+        auto normal = original, enlarged = original;
+        enlarged.SetLowerBodyScale(1.40f);
+        for (int frame = 0; frame < 20; ++frame)
+        {
+            normal.Update(motion, 1.0f / 60);
+            enlarged.Update(motion, 1.0f / 60);
+        }
+        const auto offset = (normal.GetMatrices()[top] * aiVector3D()) * 0.40f;
+        for (const auto& part : normal.GetParts()) for (const auto& vertex : part.vertices)
+        {
+            const auto before = normal.GetMatrices()[vertex.node] * vertex.position;
+            const auto after = enlarged.GetMatrices()[vertex.node] * vertex.position;
+            const auto expected = upperBody[vertex.node] ? before + offset : before * 1.40f;
+            assert((after - expected).Length() < 0.002f);
+        }
+    }
+
     constexpr float pi = 3.14159265358979323846f;
     // 水平旋回だけでなく、右上・左下・真上・真下の照準でも脚を巻き込まないか調べる。
     const std::pair<float, float> aimAngles[] = {

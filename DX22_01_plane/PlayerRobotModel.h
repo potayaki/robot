@@ -40,6 +40,9 @@ public:
     void BeginBreakApart(float groundY);
     void AdvanceBreakApart(float deltaSeconds);
     void RestoreBody(); // DebugでHPを戻した場合も、素材を再読込せず元の機体へ戻す。
+#ifdef _DEBUG
+    void DrawIKDebugUI(); // Skill Debugから呼び、一時停止中も足の配置を調整する。
+#endif
     void Draw(Camera* cam) override;
     void Uninit() override;
 };
