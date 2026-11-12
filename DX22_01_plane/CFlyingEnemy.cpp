@@ -121,7 +121,7 @@ void CFlyingEnemy::Update() {
         // 急降下して触れた時だけダメージを与え、次の攻撃まで間隔を空ける。
         const float hitRange = GetCollisionSphere().radius + player->GetCollisionSphere().radius;
         if (m_diveTimer > 0 && (m_position - playerPos).LengthSquared() < hitRange * hitRange) {
-            player->TakeDamage(m_contactDamage);
+            player->TakeDamage(SupportedOutgoingDamage(m_contactDamage));
             m_diveTimer = 0;
         }
     }
@@ -190,7 +190,7 @@ void CFlyingEnemy::OnHit(int& damage) {
         return;
     }
     // 被弾時はHPだけを減らし、ミサイル専用の爆発・画面揺れはCMissileに任せる。
-    m_hp -= damage;
+    m_hp -= SupportedIncomingDamage(damage);
     if (m_hp > 0) {
         return;
     }

@@ -47,6 +47,7 @@ void CMushroomEnemy::Update() {
     }
 
     // 自爆は一度だけ行う。武器で倒した場合だけ撃破報酬を与える。
+    const int blastDamage = SupportedOutgoingDamage(BlastDamage);
     Destroy();
     const auto effects = game->GetObjects<ExplosionManager>();
     if (!effects.empty()) {
@@ -55,7 +56,7 @@ void CMushroomEnemy::Update() {
     const auto target = player->GetCollisionSphere();
     const float reach = BlastRadius + target.radius;
     if ((target.center - m_position).LengthSquared() <= reach * reach) {
-        player->TakeDamage(BlastDamage);
+        player->TakeDamage(blastDamage);
     }
 }
 
@@ -69,7 +70,7 @@ void CMushroomEnemy::OnHit(int& damage) {
     if (IsDead() || damage <= 0) {
         return;
     }
-    m_hp -= damage;
+    m_hp -= SupportedIncomingDamage(damage);
     if (m_hp <= 0) {
         Defeat(m_experience, m_presentChance);
     }

@@ -92,7 +92,8 @@ void CBossEnemy::Update() {
     const Collision::Segment movement{oldPosition, m_position};
     if (m_contactCooldown <= 0 &&
         Collision::DistanceSquaredPointToSegment(player->GetPosition(), movement) <= hitRadius * hitRadius) {
-        player->TakeDamage(m_phase == Phase::Charge ? m_chargeDamage : m_contactDamage);
+        player->TakeDamage(
+            SupportedOutgoingDamage(m_phase == Phase::Charge ? m_chargeDamage : m_contactDamage));
         m_contactCooldown = m_contactInterval;
     }
 
@@ -116,7 +117,7 @@ void CBossEnemy::OnHit(int& damage) {
     if (IsDead() || damage <= 0) {
         return;
     }
-    m_hp = (std::max)(0, m_hp - damage);
+    m_hp = (std::max)(0, m_hp - SupportedIncomingDamage(damage));
     if (m_hp > 0) {
         return;
     }

@@ -54,7 +54,6 @@ void CEnemy::Init() {
     m_body->SetRotation(
         DirectX::SimpleMath::Vector3(m_rotation.x, m_rotation.y + SlimeFacingOffset, m_rotation.z));
     //m_body->SetMaterial(DirectX::SimpleMath::Vector4(1.0f, 1.0f, 1.0f, 1.0f)); // 白色のマテリアル
-   
 }
 
 void CEnemy::Update() {
@@ -104,7 +103,7 @@ void CEnemy::Update() {
 
         if (distance < hitRange && m_attackTimer <= 0.0f) {
             // プレイヤーと敵が接触した場合の処理
-            player[0]->TakeDamage(m_damage); // プレイヤーにダメージを与える
+            player[0]->TakeDamage(SupportedOutgoingDamage(m_damage)); // 支援中の攻撃力を反映。
             m_attackTimer += m_contactInterval; // 接触攻撃は1秒間隔。
         }
     }
@@ -156,7 +155,7 @@ void CEnemy::OnHit(int& damage) {
         return;
     }
     // 共通の被弾処理ではダメージだけを扱い、爆発と画面揺れはミサイルの命中処理に任せる。
-    m_hp -= damage; // 体力を減らす
+    m_hp -= SupportedIncomingDamage(damage); // 攻撃元のダメージ値は変更しない。
     if (m_hp <= 0) {
         Defeat(m_experience, m_dropPercent);
     }

@@ -199,6 +199,9 @@
     <ClCompile Include="Game.cpp">
       <Filter>ソース ファイル\System</Filter>
     </ClCompile>
+    <ClCompile Include="CGhostEnemy.cpp" />
+    <ClCompile Include="GhostModel.cpp" />
+    <None Include="shader\ghostSpiritPS.hlsl" />
     <ClCompile Include="Application.cpp">
       <Filter>ソース ファイル\System</Filter>
     </ClCompile>
@@ -321,6 +324,9 @@
     <ClInclude Include="Stage1Scene.h">
       <Filter>ヘッダー ファイル\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="CGhostEnemy.h" />
+    <ClInclude Include="GhostModel.h" />
+    <ClInclude Include="GhostSupportRules.h" />
     <ClInclude Include="Application.h">
       <Filter>ヘッダー ファイル\System</Filter>
     </ClInclude>

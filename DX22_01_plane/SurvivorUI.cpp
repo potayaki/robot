@@ -10,6 +10,7 @@
 #include "CAutoturret.h"
 #include "CBossBattle.h"
 #include "CBoarEnemy.h"
+#include "CGhostEnemy.h"
 #endif
 
 namespace {
@@ -56,6 +57,7 @@ void CPlayer::DrawSurvivorDebugUI() {
     }
 
     CBoarEnemy::DrawDebugUI();
+    CGhostEnemy::DrawDebugUI();
 
     if (ImGui::CollapsingHeader(Text(u8"ロボットのアニメーション"))) {
         // 見た目だけの確認。移動位置や攻撃判定は変えず、実測した秒数で再生する。

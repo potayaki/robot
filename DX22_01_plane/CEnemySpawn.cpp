@@ -6,6 +6,7 @@
 #include "CFlyingEnemy.h"
 #include "CBoarEnemy.h"
 #include "CMushroomEnemy.h"
+#include "CGhostEnemy.h"
 #include "EnemyTarget.h"
 #include "CBossBattle.h"
 #include "CPlayer.h"
@@ -17,6 +18,7 @@ CEnemySpawn::CEnemySpawn() {}
 CEnemySpawn::~CEnemySpawn() {}
 
 void CEnemySpawn::Init() {
+    m_ghostResources = GhostModel::Acquire();
     m_boarResources = std::make_unique<BoarModel>();
     if (!m_boarResources->Init()) {
         m_boarResources.reset();
@@ -78,6 +80,9 @@ void CEnemySpawn::Update() {
         } else if (kind < m_mushroomThreshold) {
             auto mushroom = Game::GetInstance()->AddObject<CMushroomEnemy>();
             mushroom->SetPosition(x, mushroom->GetPosition().y, z);
+        } else if (kind < m_ghostThreshold && m_ghostResources) {
+            auto ghost = Game::GetInstance()->AddObject<CGhostEnemy>();
+            ghost->SetPosition(x, ghost->GetPosition().y, z);
         } else if (kind < m_droneThreshold) {
             CFlyingEnemy* drone = Game::GetInstance()->AddObject<CFlyingEnemy>();
             drone->SetPosition(x, m_droneSpawnHeight, z);
@@ -99,5 +104,6 @@ void CEnemySpawn::Draw(Camera* cam) {
 }
 
 void CEnemySpawn::Uninit() {
+    m_ghostResources.reset();
     m_boarResources.reset();
 }

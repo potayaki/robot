@@ -14,6 +14,7 @@
 #include "CAutoturret.h"
 #include "CBossBattle.h"
 #include "CBoarEnemy.h"
+#include "CGhostEnemy.h"
 #include "PoolManager.h"
 #include "LowHealthGlitchStrength.h"
 #include <filesystem>
@@ -436,6 +437,10 @@ void Game::Draw() {
         for (auto turret : manager->GetPool()) {
             turret->DrawLaser(&m_instance->m_camera);
         }
+    }
+
+    for (auto ghost : m_instance->GetObjects<CGhostEnemy>()) {
+        ghost->DrawEffects(&m_instance->m_camera);
     }
 
     // 透明なバリアは地形と敵を描き終えてから重ねる。

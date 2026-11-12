@@ -15,6 +15,8 @@ if (-not (Test-Path "$directXRoot/include/SimpleMath.h")) { throw 'DirectXTK is 
 
 # ヘッダーだけのテストはSourcesを空にする。描画テストはWARPでGPU処理も検証する。
 $cases = @(
+    @{ Name = 'GhostAssetTests'; Sources = @() },
+    @{ Name = 'GhostSupportTests'; Sources = @() },
     @{ Name = 'GameTimeTests'; Sources = @() },
     @{ Name = 'SkyCycleTests'; Sources = @() },
     @{ Name = 'BossBattleTests'; Sources = @() },

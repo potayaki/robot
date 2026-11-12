@@ -5,6 +5,7 @@
 #include "Object.h"
 #include <memory>
 class BoarModel;
+class GhostModel;
 
 class CEnemySpawn : public Object {
 private:
@@ -22,6 +23,9 @@ private:
 
     /// Boar以外の抽選でキノコを選ぶ累積上限。
     int m_mushroomThreshold = 35;
+
+    /// Ghostを選ぶ累積上限。35～44の10%を支援型にする。
+    int m_ghostThreshold = 45;
 
     /// キノコまでの種類以外でドローンを選ぶ累積上限。
     int m_droneThreshold = 55;
@@ -42,6 +46,8 @@ private:
     float m_spawnElapsed = 0.0f;
     /// 出現時にモデル読込で止まらないよう、共有素材を保持する。
     std::unique_ptr<BoarModel> m_boarResources;
+    /// 出現時のFBX読込を避けるため、Ghostの描画資源を保持する。
+    std::shared_ptr<GhostModel> m_ghostResources;
 
 public:
 #ifdef _DEBUG

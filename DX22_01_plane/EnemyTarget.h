@@ -10,6 +10,9 @@ class EnemyTarget : public Object {
 protected:
     // 全敵共通の撃破報酬。経験値とプレゼントを一度だけ付与する。
     void Defeat(int experience, int presentChance);
+    // 攻撃元の整数ダメージを変更せず、現在つながっているGhostの倍率を適用する。
+    int SupportedIncomingDamage(int damage) const;
+    int SupportedOutgoingDamage(int damage) const;
 
 public:
     virtual void OnHit(int& damage) = 0;

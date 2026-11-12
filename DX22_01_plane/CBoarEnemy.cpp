@@ -106,7 +106,7 @@ void CBoarEnemy::Update() {
         const float radius = m_collisionRadius + target.radius;
         const Collision::Segment segment{movement.start, movement.end};
         if (Collision::DistanceSquaredPointToSegment(target.center, segment) <= radius * radius) {
-            player->TakeDamage(m_chargeDamage);
+            player->TakeDamage(SupportedOutgoingDamage(m_chargeDamage));
             m_charge.MarkHit(); // 同じ突進で何フレームも連続ダメージを与えない。
         }
     }
@@ -148,7 +148,7 @@ void CBoarEnemy::OnHit(int& damage) {
     if (IsDead() || damage <= 0) {
         return;
     }
-    m_hp -= damage;
+    m_hp -= SupportedIncomingDamage(damage);
     if (m_hp > 0) {
         return;
     }

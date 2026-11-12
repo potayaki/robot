@@ -145,6 +145,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CGhostEnemy.cpp" />
+    <ClCompile Include="GhostModel.cpp" />
+    <None Include="shader\ghostSpiritPS.hlsl" />
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Arrow.cpp" />
     <ClCompile Include="AssimpPerse.cpp" />
@@ -218,6 +221,9 @@
     <ClInclude Include="..\..\..\ソースファイルなど\ソースファイルなど\Material.h" />
     <ClInclude Include="..\..\..\ソースファイルなど\ソースファイルなど\Mesh.h" />
     <ClInclude Include="..\..\..\ソースファイルなど\ソースファイルなど\MeshRenderer.h" />
+    <ClInclude Include="CGhostEnemy.h" />
+    <ClInclude Include="GhostModel.h" />
+    <ClInclude Include="GhostSupportRules.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="Arrow.h" />
     <ClInclude Include="AssimpPerse.h" />

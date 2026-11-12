@@ -7,8 +7,33 @@
 #include "Ground.h"
 #include "CPresentBox.h"
 #include "CSpanner.h"
+#include "CGhostEnemy.h"
 #include <algorithm>
 #include <cstdlib>
+
+namespace {
+    bool HasGhostSupport(const EnemyTarget* target) {
+        for (auto ghost : Game::GetInstance()->GetObjects<CGhostEnemy>()) {
+            const auto targets = ghost->GetSupportTargets();
+            if (std::find(targets.begin(), targets.end(), target) != targets.end()) {
+                return true; // 複数のGhostが同じ相手へつないでも倍率を重ねない。
+            }
+        }
+        return false;
+    }
+} // namespace
+
+int EnemyTarget::SupportedIncomingDamage(int damage) const {
+    return HasGhostSupport(this)
+               ? GhostSupport::Incoming(damage, CGhostEnemy::SupportSettings().incomingMultiplier)
+               : damage;
+}
+
+int EnemyTarget::SupportedOutgoingDamage(int damage) const {
+    return HasGhostSupport(this)
+               ? GhostSupport::Outgoing(damage, CGhostEnemy::SupportSettings().outgoingMultiplier)
+               : damage;
+}
 
 void EnemyTarget::Defeat(int experience, int presentChance) {
     // 敵の種類によらず共通の撃破処理。経験値とドロップ率は呼び出し側で指定する。
