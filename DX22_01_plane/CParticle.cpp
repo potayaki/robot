@@ -16,6 +16,7 @@ Shader* CParticle::m_sparkShader = nullptr;
 VertexBuffer<VERTEX_3D>* CParticle::m_sparkVB = nullptr;
 IndexBuffer* CParticle::m_sparkIB = nullptr;
 Material* CParticle::m_sparkMaterial = nullptr;
+Microsoft::WRL::ComPtr<ID3D11DepthStencilState> CParticle::m_sparkDepthState;
 
 CParticle::CParticle() {
     if (m_type == Test) {
@@ -49,7 +50,12 @@ void CParticle::Update() {
         m_rotation.x += m_spinSpeed * deltaSeconds;
         m_rotation.y += m_spinSpeed * deltaSeconds;
 
-    } else if (m_type == Spark) {
+    } else if (m_type == Spark || m_type == MuzzleSpark || m_type == MuzzleFlash) {
+        if (m_type == MuzzleSpark) {
+            m_position += m_velocity * deltaSeconds;
+            m_position.y -= 0.5f * m_gravity * deltaSeconds * deltaSeconds;
+            m_velocity.y -= m_gravity * deltaSeconds;
+        }
         // 旧「毎フレーム0.95倍」を秒に応じた指数減衰へ変換する。
         const float shrink = std::pow(m_shrinkPerReferenceFrame, deltaSeconds * m_referenceFramesPerSecond);
         m_scale *= shrink;
@@ -70,7 +76,12 @@ void CParticle::Draw(Camera* cam) {
         m_body->Draw(cam);
     }
     //  Sparkの場合は、板（ビルボード）として画像を描く
-    else if (m_type == Spark && m_sparkTexture) {
+    else if ((m_type == Spark || m_type == MuzzleSpark || m_type == MuzzleFlash) && m_sparkTexture) {
+        ID3D11DeviceContext* dc = Renderer::GetDeviceContext();
+        Microsoft::WRL::ComPtr<ID3D11DepthStencilState> previousDepth;
+        UINT previousStencilRef = 0;
+        dc->OMGetDepthStencilState(previousDepth.GetAddressOf(), &previousStencilRef);
+        dc->OMSetDepthStencilState(m_sparkDepthState.Get(), 0);
         Renderer::SetBlendState(BS_ADDITIVE); // 加算合成（光るモード）
 
         cam->SetCamera(0); // 3Dカメラを使用
@@ -93,17 +104,20 @@ void CParticle::Draw(Camera* cam) {
         m_sparkTexture->SetGPU();
         m_sparkMaterial->SetGPU();
 
-        MATERIAL mtrl;
+        MATERIAL mtrl{};
         mtrl.Diffuse = m_color; // パーティクルの色をマテリアルに反映
+        if (m_type == MuzzleSpark || m_type == MuzzleFlash) {
+            mtrl.Diffuse.w *= m_initialLife > 0.0f ? m_life / m_initialLife : 0.0f;
+        }
         mtrl.Ambient = DirectX::SimpleMath::Color(1.0f, 1.0f, 1.0f, 1.0f);
         mtrl.TextureEnable = true;
         Renderer::SetMaterial(mtrl);
 
-        ID3D11DeviceContext* dc = Renderer::GetDeviceContext();
         dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
         dc->DrawIndexed(4, 0, 0);
 
         Renderer::SetBlendState(BS_ALPHABLEND); // 通常の半透明に戻す
+        dc->OMSetDepthStencilState(previousDepth.Get(), previousStencilRef);
     }
 }
 
@@ -121,7 +135,13 @@ void CParticle::Preload() {
         m_sparkTexture->Load("assets/texture/spark.png"); // ★ ここで画像をロード！
 
         m_sparkShader = new Shader();
-        m_sparkShader->Create("shader/unlitTextureVS.hlsl", "shader/unlitTexturePS.hlsl");
+        m_sparkShader->Create("shader/unlitTextureVS.hlsl", "shader/particlePS.hlsl");
+
+        D3D11_DEPTH_STENCIL_DESC depth{};
+        depth.DepthEnable = TRUE;
+        depth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+        depth.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+        Renderer::GetDevice()->CreateDepthStencilState(&depth, m_sparkDepthState.GetAddressOf());
 
         // 板の頂点（4つの角）
         std::vector<VERTEX_3D> vertices(4);

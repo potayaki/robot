@@ -14,6 +14,8 @@ class CPlayer;
 class CBossBattle : public Object {
     /// 通常戦とボス戦の進行、および出現条件の達成状態。
     BossBattleProgress m_progress;
+    /// このプレイでスライムキングを1回以上倒したか。
+    bool m_defeatedSlimeKing = false;
     /// 出現するボスに設定する最大HP。
     int m_bossHp = 250;
     /// ボス戦で移動できるバリア内の半径。
@@ -64,6 +66,10 @@ public:
     void DrawDebugUI();
 #endif
     void OnBossDefeated();
+
+    int GetDefeatedBossTypes() const {
+        return m_defeatedSlimeKing ? 1 : 0;
+    }
 
     bool IsBattleActive() const {
         return m_progress.IsActive();

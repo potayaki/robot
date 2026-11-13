@@ -1,27 +1,29 @@
-﻿/// @file ResultScene.h
-/// @brief ゲーム終了後の結果画面。
-
+﻿/// @brief 死亡時の記録とゲームオーバー画面。
 #pragma once
 #include "Scene.h"
-#include "Object.h"
 
-// ResultSceneクラス
+struct RunResult {
+    /// 生存時間（秒）。停止中と死亡演出の時間は含めない。
+    double survivalSeconds = 0.0;
+    /// このプレイで倒した敵の数。
+    int kills = 0;
+    /// 死亡時の到達レベル。
+    int level = 1;
+    /// このプレイで1回以上倒したボスの種類数。
+    int defeatedBossTypes = 0;
+    /// 実装済みのボスの全種類数。現在はスライムキングのみ。
+    static constexpr int TotalBossTypes = 1;
+};
+
 class ResultScene : public Scene {
 private:
-    /// このシーンのオブジェクト
-    std::vector<Object*> m_mySceneObjects;
-
-    /// 使用前の状態と必要な資源を初期化する。
-    void Init(); // 初期化
-    /// 使用した資源を解放して終了する。
-    void Uninit(); // 終了処理
+    /// シーンを破棄しても変化しない死亡時の記録。
+    RunResult m_result;
 
 public:
-    ResultScene(); // コンストラクタ
-    ~ResultScene(); // デストラクタ
+    explicit ResultScene(const RunResult& result) : m_result(result) {}
 
-    void Setscore(int c); //スコアを設定
+    void Update() override {}
 
-    /// 経過時間と入力に合わせて状態を更新する。
-    void Update(); // 更新
+    void DrawUI() override;
 };

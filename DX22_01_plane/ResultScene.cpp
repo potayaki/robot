@@ -1,88 +1,40 @@
-﻿/// @file ResultScene.cpp
-/// @brief ゲーム終了後の結果画面。
-
+﻿/// @brief 結果の表示と、タイトル・再挑戦のクリック操作。
 #include "ResultScene.h"
 #include "Game.h"
-#include "Input.h"
-#include "Texture2D.h"
-#include "TitleScene.h"
+#include "imgui.h"
+#include <algorithm>
 
-// コンストラクタ
-ResultScene::ResultScene() {
-    Init();
-}
-
-// デストラクタ
-ResultScene::~ResultScene() {
-    Uninit();
-}
-
-// 初期化
-void ResultScene::Init() {
-    //Renderer::SetClearColor(0.2f, 0.2f, 0.2f);
-}
-
-// 更新
-void ResultScene::Update() {
-    /*
-	Scene::Update();
-
-	// エンターキーを押してタイトルへ
-	if (Input::GetKeyTrigger(VK_SPACE))
-	{
-		//Game::GetInstance()->ChangeScene<TitleScene>();
-		//Game::GetInstance()->ChangeScene<TitleScene>();
-	}
-	*/
-}
-
-// 終了処理
-void ResultScene::Uninit() {}
-
-void ResultScene::Setscore(int c) {
-    if (m_mySceneObjects.size() <= 1) {
-        return;
+void ResultScene::DrawUI() {
+    const auto text = [](const char8_t* value) { return reinterpret_cast<const char*>(value); };
+    const auto size = ImGui::GetIO().DisplaySize;
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(size);
+    ImGui::SetNextWindowBgAlpha(1.0f);
+    constexpr auto flags =
+        ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings;
+    ImGui::Begin("ResultScreen", nullptr, flags);
+    const float width = (std::min)(420.0f, size.x - 32.0f);
+    ImGui::SetCursorPos(ImVec2((size.x - width) * 0.5f, (std::max)(16.0f, (size.y - 350.0f) * 0.5f)));
+    ImGui::BeginChild("ResultContents", ImVec2(width, 350), false);
+    ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.35f, 1.0f), "%s", text(u8"ゲームオーバー"));
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+    const int seconds = static_cast<int>(m_result.survivalSeconds);
+    ImGui::Text(text(u8"生存時間：%02d:%02d"), seconds / 60, seconds % 60);
+    ImGui::Text(text(u8"撃破数：%d"), m_result.kills);
+    ImGui::Text(text(u8"到達レベル：%d"), m_result.level);
+    ImGui::Text(text(u8"ボス撃破：%d / %d 種類"), m_result.defeatedBossTypes, RunResult::TotalBossTypes);
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+    if (ImGui::Button(text(u8"もう一度遊ぶ"), ImVec2(-1, 52))) {
+        Game::GetInstance()->ChangeScene(STAGE1);
     }
-    Texture2D* stringObj = dynamic_cast<Texture2D*>(m_mySceneObjects[1]);
-    if (stringObj == nullptr) {
-        return;
+    ImGui::Spacing();
+    if (ImGui::Button(text(u8"タイトル"), ImVec2(-1, 52))) {
+        Game::GetInstance()->ChangeScene(TITLE);
     }
-    switch (c) {
-        case -4:
-            stringObj->SetUV(1, 2, 1, 13); //-4コンドル
-            break;
-        case -3:
-            stringObj->SetUV(1, 3, 1, 13); //-3アルバトロス
-            break;
-        case -2:
-            stringObj->SetUV(1, 4, 1, 13); //-2イーグル
-            break;
-        case -1:
-            stringObj->SetUV(1, 5, 1, 13); //-1バーディ
-            break;
-        case 0:
-            stringObj->SetUV(1, 6, 1, 13); //Par
-            break;
-        case 1:
-            stringObj->SetUV(1, 7, 1, 13); //+1ボギー
-            break;
-        case 2:
-            stringObj->SetUV(1, 8, 1, 13); //+2ダブルボギー
-            break;
-        case 3:
-            stringObj->SetUV(1, 9, 1, 13); //+3トリプルボギー
-            break;
-        case 4:
-            stringObj->SetUV(1, 10, 1, 13); //+4
-            break;
-        case 5:
-            stringObj->SetUV(1, 12, 1, 13); //+5
-            break;
-        case 6:
-            stringObj->SetUV(1, 13, 1, 13); //+6
-            break;
-        default:
-
-            break;
-    }
+    ImGui::EndChild();
+    ImGui::End();
 }

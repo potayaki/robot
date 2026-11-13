@@ -14,6 +14,7 @@
 #include "COrbitalOrb.h"
 #include "SurvivorProgression.h"
 #include "PlayerRobotModel.h"
+#include "CEmitter.h"
 #include <string>
 
 class CPlayer : public Object {
@@ -65,6 +66,8 @@ private:
     float m_bulletTime = UpgradeBalance::BulletInterval;
     /// 0以下なら発射可能。小数部分も保持する。
     float m_currentBulletTime = 0.0f;
+    /// 通常弾が実際に発射されたとき、発射位置へ火花を放出する。
+    CEmitter m_bulletEmitter;
 
     // ミサイルは初期状態で2秒おきに発射できる。
     /// ミサイルの発射間隔（秒）。
@@ -187,6 +190,10 @@ public:
     int GetMaxHp() {
         return UpgradeBalance::BaseMaxHp +
                UpgradeBalance::VitalityPerRank * m_progression.Rank(UpgradeId::Vitality);
+    }
+
+    int GetLevel() const {
+        return m_progression.Level();
     }
 
     int GetKills() const {

@@ -25,6 +25,8 @@ enum SceneName {
     RESULT
 };
 
+class CPlayer;
+
 class Game {
 private:
     static void FlushObjects(); // 更新終了後に、削除・追加待ちのオブジェクトを反映する。
@@ -32,6 +34,20 @@ private:
     static Game* m_instance;
     /// シーン
     Scene* m_scene;
+    /// 次フレームの更新前に反映するシーン遷移先。
+    SceneName m_nextScene = TITLE;
+    /// UI・オブジェクトの実行中にシーンを破棄しないための予約フラグ。
+    bool m_sceneChangePending = false;
+    /// シーン読み込みにかかった時間を次フレームの生存時間に加算しない。
+    bool m_skipNextElapsed = false;
+    /// 死亡時に確定した今回のプレイ記録。
+    RunResult m_result;
+    /// 記録を確定済みで、死亡演出を再生しているか。
+    bool m_gameOver = false;
+    /// 死亡演出を再生した経過秒数。
+    float m_deathElapsed = 0.0f;
+    void ApplySceneChange();
+    void CaptureGameOver(CPlayer* player);
     // カメラ
     /// 通常の追従視点とデバッグ用の視点を管理するカメラ。
     Camera m_camera;

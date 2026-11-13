@@ -98,23 +98,50 @@ void Game::Init() {
 #endif
 
     //最初のシーンを読み込む
-    m_instance->m_scene = new Stage1Scene; //TODO:最初のシーンをタイトルシーンにする
+    m_instance->m_scene = new TitleScene;
 }
 
 // 更新
 void Game::Update(double elapsedSeconds) {
     static int slowMoLevel = 1;
+    const bool sceneChanged = m_instance->m_sceneChangePending;
+    const bool discardElapsed = sceneChanged || m_instance->m_skipNextElapsed;
+    m_instance->m_skipNextElapsed = sceneChanged;
+    if (sceneChanged) {
+        m_instance->ApplySceneChange();
+        FlushObjects();
+        slowMoLevel = 1;
+        // 読み込み時間や前画面の入力を新しいプレイへ持ち越さない。
+    }
+    if (discardElapsed) {
+        elapsedSeconds = 0.0;
+    }
 
     auto players = m_instance->GetObjects<CPlayer>();
     CPlayer* player = players.empty() ? nullptr : players[0];
-    const bool paused = player && player->IsGameplayPaused();
+    m_instance->CaptureGameOver(player);
+    const bool paused = player && !m_instance->m_gameOver && player->IsGameplayPaused();
 
     // スロー再生はフレームを間引かず、ゲーム内で進む秒数を小さくする。
     // 一時停止中も毎フレーム計測し、再開時に停止時間を加算しない。
     GameTime::BeginFrame(elapsedSeconds, 1.0f / slowMoLevel, paused);
     Input::Update();
+    if (sceneChanged) {
+        Input::ConsumeTriggers();
+    }
 
     while (GameTime::NextStep()) {
+        if (m_instance->m_gameOver && player) {
+            // 死亡後は残骸だけを動かす。時間・敵・報酬は確定時から進めない。
+            player->Update();
+            m_instance->m_deathElapsed += GameTime::DeltaSeconds();
+            constexpr float DeathPresentationSeconds = 2.0f;
+            if (m_instance->m_deathElapsed >= DeathPresentationSeconds) {
+                m_instance->ChangeScene(RESULT);
+                break;
+            }
+            continue;
+        }
         //シーン更新
         m_instance->m_scene->Update();
         // シーンが切り替わった場合は、破棄済みのプレイヤーを参照しない。
@@ -124,7 +151,9 @@ void Game::Update(double elapsedSeconds) {
         m_instance->m_camera.Update();
 
         // 表示時間と敵の出現段階も、武器・移動と同じ経過秒数で進める。
-        m_instance->m_gameTime += GameTime::DeltaSeconds();
+        if (player) {
+            m_instance->m_gameTime += GameTime::DeltaSeconds();
+        }
 
         // ゲームと同じ実測秒数で空も進める。一時停止・レベルアップ中は昼夜も止まる。
         m_instance->m_sky.Update(GameTime::DeltaSeconds());
@@ -135,21 +164,23 @@ void Game::Update(double elapsedSeconds) {
                 a->Update();
             }
             // 更新途中でレベルアップした場合も、それ以降の敵から被弾させない。
-            if (player && player->IsGameplayPaused()) {
+            if (player && (player->GetHp() <= 0 || player->IsGameplayPaused())) {
                 break;
             }
         }
 
         for (auto& a : m_instance->m_uis) {
-            if (!a->IsDead() && !(player && player->IsGameplayPaused())) {
+            if (!a->IsDead() && !(player && (player->GetHp() <= 0 || player->IsGameplayPaused()))) {
                 a->Update();
             }
         }
 
+        m_instance->CaptureGameOver(player);
+
         // 低FPSで複数回更新しても、押した瞬間の入力は1回だけ扱う。
         Input::ConsumeTriggers();
         FlushObjects();
-        if (player && player->IsGameplayPaused()) {
+        if (player && (player->GetHp() <= 0 || player->IsGameplayPaused())) {
             break;
         }
     }
@@ -170,7 +201,8 @@ void Game::Update(double elapsedSeconds) {
     // 数字キー1～3は報酬選択に使用するため、以前のHPデバッグショートカットは廃止。
     std::vector<CPlayer*> GUIPlayer = GetInstance()->GetObjects<CPlayer>();
     // Debugの一時停止中もCollisionや各種数値を確認・変更できるように表示する。
-    if (!GUIPlayer.empty() && (!GUIPlayer[0]->IsGameplayPaused() || GUIPlayer[0]->IsDebugPaused())) {
+    if (!m_instance->m_gameOver && !GUIPlayer.empty() &&
+        (!GUIPlayer[0]->IsGameplayPaused() || GUIPlayer[0]->IsDebugPaused())) {
         //Imguiのウィンドウを作成
         ImGui::Begin("Player Debug");
 
@@ -355,12 +387,18 @@ void Game::Update(double elapsedSeconds) {
     // 停止中にも操作できるデバッグ画面。通常の報酬画面とは別に描画する。
 #ifdef _DEBUG
     for (CPlayer* survivor : GetInstance()->GetObjects<CPlayer>()) {
-        survivor->DrawSurvivorDebugUI();
+        if (!m_instance->m_gameOver) {
+            survivor->DrawSurvivorDebugUI();
+        }
     }
 #endif
+    m_instance->m_scene->DrawUI();
+
     // 同じUIをDebug / Releaseの両方で使用する。
     for (CPlayer* survivor : GetInstance()->GetObjects<CPlayer>()) {
-        survivor->DrawSurvivorUI();
+        if (!m_instance->m_gameOver) {
+            survivor->DrawSurvivorUI();
+        }
     }
     for (auto battle : GetInstance()->GetObjects<CBossBattle>()) {
         battle->DrawUI();
@@ -370,7 +408,7 @@ void Game::Update(double elapsedSeconds) {
     // ImGuiの入力先が確定してから、ゲーム進行とは独立して自由視点だけを動かす。
     // Skill Debugを折り畳んでも操作でき、シーン切替でPlayerが消えた場合も解除する。
     players = m_instance->GetObjects<CPlayer>();
-    const bool debugPaused = !players.empty() && players[0]->IsDebugPaused();
+    const bool debugPaused = !m_instance->m_gameOver && !players.empty() && players[0]->IsDebugPaused();
     m_instance->m_camera.SetDebugFreeCamera(debugPaused);
     if (debugPaused) {
         m_instance->m_camera.UpdateDebugFreeCamera();
@@ -418,8 +456,14 @@ void Game::Draw() {
 
     // テストオブジェクト描画
     for (auto& a : m_instance->m_objects) {
-        if (!a->IsDead()) {
+        if (!a->IsDead() && dynamic_cast<ParticleManager*>(a.get()) == nullptr) {
             a->Draw(&m_instance->m_camera);
+        }
+    }
+    // 加算合成の粒子は、後から出現した敵も含めて本体を描いた後に重ねる。
+    for (auto particles : m_instance->GetObjects<ParticleManager>()) {
+        if (!particles->IsDead()) {
+            particles->Draw(&m_instance->m_camera);
         }
     }
     if (m_instance->m_scene) {
@@ -560,32 +604,45 @@ Game* Game::GetInstance() {
     return m_instance;
 }
 
-//シーンを切り替える
+// UIやオブジェクトのメソッド実行中には自身を破棄せず、次フレームへ予約する。
 void Game::ChangeScene(SceneName sName) {
-    //読み込み済みのシーンがあれば削除
-    int score = 0;
+    m_nextScene = sName;
+    m_sceneChangePending = true;
+}
 
-    if (m_instance->m_scene != nullptr) {
-        //消そうとしているシーンがStage1ならスコアを保存しておく
-        /*
-        if (Stage1Scene* sObj = dynamic_cast<Stage1Scene*>(m_instance->m_scene)) {
-            score = sObj->Getscore();
-        }
-        */
-        delete m_instance->m_scene;
-        m_instance->m_scene = nullptr;
+void Game::CaptureGameOver(CPlayer* player) {
+    if (m_gameOver || !player || player->GetHp() > 0) {
+        return;
     }
+    m_gameOver = true;
+    m_deathElapsed = 0.0f;
+    m_result.survivalSeconds = m_gameTime;
+    m_result.kills = player->GetKills();
+    m_result.level = player->GetLevel();
+    for (auto battle : GetObjects<CBossBattle>()) {
+        m_result.defeatedBossTypes = battle->GetDefeatedBossTypes();
+    }
+}
 
-    switch (sName) {
+void Game::ApplySceneChange() {
+    m_sceneChangePending = false;
+    delete m_scene;
+    m_scene = nullptr;
+    DeleteAllObject();
+    m_camera = Camera{};
+    m_camera.Init();
+    switch (m_nextScene) {
         case TITLE:
-            m_instance->m_scene = new TitleScene;
+            m_scene = new TitleScene;
             break;
         case STAGE1:
-            m_instance->m_scene = new Stage1Scene;
+            m_result = RunResult{};
+            m_gameOver = false;
+            m_deathElapsed = 0.0f;
+            m_scene = new Stage1Scene;
             break;
         case RESULT:
-            m_instance->m_scene = new ResultScene;
-            dynamic_cast<ResultScene*>(m_instance->m_scene)->Setscore(score); //スコアを設定
+            m_scene = new ResultScene(m_result);
             break;
     }
 }

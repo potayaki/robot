@@ -148,6 +148,9 @@
     <ClCompile Include="CGhostEnemy.cpp" />
     <ClCompile Include="GhostModel.cpp" />
     <None Include="shader\ghostSpiritPS.hlsl" />
+    <None Include="shader\titleDioramaVS.hlsl" />
+    <None Include="shader\titleDioramaPS.hlsl" />
+    <None Include="shader\titleBackdropPS.hlsl" />
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Arrow.cpp" />
     <ClCompile Include="AssimpPerse.cpp" />
@@ -171,6 +174,7 @@
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="COrbitalOrb.cpp" />
     <ClCompile Include="CParticle.cpp" />
+    <ClCompile Include="CEmitter.cpp" />
     <ClCompile Include="CPlayer.cpp" />
     <ClCompile Include="RobotAnimationRig.cpp" />
     <ClCompile Include="RobotDebris.cpp" />
@@ -255,6 +259,7 @@
     <ClInclude Include="Collision.h" />
     <ClInclude Include="COrbitalOrb.h" />
     <ClInclude Include="CParticle.h" />
+    <ClInclude Include="CEmitter.h" />
     <ClInclude Include="CPlayer.h" />
     <ClInclude Include="RobotAnimationRig.h" />
     <ClInclude Include="RobotDebris.h" />
@@ -351,6 +356,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemGroup>
     <None Include="shader\playerRobotVS.hlsl" />
+    <None Include="shader\particlePS.hlsl" />
     <None Include="shader\debugCollisionVS.hlsl" />
     <None Include="shader\debugCollisionPS.hlsl" />
     <None Include="shader\skyVS.hlsl" />

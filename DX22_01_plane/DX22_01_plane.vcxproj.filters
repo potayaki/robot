@@ -28,9 +28,12 @@
     <ClInclude Include="AimCursor.h">
       <Filter>ヘッダー ファイル\Player</Filter>
     </ClInclude>
-    <None Include="shader\playerRobotVS.hlsl" />
-    <None Include="shader\debugCollisionVS.hlsl" />
-    <None Include="shader\debugCollisionPS.hlsl" />
+    <ClCompile Include="CGhostEnemy.cpp">
+      <Filter>ソース ファイル\Enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="GhostModel.cpp">
+      <Filter>ソース ファイル\Model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CBossBattle.cpp">
@@ -103,6 +106,12 @@
     </Filter>
     <Filter Include="ヘッダー ファイル\Object">
       <UniqueIdentifier>{189e2781-410d-4edc-8a86-470c2edf0ef5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\PS">
+      <UniqueIdentifier>{3c06b553-e95e-41c0-ac72-b13f8a671ef7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\VS">
+      <UniqueIdentifier>{7b0915c2-e672-4565-95a2-b22959aacc1a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -199,9 +208,6 @@
     <ClCompile Include="Game.cpp">
       <Filter>ソース ファイル\System</Filter>
     </ClCompile>
-    <ClCompile Include="CGhostEnemy.cpp" />
-    <ClCompile Include="GhostModel.cpp" />
-    <None Include="shader\ghostSpiritPS.hlsl" />
     <ClCompile Include="Application.cpp">
       <Filter>ソース ファイル\System</Filter>
     </ClCompile>
@@ -218,6 +224,9 @@
       <Filter>ソース ファイル\Texture_UI</Filter>
     </ClCompile>
     <ClCompile Include="CParticle.cpp">
+      <Filter>ソース ファイル\Object\Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="CEmitter.cpp">
       <Filter>ソース ファイル\Object\Effect</Filter>
     </ClCompile>
     <ClCompile Include="input.cpp">
@@ -324,9 +333,6 @@
     <ClInclude Include="Stage1Scene.h">
       <Filter>ヘッダー ファイル\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="CGhostEnemy.h" />
-    <ClInclude Include="GhostModel.h" />
-    <ClInclude Include="GhostSupportRules.h" />
     <ClInclude Include="Application.h">
       <Filter>ヘッダー ファイル\System</Filter>
     </ClInclude>
@@ -382,6 +388,9 @@
       <Filter>ヘッダー ファイル\Object\Weapon</Filter>
     </ClInclude>
     <ClInclude Include="CParticle.h">
+      <Filter>ヘッダー ファイル\Object\Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="CEmitter.h">
       <Filter>ヘッダー ファイル\Object\Effect</Filter>
     </ClInclude>
     <ClInclude Include="CPlayer.h">
@@ -474,37 +483,46 @@
     <ClInclude Include="COrbitalOrb.h">
       <Filter>ヘッダー ファイル\Object\Weapon</Filter>
     </ClInclude>
+    <ClInclude Include="CGhostEnemy.h">
+      <Filter>ヘッダー ファイル\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="GhostModel.h">
+      <Filter>ヘッダー ファイル\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="GhostSupportRules.h">
+      <Filter>ヘッダー ファイル\Enemy</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="shader\eyeTurretVS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
-    <FxCompile Include="shader\eyeTurretPS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
     <FxCompile Include="shader\common.hlsl">
       <Filter>リソース ファイル</Filter>
     </FxCompile>
-    <FxCompile Include="shader\unlitTexturePS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
-    <FxCompile Include="shader\unlitTextureVS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
-    <FxCompile Include="shader\litTextureVS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
-    <FxCompile Include="shader\litTexturePS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
-    <FxCompile Include="shader\UI_RingPS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
-    <FxCompile Include="shader\gridPS.hlsl">
-      <Filter>リソース ファイル</Filter>
+    <FxCompile Include="shader\eyeTurretVS.hlsl">
+      <Filter>リソース ファイル\VS</Filter>
     </FxCompile>
     <FxCompile Include="shader\gridVS.hlsl">
-      <Filter>リソース ファイル</Filter>
+      <Filter>リソース ファイル\VS</Filter>
+    </FxCompile>
+    <FxCompile Include="shader\litTextureVS.hlsl">
+      <Filter>リソース ファイル\VS</Filter>
+    </FxCompile>
+    <FxCompile Include="shader\unlitTextureVS.hlsl">
+      <Filter>リソース ファイル\VS</Filter>
+    </FxCompile>
+    <FxCompile Include="shader\eyeTurretPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </FxCompile>
+    <FxCompile Include="shader\gridPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </FxCompile>
+    <FxCompile Include="shader\litTexturePS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </FxCompile>
+    <FxCompile Include="shader\UI_RingPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </FxCompile>
+    <FxCompile Include="shader\unlitTexturePS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -517,18 +535,6 @@
     <ClInclude Include="SkyCycle.h">
       <Filter>ヘッダー ファイル\Object\Environment</Filter>
     </ClInclude>
-    <None Include="shader\skyVS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </None>
-    <None Include="shader\skyPS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </None>
-    <None Include="shader\groundSkyVS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </None>
-    <None Include="shader\groundSkyPS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BoarAnimationRig.cpp">
@@ -552,15 +558,6 @@
     <ClInclude Include="CBoarEnemy.h">
       <Filter>ヘッダー ファイル\Enemy</Filter>
     </ClInclude>
-    <None Include="shader\boarVS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </None>
-    <None Include="shader\chargeTelegraphVS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </None>
-    <None Include="shader\chargeTelegraphPS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ソース ファイル\Enemy">
@@ -622,9 +619,6 @@
     <ClInclude Include="MushroomModel.h">
       <Filter>ヘッダー ファイル\Model</Filter>
     </ClInclude>
-    <None Include="shader\mushroomWarningPS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LowHealthGlitch.cpp">
@@ -636,9 +630,6 @@
     <ClInclude Include="LowHealthGlitchStrength.h">
       <Filter>ヘッダー ファイル\Renderer</Filter>
     </ClInclude>
-    <None Include="shader\lowHealthGlitch.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CSpanner.cpp">
@@ -655,5 +646,55 @@
     <ClInclude Include="RobotSpiderIK.h">
       <Filter>ヘッダー ファイル\Model</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shader\boarVS.hlsl">
+      <Filter>リソース ファイル\VS</Filter>
+    </None>
+    <None Include="shader\chargeTelegraphVS.hlsl">
+      <Filter>リソース ファイル\VS</Filter>
+    </None>
+    <None Include="shader\groundSkyVS.hlsl">
+      <Filter>リソース ファイル\VS</Filter>
+    </None>
+    <None Include="shader\skyVS.hlsl">
+      <Filter>リソース ファイル\VS</Filter>
+    </None>
+    <None Include="shader\debugCollisionVS.hlsl">
+      <Filter>リソース ファイル\VS</Filter>
+    </None>
+    <None Include="shader\chargeTelegraphPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\groundSkyPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\mushroomWarningPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\skyPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\debugCollisionPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\titleDioramaVS.hlsl">
+      <Filter>リソース ファイル\VS</Filter>
+    </None>
+    <None Include="shader\titleDioramaPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\titleBackdropPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\ghostSpiritPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\playerRobotVS.hlsl">
+      <Filter>リソース ファイル\VS</Filter>
+    </None>
+    <None Include="shader\lowHealthGlitch.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
   </ItemGroup>
 </Project>

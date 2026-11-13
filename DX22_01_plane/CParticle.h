@@ -18,6 +18,8 @@
 enum ParticleType {
     Test,
     Spark, // 火花
+    MuzzleSpark, // 発射位置から飛び散る火花
+    MuzzleFlash, // 発射位置に一瞬残る閃光
 };
 
 class CParticle : public Object {
@@ -50,11 +52,15 @@ private:
     static IndexBuffer* m_sparkIB;
     /// 火花粒子で共有する材質。
     static Material* m_sparkMaterial;
+    /// 粒子同士を遮らず、地形による遮蔽だけを判定する深度設定。
+    static Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_sparkDepthState;
 
     /// 飛んでいく方向とスピード
     DirectX::SimpleMath::Vector3 m_velocity;
     /// 残りの寿命（秒）。
     float m_life = 1.0f;
+    /// 発生時の寿命（秒）。発射エフェクトのフェード率に使う。
+    float m_initialLife = 1.0f;
     /// パーティクルの種類
     ParticleType m_type = Test;
 
@@ -62,7 +68,7 @@ private:
     DirectX::SimpleMath::Color m_color;
 
     /// パーティクルがアクティブかどうか
-    bool m_isActive;
+    bool m_isActive = false;
 
 public:
     CParticle();
@@ -84,6 +90,7 @@ public:
 
     void SetLife(float life) {
         m_life = life;
+        m_initialLife = life;
     }
 
     void SetType(ParticleType type) {

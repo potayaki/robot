@@ -340,6 +340,7 @@ void CPlayer::StartBullet() {
     //bullet->Shoot(bulletStart, bulletDirection);
 
     std::vector<BulletManager*> bulletManagers = Game::GetInstance()->GetObjects<BulletManager>();
+    bool fired = false;
     if (!bulletManagers.empty()) {
         // 中央の弾は従来通り照準を狙い、追加弾だけ左右へ広げる。
         const int count = 1 + m_progression.Rank(UpgradeId::MultiShot);
@@ -353,7 +354,16 @@ void CPlayer::StartBullet() {
                                   m_progression.Rank(UpgradeId::BulletPower));
                 // 各弾の前方にいる候補から、画面上の照準中心に近い敵を選ぶ。
                 bullet->Shoot(bulletStart, shotDirection, m_progression.Rank(UpgradeId::BulletHoming));
+                fired = true;
             }
+        }
+    }
+
+    // 多重弾でも、同じ発射位置のエフェクトは1回の射撃につき1組だけ生成する。
+    if (fired) {
+        const auto particleManagers = Game::GetInstance()->GetObjects<ParticleManager>();
+        if (!particleManagers.empty()) {
+            m_bulletEmitter.Emit(*particleManagers[0], bulletStart, bulletDirection);
         }
     }
 

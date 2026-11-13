@@ -134,6 +134,7 @@ void CBossBattle::OnBossDefeated() {
     const auto players = Game::GetInstance()->GetObjects<CPlayer>();
     m_progress.Finish(players.empty() ? 0 : players[0]->GetKills());
     m_victoryNotice = 4.0f;
+    m_defeatedSlimeKing = true;
 }
 
 Vector3 CBossBattle::ConstrainPosition(const Vector3& position, float bodyRadius) const {

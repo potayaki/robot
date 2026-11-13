@@ -14,5 +14,8 @@ public:
     /// 経過時間と入力に合わせて状態を更新する。
     virtual void Update() = 0; // 更新（純粋仮想関数）
     /// 現在の状態を画面へ描画する。
-    virtual void Draw(Camera* cam) {};
+    virtual void Draw(Camera* cam){};
+
+    /// ImGuiのフレーム開始後に画面のボタン・結果を描画する。
+    virtual void DrawUI() {}
 };
