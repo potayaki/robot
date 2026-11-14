@@ -697,4 +697,27 @@
       <Filter>リソース ファイル\PS</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CStagePrimitive.cpp">
+      <Filter>ソース ファイル\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="StagePrimitiveDebug.cpp">
+      <Filter>ソース ファイル\System</Filter>
+    </ClCompile>
+    <ClInclude Include="CStagePrimitive.h">
+      <Filter>ヘッダー ファイル\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="PrimitiveMesh.h">
+      <Filter>ヘッダー ファイル\Model</Filter>
+    </ClInclude>
+    <None Include="shader\stagePrimitiveCommon.hlsli">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="shader\stagePrimitiveVS.hlsl">
+      <Filter>リソース ファイル\VS</Filter>
+    </None>
+    <None Include="shader\stagePrimitivePS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+  </ItemGroup>
 </Project>

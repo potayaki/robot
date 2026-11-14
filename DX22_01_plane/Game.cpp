@@ -28,6 +28,7 @@
 #include "CMissile.h"
 #include "CPresentBox.h"
 #include "CSpanner.h"
+#include "CStagePrimitive.h"
 #endif
 Game* Game::m_instance; //ゲームインスタンス
 
@@ -203,6 +204,8 @@ void Game::Update(double elapsedSeconds) {
     // Debugの一時停止中もCollisionや各種数値を確認・変更できるように表示する。
     if (!m_instance->m_gameOver && !GUIPlayer.empty() &&
         (!GUIPlayer[0]->IsGameplayPaused() || GUIPlayer[0]->IsDebugPaused())) {
+        CStagePrimitive::DrawDebugUI();
+
         //Imguiのウィンドウを作成
         ImGui::Begin("Player Debug");
 

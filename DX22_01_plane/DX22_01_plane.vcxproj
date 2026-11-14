@@ -391,4 +391,13 @@
     <ClCompile Include="RobotSpiderIK.cpp" />
     <ClInclude Include="RobotSpiderIK.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CStagePrimitive.cpp" />
+    <ClCompile Include="StagePrimitiveDebug.cpp" />
+    <ClInclude Include="CStagePrimitive.h" />
+    <ClInclude Include="PrimitiveMesh.h" />
+    <None Include="shader\stagePrimitiveCommon.hlsli" />
+    <None Include="shader\stagePrimitiveVS.hlsl" />
+    <None Include="shader\stagePrimitivePS.hlsl" />
+  </ItemGroup>
 </Project>
