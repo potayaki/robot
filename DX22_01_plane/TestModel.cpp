@@ -54,6 +54,19 @@ namespace {
     };
 } // namespace
 
+std::shared_ptr<TestModel> TestModel::AcquireShared(std::weak_ptr<TestModel>& cachedModel,
+                                                    const char* modelFile, const char* textureDirectory) {
+    if (auto model = cachedModel.lock()) {
+        return model;
+    }
+
+    auto model = std::make_shared<TestModel>();
+    model->Init();
+    model->Load(modelFile, textureDirectory);
+    cachedModel = model;
+    return model;
+}
+
 //=======================================
 //初期化処理
 //=======================================
@@ -74,37 +87,29 @@ void TestModel::Update() {}
 //=======================================
 //描画処理
 //=======================================
-void TestModel::Draw(Camera* cam) {
-    //カメラを選択する
-    cam->SetCamera();
+void TestModel::Draw(Camera* camera) {
+    Draw(camera, m_position, m_rotation, m_scale);
+}
 
-    // SRT情報作成
-    Matrix r = Matrix::CreateFromYawPitchRoll(m_rotation.y, m_rotation.x, m_rotation.z);
-    Matrix t = Matrix::CreateTranslation(m_position.x, m_position.y, m_position.z);
-    Matrix s = Matrix::CreateScale(m_scale.x, m_scale.y, m_scale.z);
+void TestModel::Draw(Camera* camera, const Vector3& worldPosition, const Vector3& rotationRadians,
+                     const Vector3& modelScale) {
+    camera->SetCamera();
 
-    Matrix worldmtx;
-    worldmtx = s * r * t;
-    Renderer::SetWorldMatrix(&worldmtx); // GPUにセット
-
+    // 姿勢は描画のたびに組み立てるため、同じメッシュを使う弾もそれぞれの位置・向きで描ける。
+    const Matrix rotation =
+        Matrix::CreateFromYawPitchRoll(rotationRadians.y, rotationRadians.x, rotationRadians.z);
+    Matrix world = Matrix::CreateScale(modelScale) * rotation * Matrix::CreateTranslation(worldPosition);
+    Renderer::SetWorldMatrix(&world);
     m_shader.SetGPU();
-
-    // インデックスバッファ・頂点バッファをセット
     m_meshRenderer.BeforeDraw();
 
-    //マテリアル数分ループ
-    for (int i = 0; i < m_subsets.size(); i++) {
-        // マテリアルをセット(サブセット情報の中にあるマテリアルインデックを使用)
-        const auto materialIndex = m_subsets[i].MaterialIdx;
-        m_materiales[materialIndex]->SetGPU();
-
-        if (m_materiales[materialIndex]->isTextureEnable()) {
-            m_textures[materialIndex]->SetGPU();
+    for (const auto& subset : m_subsets) {
+        Material& material = *m_materials[subset.MaterialIdx];
+        material.SetGPU();
+        if (material.isTextureEnable()) {
+            m_textures[subset.MaterialIdx]->SetGPU();
         }
-
-        m_meshRenderer.DrawSubset(m_subsets[i].IndexNum, // 描画するインデックス数
-                                  m_subsets[i].IndexBase, // 最初のインデックスバッファの位置
-                                  m_subsets[i].VertexBase); // 頂点バッファの最初から使用
+        m_meshRenderer.DrawSubset(subset.IndexNum, subset.IndexBase, subset.VertexBase);
     }
 }
 
@@ -143,14 +148,10 @@ void TestModel::Load(std::string modelFile, std::string texDirectory, std::strin
         materials[i].TextureEnable = i < m_textures.size() && m_textures[i] != nullptr;
     }
 
-    // 念のため配列をクリアしておく
-    m_materiales.clear();
-
-    // マテリアル数分ループ
-    for (int i = 0; i < materials.size(); i++) {
-        std::unique_ptr<Material> m = std::make_unique<Material>();
-        m->Create(materials[i]);
-        m_materiales.push_back(std::move(m));
+    // 描画時にサブセットの MaterialIdx が使えるよう、元の材質順を保つ。
+    m_materials.clear();
+    for (const auto& material : materials) {
+        m_materials.push_back(std::make_unique<Material>(material));
     }
 }
 

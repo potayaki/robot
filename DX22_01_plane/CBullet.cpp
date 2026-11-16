@@ -44,33 +44,25 @@ namespace {
     }
 } // namespace
 
-CBullet::CBullet() {}
-
-CBullet::~CBullet() {
-    // Uninit();   プール管理なので呼ばない
-}
-
 void CBullet::Init() {
-    m_model = new TestModel();
-    m_model->Init();
-    //弾のモデルを読み込む
-    m_model->Load("assets/model/bullet/Bullett.fbx", "assets/model/bullet"); //弾のモデルを読み込む
-    m_model->SetScale(m_modelScale); // 弾のサイズ
+    static std::weak_ptr<TestModel> cachedBulletModel;
+    m_sharedModel =
+        TestModel::AcquireShared(cachedBulletModel, "assets/model/bullet/Bullett.fbx", "assets/model/bullet");
 }
 
 void CBullet::Update() {
     // ----- 1. 寿命の確認 -----
     // 弾は削除せず非アクティブにして、プールから次の発射時に再利用する。
-    if (m_life <= 0) {
+    if (m_remainingLifeSeconds <= 0.0f) {
         SetActive(false);
         return;
     }
 
     // 寿命が切れる最後の更新では、残っている時間の分だけ移動する。
-    const float deltaSeconds = (std::min)(GameTime::DeltaSeconds(), m_life);
+    const float deltaSeconds = (std::min)(GameTime::DeltaSeconds(), m_remainingLifeSeconds);
 
-    //パーティクルの生成で1フレーム前の弾の位置を取得するために保存しておく
-    DirectX::SimpleMath::Vector3 OldPosition = m_position;
+    // 軌跡の補間と衝突判定に使う、このフレームの移動開始位置。
+    const Vector3 previousPosition = m_position;
 
     // ----- 2. 誘導先の検索と方向の更新 -----
     // この敵リストは、後半の衝突判定でも共通で使用する。
@@ -106,54 +98,47 @@ void CBullet::Update() {
                             std::atan2(m_velocity.x, m_velocity.z), 0.0f));
     }
 
-    // ----- 3. 移動とモデルの更新 -----
+    // ----- 3. 移動 -----
     // 誘導後の速度で動かす。誘導先が見つからない場合は、直前の向きでそのまま進む。
     m_position += m_velocity * deltaSeconds; // 距離/秒 × 経過秒数。
-    GameTime::CountDown(m_life, deltaSeconds);
-
-    // モデルの位置を更新
-    m_model->SetPosition(m_position);
-    m_model->SetRotation(m_rotation);
+    GameTime::CountDown(m_remainingLifeSeconds, deltaSeconds);
 
     //--------------------
     //パーティクル(弾の軌道)を生成
     //--------------------
-    std::vector<ParticleManager*> pManagers = Game::GetInstance()->GetObjects<ParticleManager>();
-    m_trailTimer += deltaSeconds;
-    // 粒子の生成間隔は弾ごとの調整値を参照する。
-    while (m_trailTimer >= m_trailInterval) {
-        m_trailTimer -= m_trailInterval;
-        if (pManagers.empty()) {
+    const auto particleManagers = Game::GetInstance()->GetObjects<ParticleManager>();
+    m_trailElapsedSeconds += deltaSeconds;
+    while (m_trailElapsedSeconds >= TrailIntervalSeconds) {
+        m_trailElapsedSeconds -= TrailIntervalSeconds;
+        if (particleManagers.empty()) {
             continue;
         }
-        CParticle* trail = pManagers[0]->Spawn();
+        CParticle* trail = particleManagers[0]->Spawn();
         if (trail != nullptr) { // 取得できた時だけ設定
             trail->SetType(Spark);
             // 低FPSで複数生成するときも、移動した区間に等間隔で並べる。
-            const float fraction = 1.0f - m_trailTimer / deltaSeconds;
-            trail->SetPosition(Vector3::Lerp(OldPosition, m_position, fraction));
-            trail->SetVelocity(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f));
-            trail->SetLife(m_trailLifetime);
-            trail->SetScale(DirectX::SimpleMath::Vector3(m_trailScale, m_trailScale, m_trailScale));
+            const float fraction = 1.0f - m_trailElapsedSeconds / deltaSeconds;
+            trail->SetPosition(Vector3::Lerp(previousPosition, m_position, fraction));
+            trail->SetVelocity(Vector3::Zero);
+            trail->SetLife(TrailLifetimeSeconds);
+            trail->SetScale(Vector3(TrailScale));
             trail->SetColor(DirectX::SimpleMath::Color(1.0f, 0.0f, 0.0f, 1.0f));
         }
     }
 
     // ----- 4. 移動した区間全体で衝突を調べる -----
     // 高速な弾は敵を1フレームで通り越すため、移動先の点だけでは判定しない。
-    Collision::Segment bulletsegment;
-    bulletsegment.start = OldPosition;
-    bulletsegment.end = m_position;
+    const Collision::Segment movement{previousPosition, m_position};
 
     // 弾の半径を含め、今フレームの軌道が地面に最初に触れる位置を求める。
     float groundHitFraction = 2.0f; // 1より大きい値は「このフレームでは当たらない」。
     const std::vector<Ground*> grounds = Game::GetInstance()->GetObjects<Ground>();
     if (!grounds.empty() && grounds[0] != nullptr) {
         const float groundCollisionY = grounds[0]->GetPosition().y + m_colRadius;
-        if (OldPosition.y <= groundCollisionY) {
+        if (previousPosition.y <= groundCollisionY) {
             groundHitFraction = 0.0f;
         } else if (m_position.y <= groundCollisionY) {
-            groundHitFraction = (groundCollisionY - OldPosition.y) / (m_position.y - OldPosition.y);
+            groundHitFraction = (groundCollisionY - previousPosition.y) / (m_position.y - previousPosition.y);
         }
     }
 
@@ -166,7 +151,7 @@ void CBullet::Update() {
             continue;
         }
         float fraction = 0.0f;
-        if (SegmentSphereHitFraction(bulletsegment, enemy->GetCollisionSphere(), m_colRadius, fraction) &&
+        if (SegmentSphereHitFraction(movement, enemy->GetCollisionSphere(), m_colRadius, fraction) &&
             fraction < enemyHitFraction) {
             firstEnemy = enemy;
             enemyHitFraction = fraction;
@@ -180,44 +165,35 @@ void CBullet::Update() {
         SetActive(false);
         return;
     }
-    if (groundHitFraction <= 1.0f || m_life <= 0.0f) {
+    if (groundHitFraction <= 1.0f || m_remainingLifeSeconds <= 0.0f) {
         SetActive(false);
         return;
     }
 }
 
 void CBullet::Draw(Camera* cam) {
-    if (m_model) {
-        m_model->Draw(cam);
+    if (m_sharedModel) {
+        m_sharedModel->Draw(cam, m_position, m_rotation, ModelScale);
     }
 }
 
 void CBullet::Uninit() {
-    if (m_model) {
-        m_model->Uninit();
-        delete m_model;
-        m_model = nullptr;
-    }
+    m_sharedModel.reset();
 }
 
 //--------------------
 //弾を発射する
 //--------------------
-void CBullet::Shoot(DirectX::SimpleMath::Vector3 player, DirectX::SimpleMath::Vector3 dir, int homingRank) {
+void CBullet::Shoot(Vector3 muzzlePosition, Vector3 direction, int homingRank) {
     // プール再利用時に、以前の弾の誘導レベルを引き継がない。
     m_homingRank = std::clamp(homingRank, 0, BulletHoming::MaxRank);
 
-    DirectX::SimpleMath::Vector3 offset(0.0f, 0.0f,
-                                        0.0f); //弾の初期位置のオフセットを設定(モデル入れ替えの際に微調整)
-    m_position = player + offset; // 初期位置をセット
-    m_velocity = dir * m_speed; // 発射方向に速度を設定速度を掛け合わせる
-
-    //弾の向きを発射方向に合わせるために、Y軸の回転角度を計算する
-    float yaw = atan2f(dir.x, dir.z);
-
-    // 弾の回転を設定（X軸を90度回転させ、Y軸は発射方向に合わせる）
+    m_position = muzzlePosition;
+    m_velocity = direction * LaunchSpeed;
+    // モデルの長手軸を水平に倒し、発射方向へ回す。
+    const float yaw = atan2f(direction.x, direction.z);
     SetRotation(Vector3(DirectX::XM_PIDIV2, yaw, 0.0f));
 
-    m_life = m_lifetimeSeconds; // 残り秒数から実測の経過時間を引くので、FPSによらず2秒で消える。
-    m_trailTimer = 0.0f;
+    m_remainingLifeSeconds = LifetimeSeconds;
+    m_trailElapsedSeconds = 0.0f;
 }

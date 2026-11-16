@@ -14,6 +14,7 @@ public:
     Application(uint32_t width, uint32_t height);
     ~Application();
     void Run();
+    static void ApplyDisplayMode(bool fullscreen);
 
     // 幅を取得
     static uint32_t GetWidth() {

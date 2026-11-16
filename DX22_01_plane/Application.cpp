@@ -2,9 +2,11 @@
 /// @brief Windowsウィンドウの作成、メインループ、終了処理。
 
 #include <chrono>
+#include <algorithm>
 #include <thread>
 #include "Application.h"
 #include "Game.h"
+#include "GameSettings.h"
 // レベルアップUIは製品ビルドでも操作できるようにする。
 #include "imgui_impl_win32.h"
 #include "imgui.h"
@@ -12,6 +14,11 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
                                                              LPARAM lParam);
 const auto ClassName = TEXT("2022 framework ひな型"); //ウィンドウクラス名
 const auto WindowName = TEXT("2023 framework ひな型"); //ウィンドウ名
+
+namespace {
+    // 終了確認を取り消した次のフレームで、ダイアログの待ち時間を計測から外す。
+    bool resumeAfterCloseDialog = false;
+} // namespace
 
 HINSTANCE Application::m_hInst; // インスタンスハンドル
 HWND Application::m_hWnd; // ウィンドウハンドル
@@ -39,6 +46,7 @@ Application::~Application() {
 // 実行
 //-----------------------------------------------------------------------------
 void Application::Run() {
+    GameSettings::Load();
     //初期化
     bool okfg = InitApp();
     if (okfg) {
@@ -46,6 +54,7 @@ void Application::Run() {
     }
 
     UninitApp(); // 終了処理
+    GameSettings::Shutdown();
 }
 
 //-----------------------------------------------------------------------------
@@ -99,10 +108,7 @@ bool Application::InitApp() {
         return false;
     }
 
-    SetWindowLongPtr(m_hWnd, GWL_STYLE, WS_POPUP | WS_MINIMIZEBOX);
-    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    SetWindowPos(m_hWnd, HWND_TOP, 0, 0, screenWidth, screenHeight, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+    ApplyDisplayMode(GameSettings::Fullscreen());
 
     // ウィンドウを表示
     ShowWindow(m_hWnd, SW_SHOWNORMAL);
@@ -118,8 +124,35 @@ bool Application::InitApp() {
 }
 
 //-----------------------------------------------------------------------------
-// 終了処理
+// 表示モードに合わせてウィンドウの枠、サイズ、位置を設定する。
 //-----------------------------------------------------------------------------
+void Application::ApplyDisplayMode(bool fullscreen) {
+    if (!m_hWnd) {
+        return;
+    }
+    MONITORINFO monitor{sizeof(MONITORINFO)};
+    if (!GetMonitorInfoW(MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST), &monitor)) {
+        return;
+    }
+    DWORD style = fullscreen ? (WS_POPUP | WS_MINIMIZEBOX) : WS_OVERLAPPEDWINDOW;
+    RECT bounds = monitor.rcMonitor;
+    if (!fullscreen) {
+        RECT desired{0, 0, static_cast<LONG>(m_width), static_cast<LONG>(m_height)};
+        AdjustWindowRect(&desired, style, FALSE);
+        const RECT& work = monitor.rcWork;
+        const LONG width = (std::min)(desired.right - desired.left, work.right - work.left);
+        const LONG height = (std::min)(desired.bottom - desired.top, work.bottom - work.top);
+        bounds.left = work.left + (work.right - work.left - width) / 2;
+        bounds.top = work.top + (work.bottom - work.top - height) / 2;
+        bounds.right = bounds.left + width;
+        bounds.bottom = bounds.top + height;
+    }
+    SetWindowLongPtr(m_hWnd, GWL_STYLE, style);
+    SetWindowPos(m_hWnd, nullptr, bounds.left, bounds.top, bounds.right - bounds.left,
+                 bounds.bottom - bounds.top, SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE);
+}
+
+// 終了処理
 void Application::UninitApp() {
     // ウィンドウの登録を解除
     if (m_hInst != nullptr) {
@@ -154,6 +187,11 @@ void Application::MainLoop() {
 
         LARGE_INTEGER current{};
         QueryPerformanceCounter(&current);
+        if (resumeAfterCloseDialog) {
+            previous = current;
+            resumeAfterCloseDialog = false;
+            continue;
+        }
 
         // 最小化中も基準時刻を更新し、復帰時に停止時間をまとめて進めない。
         if (IsIconic(m_hWnd)) {
@@ -167,8 +205,8 @@ void Application::MainLoop() {
         const double elapsedSeconds =
             static_cast<double>(current.QuadPart - previous.QuadPart) / frequency.QuadPart;
 
-        // 描画の上限は従来どおり60fps。ゲームの時間には固定値ではなく実測値を渡す。
-        if (elapsedSeconds < 1.0 / 60.0) {
+        // 描画の上限を変えても、ゲームの時間には同じ実測値を渡す。
+        if (elapsedSeconds < 1.0 / GameSettings::FrameLimit()) {
             continue;
         }
         previous = current;
@@ -184,7 +222,6 @@ void Application::MainLoop() {
 // ウィンドウプロシージャ
 //-----------------------------------------------------------------------------
 LRESULT CALLBACK Application::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    static bool isFullscreen = true;
     static bool isMessageBoxShowed = false;
     if (ImGui::GetCurrentContext() && ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
         return true;
@@ -197,48 +234,40 @@ LRESULT CALLBACK Application::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
         case WM_CLOSE: // 「x」ボタンが押されたら
         {
-            DestroyWindow(hWnd); // 「WM_DESTROY」メッセージを送る
-            int res = MessageBoxA(NULL, "終了しますか？", "確認", MB_OKCANCEL);
-            if (res == IDOK) {
+            if (!isMessageBoxShowed) {
+                isMessageBoxShowed = true;
+                const int choice = MessageBoxW(hWnd, L"ゲームを終了しますか？", L"ゲーム終了",
+                                               MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2);
+                isMessageBoxShowed = false;
+                if (choice == IDYES) {
+                    DestroyWindow(hWnd);
+                } else {
+                    resumeAfterCloseDialog = true;
+                }
             }
         } break;
 
         case WM_KEYDOWN: //キー入力があったメッセージ
-            if (LOWORD(wParam) == VK_ESCAPE) { //入力されたキーがESCAPEなら
-                PostMessage(hWnd, WM_CLOSE, wParam, lParam); //「WM_CLOSE」を送る
+            if (LOWORD(wParam) == VK_ESCAPE) {
+                // 開いているメニューではEscを「戻る」に使う。キーリピートで終了へ進めない。
+                auto* game = Game::GetInstance();
+                const bool titlePanelOpen = ImGui::GetCurrentContext() && game &&
+                                            dynamic_cast<TitleScene*>(game->GetScene()) &&
+                                            ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopup);
+                if (!titlePanelOpen && (lParam & (1L << 30)) == 0) {
+                    PostMessage(hWnd, WM_CLOSE, 0, 0);
+                }
             }
 
-            else if (LOWORD(wParam) == VK_F11) {
-                isFullscreen = !isFullscreen;
-                if (isFullscreen) {
-                    //フルスクリーンに切り替え
-                    //g_pSwapChain->SetFullscreenState(TRUE, NULL);
-                    //ShowWindow(hWnd, SW_MAXIMIZE);
-
-                    // 疑似フルスクリーンモードに変更
-                    SetWindowLongPtr(hWnd, GWL_STYLE, WS_POPUP | WS_MINIMIZEBOX); // ウィンドウ枠を削除
-                    // ディスプレイ解像度を取得
-                    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-                    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-                    SetWindowPos(hWnd, HWND_TOP, 0, 0, screenWidth, screenHeight,
-                                 SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-                } else {
-                    //ウィンドウモードに戻す
-                    //g_pSwapChain->SetFullscreenState(FALSE, NULL);
-                    //ShowWindow(hWnd, SW_RESTORE);
-
-                    // 通常ウィンドウに戻す
-                    SetWindowLongPtr(hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW); // ウィンドウ枠を戻す
-                    SetWindowPos(hWnd, HWND_TOP, 100, 100, m_width, m_height,
-                                 SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-                }
+            else if (LOWORD(wParam) == VK_F11 && !(lParam & (1LL << 30))) {
+                GameSettings::SetFullscreen(!GameSettings::Fullscreen());
             }
             break;
 
         case WM_ACTIVATE:
             if (wParam == WA_INACTIVE) {
                 // フルスクリーン表示かつメッセージボックス非表示なら
-                if (isFullscreen && !isMessageBoxShowed) {
+                if (GameSettings::Fullscreen() && !isMessageBoxShowed) {
                     // ウインドウを最小化する（タスク切替時に背後に残る問題対策）
                     ShowWindow(hWnd, SW_MINIMIZE);
                 }

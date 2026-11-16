@@ -3,6 +3,7 @@
 
 #include "Application.h" //GetWindow()を使うために必要
 #include "Game.h"
+#include "GameRules.h"
 #include "Renderer.h"
 #include "input.h"
 #include "billboard.h"
@@ -67,6 +68,7 @@ void Game::Init() {
         static ImVector<ImWchar> skillGlyphRanges;
         ImFontGlyphRangesBuilder glyphs;
         glyphs.AddRanges(io.Fonts->GetGlyphRangesJapanese());
+        GameRules::AddGlyphs(glyphs);
         for (int i = 0; i < static_cast<int>(UpgradeId::Count); ++i) {
             const auto id = static_cast<UpgradeId>(i);
             const auto& definition = GetUpgradeDefinition(id);

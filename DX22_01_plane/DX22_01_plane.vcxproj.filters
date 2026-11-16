@@ -208,6 +208,12 @@
     <ClCompile Include="Game.cpp">
       <Filter>ソース ファイル\System</Filter>
     </ClCompile>
+    <ClCompile Include="GameSettings.cpp">
+      <Filter>ソース ファイル\System</Filter>
+    </ClCompile>
+    <ClCompile Include="GameRules.cpp">
+      <Filter>ソース ファイル\Scene</Filter>
+    </ClCompile>
     <ClCompile Include="Application.cpp">
       <Filter>ソース ファイル\System</Filter>
     </ClCompile>
@@ -218,6 +224,15 @@
       <Filter>ソース ファイル\Scene</Filter>
     </ClCompile>
     <ClCompile Include="TitleScene.cpp">
+      <Filter>ソース ファイル\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="TitleFigureShadows.cpp">
+      <Filter>ソース ファイル\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="TitleRobotFigure.cpp">
+      <Filter>ソース ファイル\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="TitleEnemyFigures.cpp">
       <Filter>ソース ファイル\Scene</Filter>
     </ClCompile>
     <ClCompile Include="CMiniMap.cpp">
@@ -330,6 +345,24 @@
     <ClInclude Include="TitleScene.h">
       <Filter>ヘッダー ファイル\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="TitleFigureShadows.h">
+      <Filter>ヘッダー ファイル\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="TitleRobotFigure.h">
+      <Filter>ヘッダー ファイル\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="TitleEnemyFigures.h">
+      <Filter>ヘッダー ファイル\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="TitleEnemyCamera.h">
+      <Filter>ヘッダー ファイル\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="TitleEnemyGallery.h">
+      <Filter>ヘッダー ファイル\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="TitleEnemyGuide.h">
+      <Filter>ヘッダー ファイル\Scene</Filter>
+    </ClInclude>
     <ClInclude Include="Stage1Scene.h">
       <Filter>ヘッダー ファイル\Scene</Filter>
     </ClInclude>
@@ -341,6 +374,12 @@
     </ClInclude>
     <ClInclude Include="Game.h">
       <Filter>ヘッダー ファイル\System</Filter>
+    </ClInclude>
+    <ClInclude Include="GameSettings.h">
+      <Filter>ヘッダー ファイル\System</Filter>
+    </ClInclude>
+    <ClInclude Include="GameRules.h">
+      <Filter>ヘッダー ファイル\Scene</Filter>
     </ClInclude>
     <ClInclude Include="main.h">
       <Filter>ヘッダー ファイル\System</Filter>
@@ -681,10 +720,25 @@
     <None Include="shader\titleDioramaVS.hlsl">
       <Filter>リソース ファイル\VS</Filter>
     </None>
+    <None Include="shader\titleMuzzleGlowVS.hlsl">
+      <Filter>リソース ファイル\VS</Filter>
+    </None>
     <None Include="shader\titleDioramaPS.hlsl">
       <Filter>リソース ファイル\PS</Filter>
     </None>
+    <None Include="shader\titleEnemyPortraitPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
     <None Include="shader\titleBackdropPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\titleMuzzleGlowPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\titleGroundPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\titleRobotFigurePS.hlsl">
       <Filter>リソース ファイル\PS</Filter>
     </None>
     <None Include="shader\ghostSpiritPS.hlsl">

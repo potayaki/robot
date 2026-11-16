@@ -15,6 +15,14 @@ namespace {
     constexpr unsigned ImportFlags = aiProcess_Triangulate | aiProcess_ConvertToLeftHanded;
     constexpr float BlendSeconds = 0.15f;
 
+    void ConfigureRigImporter(Assimp::Importer& importer) {
+        // 本体とモーションを同じ骨座標で読む。射線と接地位置はFBX素材の軸が基準。
+        importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+#ifdef AI_CONFIG_IMPORT_FBX_IGNORE_UP_DIRECTION
+        importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_IGNORE_UP_DIRECTION, true);
+#endif
+    }
+
     aiQuaternion BlendRotation(const aiQuaternion& a, const aiQuaternion& b, float amount) {
         aiQuaternion result;
         aiQuaternion::Interpolate(result, a, b, amount); // 最短経路のSlerp。
@@ -69,8 +77,7 @@ bool RobotAnimationRig::Load(const std::string& directory, std::string& error) {
     error.clear();
     try {
         Assimp::Importer importer;
-        // モデルと別ファイルのアニメーションで同じ骨名・変換規則にする。
-        importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+        ConfigureRigImporter(importer);
         const auto scene = importer.ReadFile(directory + "/Player.fbx", ImportFlags);
         if (!scene || !scene->mRootNode) {
             throw std::runtime_error(importer.GetErrorString());
@@ -159,7 +166,7 @@ bool RobotAnimationRig::Load(const std::string& directory, std::string& error) {
         const char* files[] = {"Idle", "WalkForward", "WalkBackward", "Walk_L", "Walk_R"};
         for (size_t i = 0; i < m_clips.size(); ++i) {
             Assimp::Importer animationImporter;
-            animationImporter.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+            ConfigureRigImporter(animationImporter);
             const std::string path = directory + "/Animations/A_ISO_Mech_" + files[i] + "_01.fbx";
             const auto animationScene = animationImporter.ReadFile(path, ImportFlags);
             if (!animationScene || animationScene->mNumAnimations == 0) {

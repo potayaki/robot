@@ -2,6 +2,7 @@
 /// @brief プレイヤーの移動、照準、射撃、ロボットの姿勢更新。
 
 #include "CPlayer.h"
+#include "GameSettings.h"
 #include "Ground.h"
 #include "Game.h"
 #include "input.h"
@@ -361,6 +362,7 @@ void CPlayer::StartBullet() {
 
     // 多重弾でも、同じ発射位置のエフェクトは1回の射撃につき1組だけ生成する。
     if (fired) {
+        GameSettings::PlayShotSound();
         const auto particleManagers = Game::GetInstance()->GetObjects<ParticleManager>();
         if (!particleManagers.empty()) {
             m_bulletEmitter.Emit(*particleManagers[0], bulletStart, bulletDirection);

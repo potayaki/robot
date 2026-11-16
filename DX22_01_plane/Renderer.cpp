@@ -3,6 +3,7 @@
 
 #include "Renderer.h"
 #include "Application.h"
+#include "GameSettings.h"
 
 using namespace DirectX::SimpleMath;
 
@@ -37,12 +38,17 @@ static ID3D11RasterizerState* m_pRasterizerStateWire = NULL; // ワイヤーフ�
 
 // 4倍アンチエイリアス用の描画先。画面表示用バッファは1倍のまま保持する。
 static UINT g_msaaSampleCount = 1;
+static bool g_supportsMsaa4x = false;
 static ID3D11Texture2D* g_backBufferTexture = nullptr;
 static ID3D11Texture2D* g_msaaColorTexture = nullptr;
 static ID3D11RenderTargetView* g_msaaRenderTargetView = nullptr;
 
 ID3D11BlendState* Renderer::m_pBlendState[MAX_BLENDSTATE]; // ブレンドステート配列
 ID3D11BlendState* Renderer::m_pBlendStateATC{}; // 特定のアルファテストとカバレッジ（ATC）用のブレンドステート
+
+bool Renderer::SupportsMsaa4x() {
+    return g_supportsMsaa4x;
+}
 
 //初期化処理
 HRESULT Renderer::Init() {
@@ -84,12 +90,12 @@ HRESULT Renderer::Init() {
     UINT colorQualityLevels = 0;
     UINT depthQualityLevels = 0;
     // 色と深度の両方が4倍サンプリングに対応する場合だけ有効にする。
-    if (SUCCEEDED(
+    g_supportsMsaa4x =
+        SUCCEEDED(
             m_pDevice->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, 4, &colorQualityLevels)) &&
         SUCCEEDED(m_pDevice->CheckMultisampleQualityLevels(DXGI_FORMAT_D32_FLOAT, 4, &depthQualityLevels)) &&
-        colorQualityLevels > 0 && depthQualityLevels > 0) {
-        g_msaaSampleCount = 4;
-    }
+        colorQualityLevels > 0 && depthQualityLevels > 0;
+    g_msaaSampleCount = g_supportsMsaa4x && GameSettings::Msaa4x() ? 4 : 1;
 
     // レンダーターゲットビュー・デプスステンシルバッファ・デプスステンシルビュー作成
     hr = CreateRenderAndDepthResources();
@@ -444,7 +450,7 @@ void Renderer::DrawEnd() {
                                              DXGI_FORMAT_R8G8B8A8_UNORM);
     }
     // ダブルバッファの切り替えを行い画面を更新する
-    m_pSwapChain->Present(1, 0);
+    m_pSwapChain->Present(GameSettings::VSync() ? 1 : 0, 0);
 }
 
 //--------------------------------------------------------------------------------------

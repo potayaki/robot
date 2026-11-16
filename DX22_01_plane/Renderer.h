@@ -143,6 +143,8 @@ private:
 public:
     /// 使用前の状態と必要な資源を初期化する。
     static HRESULT Init();
+    /// 現在のGPUでカラーと深度の両方を4倍サンプリングできるか。
+    static bool SupportsMsaa4x();
     /// 使用した資源を解放して終了する。
     static void Uninit();
     static void DrawStart();

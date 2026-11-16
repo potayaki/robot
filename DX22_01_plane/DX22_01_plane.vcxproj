@@ -79,8 +79,8 @@
     <LibraryPath>C:\assimp\assimp\5.2.5\lib;C:\directxtk\lib\x64\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\assimp\assimp\5.2.5\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\directxtk\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\assimp\assimp\5.2.5\lib;C:\directxtk\lib\x64\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\assimp\assimp\6.0.2\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\directxtk\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\assimp\assimp\6.0.2\lib;C:\directxtk\lib\x64\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -135,13 +135,11 @@
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\assimp\5.2.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\assimp\5.2.5\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -149,8 +147,13 @@
     <ClCompile Include="GhostModel.cpp" />
     <None Include="shader\ghostSpiritPS.hlsl" />
     <None Include="shader\titleDioramaVS.hlsl" />
+    <None Include="shader\titleMuzzleGlowVS.hlsl" />
     <None Include="shader\titleDioramaPS.hlsl" />
+    <None Include="shader\titleEnemyPortraitPS.hlsl" />
     <None Include="shader\titleBackdropPS.hlsl" />
+    <None Include="shader\titleMuzzleGlowPS.hlsl" />
+    <None Include="shader\titleGroundPS.hlsl" />
+    <None Include="shader\titleRobotFigurePS.hlsl" />
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Arrow.cpp" />
     <ClCompile Include="AssimpPerse.cpp" />
@@ -189,6 +192,8 @@
     <ClCompile Include="CTimer.cpp" />
     <ClCompile Include="ExplosionManager.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GameRules.cpp" />
+    <ClCompile Include="GameSettings.cpp" />
     <ClCompile Include="GolfBall.cpp" />
     <ClCompile Include="Ground.cpp" />
     <ClCompile Include="imgui.cpp" />
@@ -217,6 +222,9 @@
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Texture2D.cpp" />
     <ClCompile Include="TitleScene.cpp" />
+    <ClCompile Include="TitleFigureShadows.cpp" />
+    <ClCompile Include="TitleRobotFigure.cpp" />
+    <ClCompile Include="TitleEnemyFigures.cpp" />
     <ClCompile Include="utility.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -270,6 +278,8 @@
     <ClInclude Include="CTimer.h" />
     <ClInclude Include="ExplosionManager.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="GameRules.h" />
+    <ClInclude Include="GameSettings.h" />
     <ClInclude Include="GameTime.h" />
     <ClInclude Include="GolfBall.h" />
     <ClInclude Include="Ground.h" />
@@ -300,6 +310,12 @@
     <ClInclude Include="TestSphere.h" />
     <ClInclude Include="Texture2D.h" />
     <ClInclude Include="TitleScene.h" />
+    <ClInclude Include="TitleFigureShadows.h" />
+    <ClInclude Include="TitleRobotFigure.h" />
+    <ClInclude Include="TitleEnemyFigures.h" />
+    <ClInclude Include="TitleEnemyCamera.h" />
+    <ClInclude Include="TitleEnemyGallery.h" />
+    <ClInclude Include="TitleEnemyGuide.h" />
     <ClInclude Include="utility.h" />
     <ClInclude Include="VertexBuffer.h" />
   </ItemGroup>

@@ -116,12 +116,20 @@ private:
     float m_upperBodyPitch = 0.0f;
     /// 上半身を保ったまま、腰と脚だけに適用する拡大率。
     float m_lowerBodyScale = 1.0f;
-    int FindNode(const std::string& name) const;
     void Evaluate();
     void ApplyLowerBodyScale();
     void ApplyUpperBodyAim();
 
 public:
+    /// 名前に対応する骨の番号。見つからない場合は -1。
+    int FindNode(const std::string& name) const;
+
+    // 武器などに表示物を取り付ける際、現在の姿勢行列を名前で参照する。
+    const aiMatrix4x4* FindNodeTransform(const std::string& name) const {
+        const int node = FindNode(name);
+        return node >= 0 ? &m_globals[node] : nullptr;
+    }
+
     bool Load(const std::string& directory, std::string& error);
     // IKのInitより前に指定する。脚と腰だけ拡大し、上半身・武器の大きさは保つ。
     void SetLowerBodyScale(float scale);

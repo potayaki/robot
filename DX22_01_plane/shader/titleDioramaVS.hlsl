@@ -4,6 +4,8 @@ struct DioramaPixel {
     float3 normal : NORMAL0;
     float4 color : COLOR0;
     float2 uv : TEXCOORD0;
+    float3 local : TEXCOORD1;
+    float3 worldPosition : TEXCOORD2;
 };
 DioramaPixel main(VS_IN input) {
     DioramaPixel output;
@@ -14,5 +16,7 @@ DioramaPixel main(VS_IN input) {
     output.normal = normalize(mul(input.nrm.xyz, cofactor));
     output.color = input.col;
     output.uv = input.tex;
+    output.local = input.pos.xyz;
+    output.worldPosition = mul(input.pos, World).xyz;
     return output;
 }
