@@ -2,6 +2,7 @@
 /// @brief ロボットの素材読込、歩行の補間、上半身の照準回転。
 
 #include "RobotAnimationRig.h"
+#include "FbxImportSettings.h"
 #include <assimp/Importer.hpp>
 #include <assimp/config.h>
 #include <assimp/postprocess.h>
@@ -18,9 +19,7 @@ namespace {
     void ConfigureRigImporter(Assimp::Importer& importer) {
         // 本体とモーションを同じ骨座標で読む。射線と接地位置はFBX素材の軸が基準。
         importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
-#ifdef AI_CONFIG_IMPORT_FBX_IGNORE_UP_DIRECTION
-        importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_IGNORE_UP_DIRECTION, true);
-#endif
+        ConfigureFbxImport(importer);
     }
 
     aiQuaternion BlendRotation(const aiQuaternion& a, const aiQuaternion& b, float amount) {

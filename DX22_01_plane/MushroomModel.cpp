@@ -2,6 +2,7 @@
 /// @brief キノコモデルの読込と、通常色・予告色の描画。
 
 #include "MushroomModel.h"
+#include "FbxImportSettings.h"
 #include <algorithm>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -18,6 +19,7 @@ namespace {
 
         bool Load() {
             Assimp::Importer importer;
+            ConfigureFbxImport(importer);
             // Replace the FBX's flat normals; GenSmoothNormals alone keeps existing normals.
             importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
             const auto scene = importer.ReadFile("assets/model/mushroom/Mushroom.fbx",

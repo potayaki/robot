@@ -1,6 +1,7 @@
 ﻿/// @file GhostModel.cpp
 /// @brief FBXの材質色を保ったGhostと半透明の支援線を描く。
 #include "GhostModel.h"
+#include "FbxImportSettings.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -11,6 +12,7 @@ namespace {
     public:
         bool Load() {
             Assimp::Importer importer;
+            ConfigureFbxImport(importer);
             const auto scene =
                 importer.ReadFile("assets/model/Ghost/Ghost.fbx",
                                   aiProcess_Triangulate | aiProcess_ConvertToLeftHanded |

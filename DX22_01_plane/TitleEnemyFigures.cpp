@@ -1,6 +1,7 @@
 ﻿/// @brief ゲームの敵モデルを静止した攻撃ポーズで展示する。
 #include "TitleEnemyFigures.h"
 #include "BoarAnimationRig.h"
+#include "FbxImportSettings.h"
 #include <assimp/Importer.hpp>
 #include <assimp/config.h>
 #include <assimp/postprocess.h>
@@ -22,10 +23,8 @@ namespace {
         // Monster Packの上方向は-Z。Ghostはノード変換を含めると通常のY-up。
         bool LoadFbx(const char* path, bool monsterPack) {
             Assimp::Importer importer;
-#ifdef AI_CONFIG_IMPORT_FBX_IGNORE_UP_DIRECTION
             // 展示メッシュが下で素材の軸を合わせるので、インポーターによる二重回転を避ける。
-            importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_IGNORE_UP_DIRECTION, true);
-#endif
+            ConfigureFbxImport(importer);
             unsigned flags = aiProcess_Triangulate | aiProcess_ConvertToLeftHanded |
                              aiProcess_PreTransformVertices | aiProcess_GenSmoothNormals |
                              aiProcess_JoinIdenticalVertices;

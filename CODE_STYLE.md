@@ -28,3 +28,12 @@ Visual Studio 2022のC++用clang-formatを使用します。設定は `.clang-fo
 
 全テスト実行には、既存プロジェクトと同じAssimp・DirectXTKが必要です。
 テストの中間ファイルは `tests/obj` に分離しています。メンバを追加・変更した後は、Visual Studioでソリューションをリビルドし、サイズが異なる古いオブジェクトファイルが混ざらないようにします。
+
+AssimpはDebugで5.2.5、Releaseで6.0.2を使用します。ヘッダー・lib・DLLは必ず同じインストール先のものを組み合わせます。アニメーションキーの構造が異なるため、5系のヘッダーと6系のDLLを混在させてはいけません。
+プロジェクトは `C:\assimp\<版>`、`C:\assimp\assimp\<版>`、`%USERPROFILE%\Downloads\assimp\assimp\<版>` の順で探し、対応するDLLを実行ファイルの隣にコピーします。別の場所に置く場合はMSBuildの `/p:AssimpRoot=<配置先>` で指定できます。構成を変更した後はリビルドしてください。
+
+FBXの向きは実素材とタイトル用の射撃ポーズで検証します。Releaseの検証例です（配置先は環境に合わせて指定）。
+
+```powershell
+./tests/run-all-tests.ps1 -Configuration Release -AssimpRoot C:\assimp\assimp\6.0.2 -Suites FbxOrientationTests,RobotAnimationTests
+```

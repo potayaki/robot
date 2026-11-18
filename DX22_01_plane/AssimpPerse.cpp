@@ -7,8 +7,7 @@
 #include <cassert>
 #include "Texture.h"
 #include "AssimpPerse.h"
-
-#pragma comment(lib, "assimp-vc143-mtd.lib")
+#include "FbxImportSettings.h"
 
 namespace AssimpPerse {
     std::vector<std::vector<VERTEX>> g_vertices{}; // 頂点データ（メッシュ単位）
@@ -159,6 +158,7 @@ namespace AssimpPerse {
 
         // シーン情報構築
         Assimp::Importer importer;
+        ConfigureFbxImport(importer);
 
         // シーン情報を構築
         const aiScene* pScene = importer.ReadFile(filename.c_str(),

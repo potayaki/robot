@@ -5,6 +5,7 @@
 #include "GameRules.h"
 #include "GameSettings.h"
 #include "GameTime.h"
+#include "FbxImportSettings.h"
 #include "MeshRenderer.h"
 #include "Shader.h"
 #include "Texture.h"
@@ -55,6 +56,7 @@ namespace {
 
         bool Load(const std::string& path, bool island, bool grass) {
             Assimp::Importer importer;
+            ConfigureFbxImport(importer);
             // 草の異なるLODを同じ材質だからと結合しない。
             importer.SetPropertyBool(AI_CONFIG_PP_PTV_KEEP_HIERARCHY, true);
             const auto scene = importer.ReadFile(

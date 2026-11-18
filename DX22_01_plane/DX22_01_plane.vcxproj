@@ -70,17 +70,27 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Platform)'=='x64'" Label="Assimp">
+    <!-- Headers, import library and runtime DLL must come from the same installation. -->
+    <AssimpVersion Condition="'$(Configuration)'=='Debug'">5.2.5</AssimpVersion>
+    <AssimpVersion Condition="'$(Configuration)'=='Release'">6.0.2</AssimpVersion>
+    <AssimpBinaryName Condition="'$(Configuration)'=='Debug'">assimp-vc143-mtd</AssimpBinaryName>
+    <AssimpBinaryName Condition="'$(Configuration)'=='Release'">assimp-vc143-mt</AssimpBinaryName>
+    <AssimpRoot Condition="'$(AssimpRoot)'=='' and Exists('C:\assimp\$(AssimpVersion)\include\assimp\Importer.hpp')">C:\assimp\$(AssimpVersion)</AssimpRoot>
+    <AssimpRoot Condition="'$(AssimpRoot)'=='' and Exists('C:\assimp\assimp\$(AssimpVersion)\include\assimp\Importer.hpp')">C:\assimp\assimp\$(AssimpVersion)</AssimpRoot>
+    <AssimpRoot Condition="'$(AssimpRoot)'=='' and Exists('$(USERPROFILE)\Downloads\assimp\assimp\$(AssimpVersion)\include\assimp\Importer.hpp')">$(USERPROFILE)\Downloads\assimp\assimp\$(AssimpVersion)</AssimpRoot>
+  </PropertyGroup>
   <PropertyGroup>
     <!-- Keep application intermediates separate from standalone test/probe outputs. -->
     <IntDir>$(ProjectDir)obj\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\assimp\assimp\5.2.5\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\directxtk\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\assimp\assimp\5.2.5\lib;C:\directxtk\lib\x64\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(AssimpRoot)\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\directxtk\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(AssimpRoot)\lib;C:\directxtk\lib\x64\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\assimp\assimp\6.0.2\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\directxtk\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\assimp\assimp\6.0.2\lib;C:\directxtk\lib\x64\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(AssimpRoot)\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\directxtk\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(AssimpRoot)\lib;C:\directxtk\lib\x64\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -116,13 +126,13 @@
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\assimp\5.2.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(AssimpRoot)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\assimp\5.2.5\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);assimp-vc143-mtd.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AssimpRoot)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(AssimpRoot)\lib\$(AssimpBinaryName).lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -135,11 +145,13 @@
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(AssimpRoot)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AssimpRoot)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(AssimpRoot)\lib\$(AssimpBinaryName).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -239,6 +251,7 @@
     <ClInclude Include="Application.h" />
     <ClInclude Include="Arrow.h" />
     <ClInclude Include="AssimpPerse.h" />
+    <ClInclude Include="FbxImportSettings.h" />
     <ClInclude Include="Bezier.h" />
     <ClInclude Include="billboard.h" />
     <ClInclude Include="Camera.h" />
@@ -370,6 +383,13 @@
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Target Name="ValidateAssimpInstallation" BeforeTargets="PrepareForBuild" Condition="'$(Platform)'=='x64'">
+    <Error Condition="'$(AssimpRoot)'=='' or !Exists('$(AssimpRoot)\include\assimp\Importer.hpp') or !Exists('$(AssimpRoot)\lib\$(AssimpBinaryName).lib') or !Exists('$(AssimpRoot)\bin\$(AssimpBinaryName).dll')"
+           Text="Assimp $(AssimpVersion) is incomplete. Set AssimpRoot to one installation containing matching include, lib and bin directories." />
+  </Target>
+  <Target Name="CopyAssimpRuntime" AfterTargets="Build" Condition="'$(Platform)'=='x64'">
+    <Copy SourceFiles="$(AssimpRoot)\bin\$(AssimpBinaryName).dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
   <ItemGroup>
     <None Include="shader\playerRobotVS.hlsl" />
     <None Include="shader\particlePS.hlsl" />
