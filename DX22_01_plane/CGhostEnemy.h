@@ -19,7 +19,8 @@ public:
         return {m_position, CollisionRadius};
     }
 
-    void DrawEffects(Camera* camera);
+    /// 支援線・霊弾と対象のオーラを描く。描画済み一覧はこの描画フレーム内だけで共有する。
+    void DrawEffects(Camera* camera, std::vector<EnemyTarget*>& auraTargets);
     std::vector<EnemyTarget*> GetSupportTargets() const;
     static GhostSupport::Settings& SupportSettings();
 #ifdef _DEBUG

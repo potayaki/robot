@@ -29,6 +29,7 @@ if (-not (Test-Path "$directXRoot/include/SimpleMath.h")) { throw 'DirectXTK is 
 $cases = @(
     @{ Name = 'GhostAssetTests'; Sources = @() },
     @{ Name = 'GhostSupportTests'; Sources = @() },
+    @{ Name = 'GhostAuraRenderTests'; Sources = @('GhostModel.cpp', 'EnemyTint.cpp', 'Shader.cpp', 'Texture.cpp', 'stb_image.cpp') },
     @{ Name = 'GameTimeTests'; Sources = @() },
     @{ Name = 'SkyCycleTests'; Sources = @() },
     @{ Name = 'BossBattleTests'; Sources = @() },
@@ -79,7 +80,7 @@ exit /b %errorlevel%
             if ($LASTEXITCODE -ne 0) { throw "$($case.Name) compilation failed." }
         } finally { Pop-Location }
         # この描画テストはゲームと同じ相対パスでHLSLを読み込む。
-        $runDirectory = if ($case.Name -in @('LowHealthGlitchTests', 'ExplosionRenderTests', 'EnemyTintTests')) {
+        $runDirectory = if ($case.Name -in @('LowHealthGlitchTests', 'ExplosionRenderTests', 'EnemyTintTests', 'GhostAuraRenderTests')) {
             Join-Path $repoRoot 'DX22_01_plane'
         } else { $repoRoot }
         Push-Location $runDirectory

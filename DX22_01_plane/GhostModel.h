@@ -17,6 +17,8 @@ public:
               const DirectX::SimpleMath::Color& tint = DirectX::SimpleMath::Color(1, 1, 1, 0));
     void DrawBeam(Camera* camera, DirectX::SimpleMath::Vector3 start, DirectX::SimpleMath::Vector3 end,
                   float width, DirectX::SimpleMath::Color color, bool spirit = false);
+    /// 支援中の敵の判定球を囲む紫の光を描く。secondsは一時停止で進まないゲーム時刻。
+    void DrawSupportAura(Camera* camera, DirectX::SimpleMath::Vector3 center, float radius, double seconds);
 
 private:
     /// モデルを共有しても個体色を次のGhostへ残さないための描画資源。
@@ -31,9 +33,9 @@ private:
     Shader m_spiritShader;
     /// 線とモデルの頂点色を表示するための白い画像。
     Texture m_white;
-    /// 1本の線を外側と芯の2枚の板で表示する頂点群。
+    /// 支援線・霊弾・支援オーラで使い回す頂点群。初期化時に最大容量を確保する。
     std::vector<VERTEX_3D> m_vertices;
-    /// 支援線と霊弾で使い回す動的バッファ。
+    /// 支援線・霊弾・支援オーラで使い回す動的バッファ。
     VertexBuffer<VERTEX_3D> m_buffer;
     /// 線を裏側からも表示する描画状態。
     Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_rasterizer;

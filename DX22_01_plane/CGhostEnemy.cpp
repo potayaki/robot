@@ -142,13 +142,18 @@ void CGhostEnemy::Draw(Camera* camera) {
     }
 }
 
-void CGhostEnemy::DrawEffects(Camera* camera) {
+void CGhostEnemy::DrawEffects(Camera* camera, std::vector<EnemyTarget*>& auraTargets) {
     if (!m_model || IsDead() || !GetActive()) {
         return;
     }
     for (auto target : GetSupportTargets()) {
-        m_model->DrawBeam(camera, m_position, target->GetCollisionSphere().center, 3.5f,
-                          Color(0.65f, 0.3f, 1, 1));
+        const auto sphere = target->GetCollisionSphere();
+        m_model->DrawBeam(camera, m_position, sphere.center, 3.5f, Color(0.65f, 0.3f, 1, 1));
+        // ダメージ倍率と同じ対象にのみ表示し、複数Ghostから支援されても重ね描きしない。
+        if (std::find(auraTargets.begin(), auraTargets.end(), target) == auraTargets.end()) {
+            auraTargets.push_back(target);
+            m_model->DrawSupportAura(camera, sphere.center, sphere.radius, Game::GetInstance()->m_gameTime);
+        }
     }
     for (const auto& shot : m_shots) {
         Vector3 trail = shot.velocity;
@@ -225,5 +230,6 @@ void CGhostEnemy::DrawDebugUI() {
     }
     ImGui::TextWrapped("%s", text(u8"設定は全Ghost共通・実行中のみ有効。Ghost同士は支援せず、倍率は重複しませ"
                                   u8"ん。被ダメージは切り捨て（最低1）、与ダメージは切り上げ。"));
+    ImGui::TextWrapped("%s", text(u8"強化中の敵には紫のオーラを表示。支援範囲外・Ghost撃破で消えます。"));
 }
 #endif

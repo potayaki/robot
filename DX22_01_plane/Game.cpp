@@ -496,8 +496,10 @@ void Game::Draw() {
         }
     }
 
+    // 同じ敵のオーラは1回だけ描く。対象を毎フレーム取り直し、支援解除をすぐ反映する。
+    std::vector<EnemyTarget*> auraTargets;
     for (auto ghost : m_instance->GetObjects<CGhostEnemy>()) {
-        ghost->DrawEffects(&m_instance->m_camera);
+        ghost->DrawEffects(&m_instance->m_camera, auraTargets);
     }
     for (auto boss : m_instance->GetObjects<CBossEnemy>()) {
         boss->DrawEffects(&m_instance->m_camera);

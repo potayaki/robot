@@ -3,12 +3,16 @@
 #include "GhostModel.h"
 #include "EnemyTint.h"
 #include "FbxImportSettings.h"
+#include "GhostSupportAura.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 using namespace DirectX::SimpleMath;
 
 namespace {
+    /// 支援線・霊弾は外側と芯の2枚の板で構成する。
+    constexpr size_t BeamVertexCount = 12;
+
     class GhostMesh : public Mesh {
     public:
         bool Load() {
@@ -86,7 +90,7 @@ bool GhostModel::Init() {
     m_shader.Create("shader/unlitTextureVS.hlsl", "shader/unlitTexturePS.hlsl");
     m_tint = EnemyTint::Acquire();
     m_spiritShader.Create("shader/unlitTextureVS.hlsl", "shader/ghostSpiritPS.hlsl");
-    m_vertices.resize(12);
+    m_vertices.resize((std::max)(BeamVertexCount, GhostSupportAura::VertexCount));
     m_buffer.Create(m_vertices);
     D3D11_RASTERIZER_DESC rasterizer{};
     rasterizer.FillMode = D3D11_FILL_SOLID;
@@ -116,6 +120,7 @@ void GhostModel::DrawBeam(Camera* cam, Vector3 start, Vector3 end, float width, 
     if (direction.LengthSquared() < 0.000001f) {
         return;
     }
+    m_vertices.resize(BeamVertexCount); // オーラ用の予約容量は維持し、線に必要な頂点だけ転送する。
 
     // 始点・終点を動かさず、板の幅方向だけをカメラへ向ける。
     // 地上のスライムにも空中のドローンにも、同じ方法で線を引ける。
@@ -192,7 +197,53 @@ void GhostModel::DrawBeam(Camera* cam, Vector3 start, Vector3 end, float width, 
     m_white.SetGPU();
     m_buffer.SetGPU();
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    context->Draw(static_cast<UINT>(m_vertices.size()), 0);
+    context->Draw(static_cast<UINT>(BeamVertexCount), 0);
+
+    context->OMSetBlendState(previousBlend.Get(), previousBlendFactor, previousSampleMask);
+    context->OMSetDepthStencilState(previousDepth.Get(), previousStencilReference);
+    context->RSSetState(previousRasterizer.Get());
+    context->IASetPrimitiveTopology(previousTopology);
+}
+
+void GhostModel::DrawSupportAura(Camera* camera, Vector3 center, float radius, double seconds) {
+    if (!camera || !m_rasterizer) {
+        return;
+    }
+    camera->SetCamera();
+    const Matrix inverseView = camera->GetViewMatrix().Invert();
+    const Vector3 right = Vector3::TransformNormal(Vector3(1, 0, 0), inverseView);
+    const Vector3 up = Vector3::TransformNormal(Vector3(0, 1, 0), inverseView);
+    m_vertices.resize(GhostSupportAura::VertexCount); // Initで確保済みの容量から再利用する。
+    const size_t count = GhostSupportAura::Build(m_vertices, center, radius, seconds, right, up);
+    if (count == 0) {
+        return;
+    }
+    m_buffer.Modify(m_vertices);
+
+    auto context = Renderer::GetDeviceContext();
+    Microsoft::WRL::ComPtr<ID3D11BlendState> previousBlend;
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilState> previousDepth;
+    Microsoft::WRL::ComPtr<ID3D11RasterizerState> previousRasterizer;
+    float previousBlendFactor[4]{};
+    UINT previousSampleMask = 0, previousStencilReference = 0;
+    D3D11_PRIMITIVE_TOPOLOGY previousTopology;
+    context->OMGetBlendState(previousBlend.GetAddressOf(), previousBlendFactor, &previousSampleMask);
+    context->OMGetDepthStencilState(previousDepth.GetAddressOf(), &previousStencilReference);
+    context->RSGetState(previousRasterizer.GetAddressOf());
+    context->IAGetPrimitiveTopology(&previousTopology);
+
+    // 本体色を塗り替えず、周囲にだけ柔らかな紫の光を加える。透明な帯は深度を書かない。
+    Renderer::SetBlendState(BS_ADDITIVE);
+    Renderer::SetDepthEnable(false);
+    context->RSSetState(m_rasterizer.Get());
+    Matrix world = Matrix::Identity;
+    Renderer::SetWorldMatrix(&world);
+    Renderer::SetUV(0, 0, 1, 1);
+    m_shader.SetGPU();
+    m_white.SetGPU();
+    m_buffer.SetGPU();
+    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    context->Draw(static_cast<UINT>(count), 0);
 
     context->OMSetBlendState(previousBlend.Get(), previousBlendFactor, previousSampleMask);
     context->OMSetDepthStencilState(previousDepth.Get(), previousStencilReference);

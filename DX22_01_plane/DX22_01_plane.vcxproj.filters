@@ -555,6 +555,9 @@
     <ClInclude Include="GhostModel.h">
       <Filter>ヘッダー ファイル\Model</Filter>
     </ClInclude>
+    <ClInclude Include="GhostSupportAura.h">
+      <Filter>ヘッダー ファイル\Model</Filter>
+    </ClInclude>
     <ClInclude Include="GhostSupportRules.h">
       <Filter>ヘッダー ファイル\Enemy</Filter>
     </ClInclude>

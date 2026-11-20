@@ -249,6 +249,7 @@
     <ClInclude Include="..\..\..\ソースファイルなど\ソースファイルなど\MeshRenderer.h" />
     <ClInclude Include="CGhostEnemy.h" />
     <ClInclude Include="GhostModel.h" />
+    <ClInclude Include="GhostSupportAura.h" />
     <ClInclude Include="GhostSupportRules.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="Arrow.h" />
