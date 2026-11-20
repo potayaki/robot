@@ -4,8 +4,11 @@
 #pragma once
 #include "Object.h"
 #include "BossBattleRules.h"
+#include "BossCatalog.h"
+#include "ForestLayout.h"
 #include "Texture.h"
 #include "VertexBuffer.h"
+#include <optional>
 
 class CBossEnemy;
 class CPlayer;
@@ -14,8 +17,16 @@ class CPlayer;
 class CBossBattle : public Object {
     /// 通常戦とボス戦の進行、および出現条件の達成状態。
     BossBattleProgress m_progress;
-    /// このプレイでスライムキングを1回以上倒したか。
-    bool m_defeatedSlimeKing = false;
+    /// 次に出現するボスと、このプレイで撃破した種類の記録。
+    BossRoster m_roster;
+    /// ステージで固定する種類。未指定なら従来の順番で全種類を巡回する。
+    std::optional<BossKind> m_stageBossKind;
+    /// 前回更新時の部屋。エリア移動時の撃破数リセットに使う。
+    ForestLayout::Area m_currentArea = ForestLayout::Area::Entrance;
+    /// 戦闘開始時に固定した部屋。ボス戦中の門の通り抜けを防ぐ。
+    ForestLayout::Area m_battleArea = ForestLayout::Area::Entrance;
+    /// 現在戦闘中の種類。敵が削除された後もUIと撃破処理で参照する。
+    BossKind m_activeKind = BossKind::Slime;
     /// 出現するボスに設定する最大HP。
     int m_bossHp = 250;
     /// ボス戦で移動できるバリア内の半径。
@@ -40,6 +51,8 @@ class CBossBattle : public Object {
     bool m_requestStart = false;
     /// デバッグ画面からボス撃破が要求されたか。
     bool m_requestDefeat = false;
+    /// 次の1戦の種類をデバッグ画面で指定したか。
+    bool m_debugBossSelected = false;
 #endif
     void BeginBattle(CPlayer* player);
     float GetBossSpawnDistance() const;
@@ -65,10 +78,16 @@ public:
 #ifdef _DEBUG
     void DrawDebugUI();
 #endif
-    void OnBossDefeated();
+    void OnBossDefeated(BossKind kind);
+
+    /// 通常の出現種類を指定する。デバッグの選択は次の1戦だけ優先する。
+    void SetStageBoss(BossKind kind) {
+        m_stageBossKind = kind;
+        m_roster.SelectNext(kind);
+    }
 
     int GetDefeatedBossTypes() const {
-        return m_defeatedSlimeKing ? 1 : 0;
+        return m_roster.DefeatedCount();
     }
 
     bool IsBattleActive() const {

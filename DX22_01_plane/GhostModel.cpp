@@ -1,6 +1,7 @@
 ﻿/// @file GhostModel.cpp
 /// @brief FBXの材質色を保ったGhostと半透明の支援線を描く。
 #include "GhostModel.h"
+#include "EnemyTint.h"
 #include "FbxImportSettings.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -83,6 +84,7 @@ bool GhostModel::Init() {
     m_mesh.Init(mesh);
     m_indexCount = static_cast<unsigned>(mesh.GetIndices().size());
     m_shader.Create("shader/unlitTextureVS.hlsl", "shader/unlitTexturePS.hlsl");
+    m_tint = EnemyTint::Acquire();
     m_spiritShader.Create("shader/unlitTextureVS.hlsl", "shader/ghostSpiritPS.hlsl");
     m_vertices.resize(12);
     m_buffer.Create(m_vertices);
@@ -95,13 +97,15 @@ bool GhostModel::Init() {
         Renderer::GetDevice()->CreateRasterizerState(&rasterizer, m_rasterizer.ReleaseAndGetAddressOf()));
 }
 
-void GhostModel::Draw(Camera* camera, Vector3 center, float yaw) {
+void GhostModel::Draw(Camera* camera, Vector3 center, float yaw, float scale, const Color& tint) {
     camera->SetCamera();
     // 元モデルは-Z方向が顔。プレイヤーへ向く角度は+Z基準。
-    Matrix world = Matrix::CreateRotationY(yaw + DirectX::XM_PI) * Matrix::CreateTranslation(center);
+    Matrix world = Matrix::CreateScale(scale) * Matrix::CreateRotationY(yaw + DirectX::XM_PI) *
+                   Matrix::CreateTranslation(center);
     Renderer::SetWorldMatrix(&world);
     Renderer::SetUV(0, 0, 1, 1);
     m_shader.SetGPU();
+    EnemyTintScope tintScope(m_tint, tint, true);
     m_white.SetGPU();
     m_mesh.BeforeDraw();
     m_mesh.DrawSubset(m_indexCount, 0, 0);

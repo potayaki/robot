@@ -29,6 +29,7 @@
 #include "CAutoturret.h"
 #include "CBossBattle.h"
 #include "AimCursor.h"
+#include "CForestStage.h"
 using namespace DirectX::SimpleMath;
 
 // コンストラクタ
@@ -50,13 +51,15 @@ void Stage1Scene::Init() {
     CSpanner::LoadResource();
 
     // プレイヤー・武器・スポナーより先に更新し、ボス開始フレームの雑魚を退場させる。
-    m_mySceneObjects.push_back(Game::GetInstance()->AddObject<CBossBattle>());
+    auto bossBattle = Game::GetInstance()->AddObject<CBossBattle>();
+    bossBattle->SetStageBoss(BossKind::Slime);
+    m_mySceneObjects.push_back(bossBattle);
 
     //--------------------
     //プレイヤーの生成
     //--------------------
     CPlayer* player = Game::GetInstance()->AddObject<CPlayer>();
-    player->SetPosition(0.0f, -3.0f, -500.0f)->SetScale(1.0f, 1.0f, 1.0f);
+    player->SetPosition(ForestLayout::PathCenter(-850.0f), -3.0f, -850.0f)->SetScale(1.0f, 1.0f, 1.0f);
     m_mySceneObjects.push_back(player);
 
     //--------------------
@@ -64,7 +67,16 @@ void Stage1Scene::Init() {
     //--------------------
     Ground* plane = Game::GetInstance()->AddObject<Ground>();
     plane->SetPosition(0.0f, -5.0f, 0.0f)->SetScale(5000.0f, 5000.0f, 5000.0f);
+    plane->SetSurfaceVisible(false);
     m_mySceneObjects.push_back(plane);
+
+    m_mySceneObjects.push_back(Game::GetInstance()->AddObject<CForestStage>());
+
+    // 入り口から見える距離に最初の群れを配置する。
+    for (const auto& position : {Vector3(-65, 5, -350), Vector3(70, 5, -245), Vector3(-110, 5, -110)}) {
+        auto slime = Game::GetInstance()->AddObject<CEnemy>();
+        slime->SetPosition(position.x, position.y, position.z);
+    }
 
     //--------------------
     //敵の生成(自動で敵が出てくるので消してもよいけどDebug時に役に立つ)
@@ -137,6 +149,7 @@ void Stage1Scene::Init() {
     //敵キャラのスポーン
     // --------------------
     CEnemySpawn* pawner = Game::GetInstance()->AddObject<CEnemySpawn>();
+    pawner->m_slimesOnly = true;
     m_mySceneObjects.push_back(pawner);
 
     //--------------------

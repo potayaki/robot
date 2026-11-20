@@ -48,6 +48,43 @@ int main() {
         }
     }
     assert(debugGrowth.Choices().size() == 1 && debugGrowth.Choices()[0] == UpgradeId::Heal);
+
+    // 下げる操作も通常の下限を守り、報酬・経験値を巻き戻さない。
+    const auto maxedChoices = debugGrowth.Choices();
+    assert(!debugGrowth.DebugRemoveUpgrade(UpgradeId::Count));
+    assert(!debugGrowth.DebugRemoveUpgrade(UpgradeId::Heal));
+    assert(!debugGrowth.DebugRemoveUpgrade(static_cast<UpgradeId>(-1)));
+    assert(debugGrowth.Choices() == maxedChoices);
+    for (int i = 0; i < static_cast<int>(UpgradeId::Count); ++i) {
+        const auto id = static_cast<UpgradeId>(i);
+        const int maxRank = GetUpgradeDefinition(id).maxRank;
+        for (int rank = maxRank - 1; rank >= 0; --rank) {
+            assert(debugGrowth.DebugRemoveUpgrade(id));
+            assert(debugGrowth.Rank(id) == rank);
+            assert(debugGrowth.Level() == 2 && debugGrowth.PendingChoices() == 1);
+            assert(debugGrowth.Experience() == experienceBefore);
+            // 他は最大なので、戻したスキルだけが再び報酬候補になる。
+            assert(debugGrowth.Choices().size() == 1 && debugGrowth.Choices()[0] == id);
+        }
+        const auto zeroChoices = debugGrowth.Choices();
+        assert(!debugGrowth.DebugRemoveUpgrade(id) && debugGrowth.Rank(id) == 0);
+        assert(debugGrowth.Choices() == zeroChoices);
+        for (int rank = 1; rank <= maxRank; ++rank) {
+            assert(debugGrowth.DebugGrantUpgrade(id));
+            assert(debugGrowth.Rank(id) == rank);
+        }
+        assert(debugGrowth.Choices().size() == 1 && debugGrowth.Choices()[0] == UpgradeId::Heal);
+    }
+    SurvivorProgression noPending(20);
+    for (int i = 0; i < static_cast<int>(UpgradeId::Count); ++i) {
+        const auto id = static_cast<UpgradeId>(i);
+        assert(!noPending.DebugRemoveUpgrade(id));
+        assert(noPending.DebugGrantUpgrade(id));
+        assert(noPending.DebugRemoveUpgrade(id));
+        assert(noPending.Rank(id) == 0);
+        assert(noPending.Level() == 1 && noPending.Experience() == 0);
+        assert(noPending.PendingChoices() == 0 && noPending.Choices().empty());
+    }
 #endif
     SurvivorProgression growth(7);
     UpgradeId reward = UpgradeId::Heal;

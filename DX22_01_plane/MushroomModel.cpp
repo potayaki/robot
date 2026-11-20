@@ -3,6 +3,7 @@
 
 #include "MushroomModel.h"
 #include "FbxImportSettings.h"
+#include "EnemyTint.h"
 #include <algorithm>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -81,37 +82,72 @@ namespace {
     };
 } // namespace
 
+struct MushroomModel::Resources {
+    /// キノコモデルの頂点とインデックス。
+    MeshRenderer m_mesh;
+    /// 通常の照明付き描画シェーダー。
+    Shader m_normalShader;
+    /// 個体色より優先する自爆警告の赤色シェーダー。
+    Shader m_redShader;
+    /// 材質ごとの描画範囲。
+    std::vector<SUBSET> m_subsets;
+    /// サブセットごとの材質。
+    std::vector<std::unique_ptr<Material>> m_materials;
+    /// 同梱のベースカラー画像。
+    Texture m_texture;
+    /// 個体色を描画時だけ適用する共有資源。
+    std::shared_ptr<EnemyTint> m_tint;
+};
+
 bool MushroomModel::Init() {
+    static std::weak_ptr<Resources> cached;
+    if (auto resources = cached.lock()) {
+        m_resources = resources;
+        return true;
+    }
+    auto resources = std::make_shared<Resources>();
     MushroomMesh mesh;
     if (!mesh.Load()) {
         return false;
     }
-    m_mesh.Init(mesh);
-    m_subsets = mesh.m_subsets;
-    const bool textured = m_texture.Load("assets/model/mushroom/albedo.tga");
+    resources->m_mesh.Init(mesh);
+    resources->m_subsets = mesh.m_subsets;
+    const bool textured = resources->m_texture.Load("assets/model/mushroom/albedo.tga");
     {
         MATERIAL data{};
         data.Diffuse = Color(1, 1, 1, 1);
         data.TextureEnable = textured;
         auto material = std::make_unique<Material>();
         material->Create(data);
-        m_materials.push_back(std::move(material));
+        resources->m_materials.push_back(std::move(material));
     }
-    m_normalShader.Create("shader/litTextureVS.hlsl", "shader/litTexturePS.hlsl");
-    m_redShader.Create("shader/litTextureVS.hlsl", "shader/mushroomWarningPS.hlsl");
-    return !m_materials.empty() && !m_subsets.empty();
+    resources->m_normalShader.Create("shader/litTextureVS.hlsl", "shader/litTexturePS.hlsl");
+    resources->m_redShader.Create("shader/litTextureVS.hlsl", "shader/mushroomWarningPS.hlsl");
+    resources->m_tint = EnemyTint::Acquire();
+    if (resources->m_materials.empty() || resources->m_subsets.empty()) {
+        return false;
+    }
+    m_resources = resources;
+    cached = resources;
+    return true;
 }
 
-void MushroomModel::Draw(Camera* camera, Vector3 feet, float yaw, bool red) {
+void MushroomModel::Draw(Camera* camera, Vector3 feet, float yaw, bool red, float scale, const Color& tint) {
+    if (!m_resources || !camera) {
+        return;
+    }
     camera->SetCamera();
     // The upright model faces -Z; movement yaw uses +Z as its forward direction.
-    Matrix world = Matrix::CreateRotationY(yaw + DirectX::XM_PI) * Matrix::CreateTranslation(feet);
+    Matrix world = Matrix::CreateScale(scale) * Matrix::CreateRotationY(yaw + DirectX::XM_PI) *
+                   Matrix::CreateTranslation(feet);
     Renderer::SetWorldMatrix(&world);
-    (red ? m_redShader : m_normalShader).SetGPU();
-    m_mesh.BeforeDraw();
-    m_texture.SetGPU();
-    for (const auto& subset : m_subsets) {
-        m_materials[subset.MaterialIdx]->SetGPU();
-        m_mesh.DrawSubset(subset.IndexNum, subset.IndexBase, subset.VertexBase);
+    (red ? m_resources->m_redShader : m_resources->m_normalShader).SetGPU();
+    // 赤点滅は亜種・希少種でも優先し、自爆の予備動作を識別できるようにする。
+    EnemyTintScope tintScope(m_resources->m_tint, red ? Color(1, 1, 1, 0) : tint);
+    m_resources->m_mesh.BeforeDraw();
+    m_resources->m_texture.SetGPU();
+    for (const auto& subset : m_resources->m_subsets) {
+        m_resources->m_materials[subset.MaterialIdx]->SetGPU();
+        m_resources->m_mesh.DrawSubset(subset.IndexNum, subset.IndexBase, subset.VertexBase);
     }
 }

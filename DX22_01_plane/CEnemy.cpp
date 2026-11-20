@@ -6,6 +6,8 @@
 #include "Game.h"
 #include "CPlayer.h"
 #include "CPresentBox.h"
+#include "CForestStage.h"
+#include "EnemyCrowd.h"
 //ランダム
 #include <cstdlib>
 #include <cmath>
@@ -80,6 +82,7 @@ void CEnemy::Update() {
     }
 
     //移動-----------------------------------------------------------
+    const auto previousPosition = m_position;
     std::vector<CPlayer*> player = Game::GetInstance()->GetObjects<CPlayer>();
     if (!player.empty() && player[0] != nullptr) {
         DirectX::SimpleMath::Vector3 PlayerPos = player[0]->GetPosition();
@@ -87,17 +90,34 @@ void CEnemy::Update() {
         DirectX::SimpleMath::Vector3 dir = PlayerPos - m_position;
         dir.y = 0.0f;
 
-        float distance = dir.Length();
-
         if (dir.LengthSquared() > 0.0001f) {
-            dir.Normalize();
-
-            // 高速型は一定周期で短いダッシュを行う。
-            const float dash =
-                m_variant == SlimeVariant::Runner && m_moveTime < m_dashDuration ? m_dashMultiplier : 1.0f;
-            m_position += dir * m_speed * dash * deltaSeconds;
             m_rotation.y = atan2f(dir.x, dir.z);
         }
+
+        std::vector<EnemyCrowd::Neighbor> neighbors;
+        const auto slimes = Game::GetInstance()->GetObjects<CEnemy>();
+        neighbors.reserve(slimes.size());
+        for (auto slime : slimes) {
+            if (slime != this && !slime->IsDead() && slime->GetActive()) {
+                const auto sphere = slime->GetCollisionSphere();
+                neighbors.push_back({sphere.center, sphere.radius, reinterpret_cast<std::uintptr_t>(slime)});
+            }
+        }
+        // 高速型のダッシュも含めて移動量を制限し、大型・小型の半径で互いを押し分ける。
+        const float dash =
+            m_variant == SlimeVariant::Runner && m_moveTime < m_dashDuration ? m_dashMultiplier : 1.0f;
+        const float speed = m_speed * EnemyVariants::Get(GetRarity()).speedMultiplier * dash;
+        m_position = EnemyCrowd::Move(m_position, PlayerPos, GetCollisionSphere().radius,
+                                      player[0]->GetCollisionSphere().radius, speed, deltaSeconds, neighbors,
+                                      reinterpret_cast<std::uintptr_t>(this));
+
+        for (auto forest : Game::GetInstance()->GetObjects<CForestStage>()) {
+            m_position = forest->ConstrainMovement(previousPosition, m_position, GetCollisionSphere().radius);
+        }
+
+        auto separation = PlayerPos - m_position;
+        separation.y = 0;
+        const float distance = separation.Length();
 
         float hitRange = GetCollisionSphere().radius + player[0]->GetCollisionSphere().radius;
 
@@ -107,12 +127,6 @@ void CEnemy::Update() {
             m_attackTimer += m_contactInterval; // 接触攻撃は1秒間隔。
         }
     }
-
-    // 当たり判定の球は中心を半径分だけ地面から上げているため、モデルの底面が地面に合う位置へ下げる。
-    m_body->SetPosition(m_position.x, m_position.y - GetCollisionSphere().radius - SlimeModelBottomY * m_size,
-                        m_position.z);
-    m_body->SetRotation(
-        DirectX::SimpleMath::Vector3(m_rotation.x, m_rotation.y + SlimeFacingOffset, m_rotation.z));
 }
 
 void CEnemy::SetVariant(SlimeVariant variant) {
@@ -122,19 +136,31 @@ void CEnemy::SetVariant(SlimeVariant variant) {
                               : variant == SlimeVariant::Brute ? BruteStats
                                                                : NormalStats;
     m_size = stats.size;
-    m_hp = stats.hp;
+    m_hp = EnemyVariants::Health(stats.hp, GetRarity());
     m_speed = stats.speed;
     m_damage = stats.damage;
     m_experience = stats.experience;
     m_dropPercent = stats.presentChance;
-    if (m_body) {
-        m_body->SetScale(m_modelScale * m_size);
-    }
+}
+
+void CEnemy::SetRarity(EnemyRarity rarity) {
+    EnemyTarget::SetRarity(rarity);
+    // 体格・役割を保ち、再設定でもHP倍率を重ねない。
+    SetVariant(m_variant);
 }
 
 void CEnemy::Draw(Camera* cam) {
     if (m_body) {
-        m_body->Draw(cam);
+        // 生成直後はまだUpdateされていないため、モデルに保存した古い位置は使わない。
+        // 当たり判定の中心からモデル底面を下げ、既存の接地位置を維持する。
+        const DirectX::SimpleMath::Vector3 modelPosition(
+            m_position.x, m_position.y - GetCollisionSphere().radius - SlimeModelBottomY * m_size,
+            m_position.z);
+        const DirectX::SimpleMath::Vector3 rotation(m_rotation.x, m_rotation.y + SlimeFacingOffset,
+                                                    m_rotation.z);
+        const float scale = m_modelScale * m_size;
+        m_body->Draw(cam, modelPosition, rotation, DirectX::SimpleMath::Vector3(scale, scale, scale),
+                     EnemyVariants::Tint(EnemySpecies::Slime, GetRarity()));
     }
 }
 

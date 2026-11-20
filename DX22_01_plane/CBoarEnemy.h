@@ -28,6 +28,8 @@ public:
     /// 使用した資源を解放して終了する。
     void Uninit() override;
     void OnHit(int& damage) override;
+    /// 出現時の種別を設定し、最大HP・移動速度を初期化する。予備動作の秒数は維持する。
+    void SetRarity(EnemyRarity rarity) override;
 
     Collision::Sphere GetCollisionSphere() override {
         return {m_position, m_collisionRadius};
@@ -41,8 +43,10 @@ private:
     std::unique_ptr<BoarModel> m_model;
     /// Boarの接近・予備動作・突進・硬直を管理する状態。
     BoarCharge m_charge;
-    /// 現在の体力。0以下になると死亡処理を行う。
-    int m_hp = 8;
+    /// 通常種の最大HP。亜種・希少種の初期HPもこの値から計算する。
+    static constexpr int BaseHp = 8;
+    /// 現在の体力。出現時に種別の倍率を適用する。
+    int m_hp = BaseHp;
     /// 突進がプレイヤーへ命中したときに与えるダメージ量。
     int m_chargeDamage = 6;
     /// 撃破時にプレイヤーへ渡す経験値。

@@ -39,8 +39,14 @@ class Ground : public Object {
     int m_sizeX = 0;
     /// 地形グリッドのZ方向の分割数。
     int m_sizeZ = 0;
+    /// ステージ固有の地表メッシュがある場合に、重複する床描画を抑える。
+    bool m_surfaceVisible = true;
 
 public:
+    void SetSurfaceVisible(bool visible) {
+        m_surfaceVisible = visible;
+    }
+
     /// 使用前の状態と必要な資源を初期化する。
     void Init() override;
     /// 経過時間と入力に合わせて状態を更新する。

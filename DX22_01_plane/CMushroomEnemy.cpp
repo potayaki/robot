@@ -6,6 +6,7 @@
 #include "Ground.h"
 #include "CPlayer.h"
 #include "ExplosionManager.h"
+#include "CForestStage.h"
 #include <cmath>
 
 using namespace DirectX::SimpleMath;
@@ -20,6 +21,13 @@ void CMushroomEnemy::Init() {
     m_position.y = (grounds.empty() ? -5.0f : grounds[0]->GetPosition().y) + m_collisionRadius;
 }
 
+void CMushroomEnemy::SetRarity(EnemyRarity rarity) {
+    EnemyTarget::SetRarity(rarity);
+    m_hp = EnemyVariants::Health(BaseHp, GetRarity());
+    const MushroomFuse defaults;
+    m_fuse.m_speed = defaults.m_speed * EnemyVariants::Get(GetRarity()).speedMultiplier;
+}
+
 void CMushroomEnemy::Update() {
     if (IsDead()) {
         return;
@@ -30,6 +38,7 @@ void CMushroomEnemy::Update() {
         return;
     }
     auto player = players[0];
+    const auto previousPosition = m_position;
     Vector3 direction = player->GetPosition() - m_position;
     direction.y = 0;
     const float distance = direction.Length();
@@ -42,6 +51,9 @@ void CMushroomEnemy::Update() {
     const float groundY = grounds.empty() ? -5.0f : grounds[0]->GetPosition().y;
     // 跳ねるモデルに判定球を追従させる。予備動作に入ったら地面に接地する。
     m_position.y = groundY + m_collisionRadius + m_fuse.HopHeight();
+    for (auto forest : game->GetObjects<CForestStage>()) {
+        m_position = forest->ConstrainMovement(previousPosition, m_position, m_collisionRadius);
+    }
     if (!m_fuse.Exploded()) {
         return;
     }
@@ -62,7 +74,8 @@ void CMushroomEnemy::Update() {
 
 void CMushroomEnemy::Draw(Camera* camera) {
     if (m_model && !IsDead()) {
-        m_model->Draw(camera, m_position - Vector3(0, m_collisionRadius, 0), m_rotation.y, m_fuse.FlashRed());
+        m_model->Draw(camera, m_position - Vector3(0, m_collisionRadius, 0), m_rotation.y, m_fuse.FlashRed(),
+                      1.0f, EnemyVariants::Tint(EnemySpecies::Mushroom, GetRarity()));
     }
 }
 

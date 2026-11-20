@@ -1,6 +1,7 @@
 ﻿/// @brief 死亡時の記録とゲームオーバー画面。
 #pragma once
 #include "Scene.h"
+#include "BossCatalog.h"
 
 struct RunResult {
     /// 生存時間（秒）。停止中と死亡演出の時間は含めない。
@@ -11,8 +12,8 @@ struct RunResult {
     int level = 1;
     /// このプレイで1回以上倒したボスの種類数。
     int defeatedBossTypes = 0;
-    /// 実装済みのボスの全種類数。現在はスライムキングのみ。
-    static constexpr int TotalBossTypes = 1;
+    /// 実装済みのボスの全種類数。
+    static constexpr int TotalBossTypes = BossTypeCount;
 };
 
 class ResultScene : public Scene {

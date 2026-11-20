@@ -11,6 +11,8 @@
 #include "CMissile.h"
 #include "CAutoturret.h"
 #include "CBossBattle.h"
+#include "CForestStage.h"
+#include "ForestLayout.h"
 #include "AimCursor.h"
 #include "PoolManager.h"
 #include "imgui.h"
@@ -166,6 +168,7 @@ void CPlayer::Uninit() {
 }
 
 void CPlayer::Move() {
+    const Vector3 previousPosition = m_position;
     Camera* cam = Game::GetInstance()->GetCamera();
     float angle = cam->GetCameraDirection();
 
@@ -207,6 +210,10 @@ void CPlayer::Move() {
 
     if (Input::GetKeyTrigger(VK_SPACE) && m_isGrounded) {
         m_velocity.y = m_jumpSpeed;
+    }
+
+    for (auto forest : Game::GetInstance()->GetObjects<CForestStage>()) {
+        m_position = forest->ConstrainMovement(previousPosition, m_position, GetCollisionSphere().radius);
     }
 
     // 射撃位置を決める前に体全体をバリアの内側へ戻す。ジャンプ中も同じ境界を使う。

@@ -9,7 +9,7 @@ class CSpanner : public Object {
 public:
     // Drop chance for every enemy defeat, in percent. 0 = never, 100 = always.
     /// 敵撃破時に回復スパナが出現する確率（パーセント）。
-    inline static int m_spawnChancePercent = 15;
+    inline static int m_spawnChancePercent = 5;
     /// 拾ったときに最大HPの何パーセントを回復するか。
     int m_healPercent = 25;
     /// 回復スパナの基本倍率。脈動による拡縮を掛ける前の大きさ。

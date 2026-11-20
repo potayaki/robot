@@ -6,6 +6,7 @@
 #include "CPlayer.h"
 #include "CEnemy.h"
 #include "CBossBattle.h"
+#include "CForestStage.h"
 #include "imgui.h"
 #include <cmath>
 using namespace DirectX::SimpleMath;
@@ -22,6 +23,11 @@ void CGhostEnemy::Init() {
     }
     const auto grounds = Game::GetInstance()->GetObjects<Ground>();
     m_position.y = (grounds.empty() ? -5.0f : grounds[0]->GetPosition().y) + m_hoverHeight;
+}
+
+void CGhostEnemy::SetRarity(EnemyRarity rarity) {
+    EnemyTarget::SetRarity(rarity);
+    m_hp = EnemyVariants::Health(BaseHp, GetRarity());
 }
 
 std::vector<EnemyTarget*> CGhostEnemy::GetSupportTargets() const {
@@ -57,6 +63,8 @@ void CGhostEnemy::Update() {
     }
     auto player = players[0];
     const float dt = GameTime::DeltaSeconds();
+    const auto previousPosition = m_position;
+    const auto forests = Game::GetInstance()->GetObjects<CForestStage>();
     Vector3 direction = player->GetPosition() - m_position;
     direction.y = 0;
     const float distance = direction.Length();
@@ -65,23 +73,34 @@ void CGhostEnemy::Update() {
     } else {
         direction = Vector3(0, 0, 1);
     }
-    m_position += direction * GhostSupport::Travel(distance, m_moveSpeed, dt, m_nearDistance, m_farDistance);
+    const float speed = m_moveSpeed * EnemyVariants::Get(GetRarity()).speedMultiplier;
+    m_position += direction * GhostSupport::Travel(distance, speed, dt, m_nearDistance, m_farDistance);
     m_rotation.y = std::atan2(direction.x, direction.z);
     m_elapsed += dt;
     const auto grounds = Game::GetInstance()->GetObjects<Ground>();
     const float groundY = grounds.empty() ? -5.0f : grounds[0]->GetPosition().y;
     m_position.y = groundY + m_hoverHeight + std::sin(m_elapsed * 2.5f) * 4.0f;
+    for (auto forest : forests) {
+        m_position = forest->ConstrainMovement(previousPosition, m_position, CollisionRadius);
+    }
 
     const auto playerSphere = player->GetCollisionSphere();
     for (auto& shot : m_shots) {
         const Vector3 before = shot.position;
         shot.position += shot.velocity * (std::min)(dt, shot.remaining);
         shot.remaining -= dt;
+        for (auto forest : forests) {
+            const auto constrained = forest->ConstrainMovement(before, shot.position, ShotRadius);
+            if ((constrained - shot.position).LengthSquared() > 0.0001f) {
+                shot.position = constrained;
+                shot.remaining = 0;
+            }
+        }
         const float radius = playerSphere.radius + ShotRadius;
         // 移動区間全体で判定し、低FPSでもプレイヤーを飛び越えない。
         if (Collision::DistanceSquaredPointToSegment(playerSphere.center, {before, shot.position}) <=
             radius * radius) {
-            player->TakeDamage(m_shotDamage);
+            player->TakeDamage(SupportedOutgoingDamage(m_shotDamage));
             shot.remaining = 0;
         }
         if (shot.position.y <= groundY + ShotRadius) {
@@ -118,7 +137,8 @@ void CGhostEnemy::OnHit(int& damage) {
 
 void CGhostEnemy::Draw(Camera* camera) {
     if (m_model && !IsDead()) {
-        m_model->Draw(camera, m_position, m_rotation.y);
+        m_model->Draw(camera, m_position, m_rotation.y, 1.0f,
+                      EnemyVariants::Tint(EnemySpecies::Ghost, GetRarity()));
     }
 }
 

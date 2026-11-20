@@ -2,6 +2,7 @@
 /// @brief ゲーム内で使用する静的モデルの読込とサブセット描画。
 
 #include "TestModel.h"
+#include "EnemyTint.h"
 
 #include <cmath>
 #include <map>
@@ -54,6 +55,19 @@ namespace {
     };
 } // namespace
 
+struct TestModel::Resources {
+    /// モデルの頂点・インデックスを保持する共有GPU資源。
+    MeshRenderer m_mesh;
+    /// サブセットのMaterialIdxに対応する共有材質。
+    std::vector<std::unique_ptr<Material>> m_materials;
+    /// 材質ごとの描画範囲。
+    std::vector<SUBSET> m_subsets;
+    /// 材質に対応する共有テクスチャ。画像なしの場合はnullptr。
+    std::vector<std::unique_ptr<Texture>> m_textures;
+    /// 個体色を描画時だけ適用する共有資源。
+    std::shared_ptr<EnemyTint> m_tint;
+};
+
 std::shared_ptr<TestModel> TestModel::AcquireShared(std::weak_ptr<TestModel>& cachedModel,
                                                     const char* modelFile, const char* textureDirectory) {
     if (auto model = cachedModel.lock()) {
@@ -71,6 +85,7 @@ std::shared_ptr<TestModel> TestModel::AcquireShared(std::weak_ptr<TestModel>& ca
 //初期化処理
 //=======================================
 void TestModel::Init() {
+    m_resources.reset();
     // シェーダオブジェクト生成
     m_shader.Create("shader/litTextureVS.hlsl", "shader/litTexturePS.hlsl");
 
@@ -91,8 +106,15 @@ void TestModel::Draw(Camera* camera) {
     Draw(camera, m_position, m_rotation, m_scale);
 }
 
+void TestModel::Draw(Camera* camera, const Color& tint) {
+    Draw(camera, m_position, m_rotation, m_scale, tint);
+}
+
 void TestModel::Draw(Camera* camera, const Vector3& worldPosition, const Vector3& rotationRadians,
-                     const Vector3& modelScale) {
+                     const Vector3& modelScale, const Color& tint) {
+    if (!m_resources || !camera) {
+        return;
+    }
     camera->SetCamera();
 
     // 姿勢は描画のたびに組み立てるため、同じメッシュを使う弾もそれぞれの位置・向きで描ける。
@@ -101,20 +123,32 @@ void TestModel::Draw(Camera* camera, const Vector3& worldPosition, const Vector3
     Matrix world = Matrix::CreateScale(modelScale) * rotation * Matrix::CreateTranslation(worldPosition);
     Renderer::SetWorldMatrix(&world);
     m_shader.SetGPU();
-    m_meshRenderer.BeforeDraw();
+    EnemyTintScope tintScope(m_resources->m_tint, tint);
+    m_resources->m_mesh.BeforeDraw();
 
-    for (const auto& subset : m_subsets) {
-        Material& material = *m_materials[subset.MaterialIdx];
+    for (const auto& subset : m_resources->m_subsets) {
+        Material& material = *m_resources->m_materials[subset.MaterialIdx];
         material.SetGPU();
         if (material.isTextureEnable()) {
-            m_textures[subset.MaterialIdx]->SetGPU();
+            m_resources->m_textures[subset.MaterialIdx]->SetGPU();
         }
-        m_meshRenderer.DrawSubset(subset.IndexNum, subset.IndexBase, subset.VertexBase);
+        m_resources->m_mesh.DrawSubset(subset.IndexNum, subset.IndexBase, subset.VertexBase);
     }
 }
 
 void TestModel::Load(std::string modelFile, std::string texDirectory, std::string overrideTextureFile,
                      bool smoothNormals) {
+    // 群れの各個体でFBXの再解析・画像再読込を繰り返さない。姿勢はTestModel自身に保持する。
+    using CacheKey = std::tuple<std::string, std::string, std::string, bool>;
+    static std::map<CacheKey, std::weak_ptr<Resources>> cached;
+    std::erase_if(cached, [](const auto& entry) { return entry.second.expired(); });
+    const CacheKey key{modelFile, texDirectory, overrideTextureFile, smoothNormals};
+    if (auto existing = cached[key].lock()) {
+        m_resources = existing;
+        return;
+    }
+    auto resources = std::make_shared<Resources>();
+    resources->m_tint = EnemyTint::Acquire();
     // メッシュ読み込み
     SmoothStaticMesh staticmesh;
 
@@ -124,38 +158,41 @@ void TestModel::Load(std::string modelFile, std::string texDirectory, std::strin
         // 同じ位置の頂点の法線を平均し、輪郭や UV は変えずに面の陰影だけを滑らかにする。
         staticmesh.SmoothNormals(80.0f);
     }
-    m_meshRenderer.Init(staticmesh);
+    resources->m_mesh.Init(staticmesh);
 
     // サブセット情報・テクスチャ情報取得
-    m_subsets = staticmesh.GetSubsets();
-    m_textures = staticmesh.GetTextures();
+    resources->m_subsets = staticmesh.GetSubsets();
+    resources->m_textures = staticmesh.GetTextures();
 
     // マテリアル情報取得
     std::vector<MATERIAL> materials = staticmesh.GetMaterials();
-    m_textures.resize(materials.size());
+    resources->m_textures.resize(materials.size());
 
     // FBX が参照する元画像が手元にないモデルには、指定された画像を割り当てる。
     for (size_t i = 0; i < materials.size(); ++i) {
         if (!overrideTextureFile.empty()) {
             auto texture = std::make_unique<Texture>();
             if (texture->Load(overrideTextureFile)) {
-                m_textures[i] = std::move(texture);
+                resources->m_textures[i] = std::move(texture);
             }
         }
 
         // FBX に画像名があっても読み込みに失敗すると nullptr のままなので、
         // 実際に読み込めた画像がある場合にだけテクスチャを有効にする。
-        materials[i].TextureEnable = i < m_textures.size() && m_textures[i] != nullptr;
+        materials[i].TextureEnable = i < resources->m_textures.size() && resources->m_textures[i] != nullptr;
     }
 
     // 描画時にサブセットの MaterialIdx が使えるよう、元の材質順を保つ。
-    m_materials.clear();
     for (const auto& material : materials) {
-        m_materials.push_back(std::make_unique<Material>(material));
+        resources->m_materials.push_back(std::make_unique<Material>(material));
     }
+    m_resources = resources;
+    cached[key] = resources;
 }
 
 //=======================================
 //終了処理
 //=======================================
-void TestModel::Uninit() {}
+void TestModel::Uninit() {
+    m_resources.reset();
+}

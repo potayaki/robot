@@ -70,6 +70,9 @@ void Ground::Update() {}
 //描画処理
 //=======================================
 void Ground::Draw(Camera* cam) {
+    if (!m_surfaceVisible) {
+        return;
+    }
     //カメラを選択する
     cam->SetCamera();
 

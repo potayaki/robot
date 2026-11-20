@@ -66,9 +66,26 @@ void CPlayer::GivePresentReward() {
 }
 
 void CPlayer::ApplyUpgradeEffects(UpgradeId id, bool fromPresent) {
+    RefreshUpgradeStats(id);
+
+    // 回復は取得した瞬間だけ行い、デバッグでレベルを下げる場合には適用しない。
+    if (id == UpgradeId::Vitality) {
+        Heal(UpgradeBalance::VitalityPerRank);
+    }
+    if (id == UpgradeId::Heal) {
+        Heal(UpgradeBalance::RecoveryHp);
+    }
+
+    // 獲得経路だけ表示を変え、武器の強化内容は共通にする。
+    m_rewardNotice = reinterpret_cast<const char*>(fromPresent ? u8"プレゼント獲得： " : u8"強化獲得： ");
+    m_rewardNotice += reinterpret_cast<const char*>(GetUpgradeDefinition(id).name);
+    m_rewardNoticeTime = m_rewardNoticeDuration;
+}
+
+void CPlayer::RefreshUpgradeStats(UpgradeId id) {
     // この関数が呼ばれる時点で、SurvivorProgression側のランク更新は完了している。
     // 通常弾・ミサイルの威力や誘導は発射時に読み取り、ここでは即時反映が必要な物を扱う。
-    // 抽選側が確定したランクから性能を計算し、重複取得は同じ武器の強化として扱う。
+    // 確定したランクから性能を再計算し、強化の増減を同じ経路で反映する。
     m_bulletTime = UpgradeBalance::BulletInterval *
                    std::pow(UpgradeBalance::ReloadMultiplier, m_progression.Rank(UpgradeId::RapidFire));
     m_missileTime = UpgradeBalance::MissileInterval *
@@ -76,21 +93,19 @@ void CPlayer::ApplyUpgradeEffects(UpgradeId id, bool fromPresent) {
     m_currentBulletTime = (std::min)(m_currentBulletTime, m_bulletTime);
     m_currentMissileTime = (std::min)(m_currentMissileTime, m_missileTime);
 
-    // 取得時だけ発生させる効果。再計算のたびにHPや弾数を増やさないようIDで分岐する。
+    // 増減どちらでも現在のランクに合わせる。別項目の調整では装備を作り直さない。
     if (id == UpgradeId::MissileVolley) {
-        SetCurRocket(m_currentRocketCount + 1);
+        SetCurRocket(1 + m_progression.Rank(id));
     }
     if (id == UpgradeId::Vitality) {
-        Heal(UpgradeBalance::VitalityPerRank);
-    }
-    if (id == UpgradeId::Heal) {
-        Heal(UpgradeBalance::RecoveryHp);
+        m_hp = (std::min)(m_hp, GetMaxHp());
     }
     if (id == UpgradeId::Orbit) {
-        CreateOrbs(1 + m_progression.Rank(id));
+        const int rank = m_progression.Rank(id);
+        CreateOrbs(rank > 0 ? 1 + rank : 0);
     }
 
-    // 初回だけ召喚し、取得済みなら同じ相棒の性能を更新する。
+    // 未取得なら解除し、取得済みなら同じ相棒の性能を更新する。
     if (id == UpgradeId::Turret) {
         DeployTurret();
     }
@@ -102,11 +117,6 @@ void CPlayer::ApplyUpgradeEffects(UpgradeId id, bool fromPresent) {
     if (id == UpgradeId::Lightning) {
         m_lightningTimer = 0;
     }
-
-    // 獲得経路だけ表示を変え、武器の強化内容は共通にする。
-    m_rewardNotice = reinterpret_cast<const char*>(fromPresent ? u8"プレゼント獲得： " : u8"強化獲得： ");
-    m_rewardNotice += reinterpret_cast<const char*>(GetUpgradeDefinition(id).name);
-    m_rewardNoticeTime = m_rewardNoticeDuration;
 }
 
 #ifdef _DEBUG
@@ -116,6 +126,18 @@ bool CPlayer::DebugGiveUpgrade(UpgradeId id) {
     }
     // ランクだけ変えず、オーブ生成・砲台性能・最大HPなども通常取得と同じ経路で反映する。
     ApplyUpgradeEffects(id, false);
+    return true;
+}
+
+bool CPlayer::DebugRemoveUpgrade(UpgradeId id) {
+    if (m_hp <= 0 || !m_progression.DebugRemoveUpgrade(id)) {
+        return false;
+    }
+    RefreshUpgradeStats(id);
+    m_rewardNotice = reinterpret_cast<const char*>(u8"スキル変更： ");
+    m_rewardNotice += reinterpret_cast<const char*>(GetUpgradeDefinition(id).name);
+    m_rewardNotice += " Lv." + std::to_string(m_progression.Rank(id));
+    m_rewardNoticeTime = m_rewardNoticeDuration;
     return true;
 }
 #endif
@@ -155,10 +177,15 @@ void CPlayer::DeployTurret() {
     }
     // 毎回Spawnすると位置・視線・攻撃待ち時間が初期化されるため、未出現時だけ呼ぶ。
     auto turret = managers[0]->GetPool().front();
+    const int rank = m_progression.Rank(UpgradeId::Turret);
+    if (rank == 0) {
+        turret->SetActive(false);
+        return;
+    }
     if (!turret->GetActive()) {
         turret->Spawn(GetTurretFollowPosition());
     }
-    turret->ConfigureUpgrade(m_progression.Rank(UpgradeId::Turret));
+    turret->ConfigureUpgrade(rank);
 }
 
 void CPlayer::UpdateAutoWeapons() {

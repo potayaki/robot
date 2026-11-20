@@ -4,6 +4,8 @@
 #include "CBossBattle.h"
 #include "CBossEnemy.h"
 #include "CPlayer.h"
+#include "CForestStage.h"
+#include "ForestLayout.h"
 #include "Game.h"
 #include "Ground.h"
 #include "imgui.h"
@@ -16,6 +18,11 @@ namespace {
 
     const char* Text(const char8_t* text) {
         return reinterpret_cast<const char*>(text);
+    }
+
+    const char8_t* AreaName(ForestLayout::Area area) {
+        constexpr const char8_t* names[] = {u8"森の入口", u8"野営地", u8"砦の中庭", u8"砦の最奥"};
+        return names[static_cast<size_t>(area)];
     }
 } // namespace
 
@@ -57,8 +64,8 @@ void CBossBattle::RemoveNormalEnemies() {
 }
 
 float CBossBattle::GetBossSpawnDistance() const {
-    // ボスの半径35と壁際の余裕15を残す。開始直後の接触を避けるため最低70離す。
-    const float maximum = (std::max)(70.0f, m_arenaRadius - 50.0f);
+    // 種類ごとの体格と壁際の余裕15を残し、開始直後の接触を避ける。
+    const float maximum = (std::max)(70.0f, m_arenaRadius - BossRadius(m_roster.Next()) - 15.0f);
     return std::clamp(m_bossSpawnDistance, 70.0f, maximum);
 }
 
@@ -67,10 +74,19 @@ void CBossBattle::BeginBattle(CPlayer* player) {
         return;
     }
     m_progress.Begin();
+    m_activeKind = m_roster.Next();
     m_victoryNotice = 0;
     m_position = player->GetPosition(); // 開始地点を固定し、プレイヤーについてこないバリアにする。
     const auto grounds = Game::GetInstance()->GetObjects<Ground>();
     m_position.y = grounds.empty() ? -5.0f : grounds[0]->GetPosition().y;
+    const auto forests = Game::GetInstance()->GetObjects<CForestStage>();
+    const bool forest = !forests.empty();
+    m_battleArea = forest ? forests[0]->GetArea(player->GetPosition()) : ForestLayout::Area::Entrance;
+    if (forest) {
+        // 最大の攻撃範囲である胞子の半径まで中心を内側に置き、矩形とバリアの補正を両立する。
+        constexpr float ArenaCenterMargin = 55.0f;
+        m_position = ForestLayout::ConstrainRoom(m_position, ArenaCenterMargin, m_battleArea);
+    }
     RemoveNormalEnemies();
 
     // カメラの前方に出す。開始直後からプレイヤーと接触しない距離を確保する。
@@ -78,9 +94,42 @@ void CBossBattle::BeginBattle(CPlayer* player) {
     const float angle = Game::GetInstance()->GetCamera()->GetCameraDirection();
     const Vector3 forward(-std::sin(angle), 0, -std::cos(angle));
     const float spawnDistance = GetBossSpawnDistance();
-    const Vector3 position = m_position + forward * spawnDistance + Vector3(0, 35.0f, 0);
+    const Vector3 height(0, BossHeight(m_activeKind), 0);
+    Vector3 position = m_position + forward * spawnDistance + height;
+    if (forest) {
+        // 壁際でカメラ正面が森の外を向く場合も、プレイヤーから離して配置する。
+        const float roomLowZ = ForestLayout::RoomMinZ(m_battleArea);
+        const float roomHighZ = ForestLayout::RoomMaxZ(m_battleArea);
+        Vector3 inward((ForestLayout::MinX + ForestLayout::MaxX) * 0.5f - m_position.x, 0,
+                       (roomLowZ + roomHighZ) * 0.5f - m_position.z);
+        if (inward.LengthSquared() < 0.0001f) {
+            inward = forward;
+        }
+        inward.Normalize();
+        position = ConstrainPosition(m_position + inward * spawnDistance + height, BossRadius(m_activeKind));
+        constexpr int SpawnDirections = 8;
+        constexpr float MinimumBossSpawnDistance = 70.0f;
+        for (int i = 0; i < SpawnDirections; ++i) {
+            const float candidateAngle = angle + DirectX::XM_2PI * i / SpawnDirections;
+            const Vector3 direction(-std::sin(candidateAngle), 0, -std::cos(candidateAngle));
+            const Vector3 candidate = m_position + direction * spawnDistance + height;
+            const Vector3 constrained = ConstrainPosition(candidate, BossRadius(m_activeKind));
+            Vector3 offset = constrained - player->GetPosition();
+            offset.y = 0;
+            if (offset.LengthSquared() >= MinimumBossSpawnDistance * MinimumBossSpawnDistance) {
+                position = constrained;
+                break;
+            }
+        }
+    }
     auto boss = Game::GetInstance()->AddObject<CBossEnemy>();
-    boss->Configure(m_bossHp, position);
+    boss->Configure(m_bossHp, position, m_activeKind);
+    if (m_stageBossKind) {
+        m_roster.SelectNext(*m_stageBossKind);
+    }
+#ifdef _DEBUG
+    m_debugBossSelected = false;
+#endif
 }
 
 void CBossBattle::Update() {
@@ -110,7 +159,26 @@ void CBossBattle::Update() {
         }
     }
 
-    bool start = m_progress.ShouldStart(player->GetKills());
+    const auto forests = Game::GetInstance()->GetObjects<CForestStage>();
+    CForestStage* forest = forests.empty() ? nullptr : forests[0];
+    if (forest && !IsBattleActive()) {
+        const auto area = forest->GetArea(player->GetPosition());
+        if (area != m_currentArea) {
+            m_currentArea = area;
+            m_progress.Finish(player->GetKills());
+            // 前の部屋の敵を持ち越さず、新しいエリアの種類と出現上限へ切り替える。
+            RemoveNormalEnemies();
+        }
+        m_stageBossKind = forest->NextBoss(area);
+#ifdef _DEBUG
+        if (!m_debugBossSelected)
+#endif
+        {
+            m_roster.SelectNext(*m_stageBossKind);
+        }
+    }
+    const bool cleared = forest && forest->IsAreaCleared(m_currentArea);
+    bool start = !cleared && m_progress.ShouldStart(player->GetKills());
 #ifdef _DEBUG
     start = start || m_requestStart;
     m_requestStart = false;
@@ -127,19 +195,35 @@ void CBossBattle::Update() {
     }
 }
 
-void CBossBattle::OnBossDefeated() {
-    if (!IsBattleActive()) {
+void CBossBattle::OnBossDefeated(BossKind kind) {
+    if (!IsBattleActive() || kind != m_activeKind) {
         return;
     }
     const auto players = Game::GetInstance()->GetObjects<CPlayer>();
     m_progress.Finish(players.empty() ? 0 : players[0]->GetKills());
     m_victoryNotice = 4.0f;
-    m_defeatedSlimeKing = true;
+    m_roster.RecordDefeat(kind);
+    for (auto forest : Game::GetInstance()->GetObjects<CForestStage>()) {
+        forest->OnBossDefeated(kind, m_battleArea);
+        m_stageBossKind = forest->NextBoss(m_battleArea);
+        if (forest->IsComplete()) {
+            RemoveNormalEnemies();
+        }
+    }
+    if (m_stageBossKind) {
+        m_roster.SelectNext(*m_stageBossKind);
+    }
 }
 
 Vector3 CBossBattle::ConstrainPosition(const Vector3& position, float bodyRadius) const {
-    return IsBattleActive() ? BossArena::ClampPosition(position, m_position, m_arenaRadius, bodyRadius)
-                            : position;
+    if (!IsBattleActive()) {
+        return position;
+    }
+    Vector3 result = position;
+    if (!Game::GetInstance()->GetObjects<CForestStage>().empty()) {
+        result = ForestLayout::ConstrainRoom(result, bodyRadius, m_battleArea);
+    }
+    return BossArena::ClampPosition(result, m_position, m_arenaRadius, bodyRadius);
 }
 
 void CBossBattle::DrawUI() {
@@ -147,6 +231,8 @@ void CBossBattle::DrawUI() {
     if (players.empty() || players[0]->GetHp() <= 0) {
         return;
     }
+    const auto forests = Game::GetInstance()->GetObjects<CForestStage>();
+    CForestStage* forest = forests.empty() ? nullptr : forests[0];
     const auto display = ImGui::GetIO().DisplaySize;
     ImGui::SetNextWindowPos(ImVec2(display.x * 0.5f, 174), 0, ImVec2(0.5f, 0));
     ImGui::SetNextWindowSize(ImVec2((std::min)(560.0f, display.x * 0.48f), 0));
@@ -154,29 +240,42 @@ void CBossBattle::DrawUI() {
     constexpr auto flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
                            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
     ImGui::Begin("BossStatus", nullptr, flags);
+    if (forest) {
+        ImGui::TextUnformatted(Text(AreaName(forest->GetArea(players[0]->GetPosition()))));
+    }
     if (IsBattleActive()) {
-        ImGui::TextColored(ImVec4(1, 0.72f, 0.3f, 1), "%s", Text(u8"BOSS : スライムキング"));
+        ImGui::TextColored(ImVec4(1, 0.72f, 0.3f, 1), "BOSS  %s", Text(BossName(m_activeKind)));
         if (auto boss = GetBoss()) {
             char hp[64];
             snprintf(hp, sizeof(hp), "%d / %d", boss->GetHp(), boss->GetMaxHp());
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.8f, 0.16f, 0.12f, 1));
             ImGui::ProgressBar(static_cast<float>(boss->GetHp()) / boss->GetMaxHp(), ImVec2(-1, 20), hp);
             ImGui::PopStyleColor();
-            const auto phase = boss->GetPhase();
-            const char8_t* notice = u8"バリアの中でボスを倒せ！";
-            if (phase == CBossEnemy::Phase::Windup) {
-                notice = u8"突進の予備動作！ 横へ避けよう";
-            } else if (phase == CBossEnemy::Phase::Charge) {
-                notice = u8"突進中！";
-            } else if (phase == CBossEnemy::Phase::Recover) {
-                notice = u8"ボスが休んでいる！ 攻撃のチャンス";
-            }
-            ImGui::TextWrapped("%s", Text(notice));
+            ImGui::TextWrapped("%s", Text(boss->GetAttackNotice()));
         }
+    } else if (forest && forest->IsComplete()) {
+        ImGui::TextColored(ImVec4(0.5f, 1, 0.7f, 1), "%s", Text(u8"砦を攻略した！ 全エリア制圧"));
+        ImGui::TextWrapped("%s", Text(u8"森から砦の最奥まで、自由に探索できます"));
     } else if (m_victoryNotice > 0) {
         ImGui::TextColored(ImVec4(0.5f, 1, 0.7f, 1), "%s", Text(u8"ボス撃破！ バリア解除"));
+    } else if (forest && forest->IsAreaCleared(m_currentArea)) {
+        const auto gateIndex = static_cast<size_t>(m_currentArea);
+        if (forest->IsGateOpen(gateIndex)) {
+            const auto nextArea = static_cast<ForestLayout::Area>(gateIndex + 1);
+            ImGui::TextWrapped(Text(u8"門が開いた！ 奥の%sへ進もう"), Text(AreaName(nextArea)));
+        } else {
+            ImGui::TextWrapped("%s", Text(u8"門が開いています……"));
+        }
     } else {
-        ImGui::Text(Text(u8"次のボスまで あと %d 体"), m_progress.RemainingKills(players[0]->GetKills()));
+        ImGui::Text(Text(u8"%s まで あと %d 体"), Text(BossName(m_roster.Next())),
+                    m_progress.RemainingKills(players[0]->GetKills()));
+    }
+    if (forest && !IsBattleActive() && !forest->IsAreaCleared(m_currentArea)) {
+        const auto target = forest->NextBoss(m_currentArea);
+        const char8_t* objective = m_currentArea == ForestLayout::Area::Keep
+                                       ? u8"%sを倒して砦の最奥を制圧しよう"
+                                       : u8"%sを倒して奥の門を開こう";
+        ImGui::TextWrapped(Text(objective), Text(BossName(target)));
     }
     ImGui::End();
 }
@@ -188,6 +287,16 @@ void CBossBattle::DrawDebugUI() {
     }
     // 戦闘中にバリアや最大HPが飛び変わらないよう、設定は次の戦闘前だけ編集する。
     ImGui::BeginDisabled(IsBattleActive());
+    if (ImGui::BeginCombo(Text(u8"次に出すボス"), Text(BossName(m_roster.Next())))) {
+        for (int index = 0; index < BossTypeCount; ++index) {
+            const auto kind = static_cast<BossKind>(index);
+            if (ImGui::Selectable(Text(BossName(kind)), kind == m_roster.Next())) {
+                m_roster.SelectNext(kind);
+                m_debugBossSelected = true;
+            }
+        }
+        ImGui::EndCombo();
+    }
     ImGui::SliderInt(Text(u8"出現までの撃破数"), &m_progress.m_killsPerBoss, 1, 500, "%d",
                      ImGuiSliderFlags_AlwaysClamp);
     ImGui::SliderInt(Text(u8"ボス最大HP"), &m_bossHp, 1, 5000, "%d", ImGuiSliderFlags_AlwaysClamp);

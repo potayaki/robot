@@ -32,8 +32,16 @@ $cases = @(
     @{ Name = 'GameTimeTests'; Sources = @() },
     @{ Name = 'SkyCycleTests'; Sources = @() },
     @{ Name = 'BossBattleTests'; Sources = @() },
+    @{ Name = 'BossAttackTests'; Sources = @() },
+    @{ Name = 'ForestStageTests'; Sources = @() },
+    @{ Name = 'ForestGateTests'; Sources = @() },
     @{ Name = 'BoarChargeTests'; Sources = @() },
     @{ Name = 'MushroomFuseTests'; Sources = @() },
+    @{ Name = 'EnemyRarityTests'; Sources = @() },
+    @{ Name = 'EnemySpawnTests'; Sources = @() },
+    @{ Name = 'EnemyCrowdTests'; Sources = @() },
+    @{ Name = 'EnemyTintTests'; Sources = @('EnemyTint.cpp') },
+    @{ Name = 'ExplosionRenderTests'; Sources = @('billboard.cpp', 'Object.cpp', 'Shader.cpp', 'Texture.cpp', 'stb_image.cpp') },
     @{ Name = 'BulletHomingTests'; Sources = @() },
     @{ Name = 'EyeTurretTests'; Sources = @() },
     @{ Name = 'MissileFlightTests'; Sources = @('Bezier.cpp') },
@@ -71,7 +79,7 @@ exit /b %errorlevel%
             if ($LASTEXITCODE -ne 0) { throw "$($case.Name) compilation failed." }
         } finally { Pop-Location }
         # この描画テストはゲームと同じ相対パスでHLSLを読み込む。
-        $runDirectory = if ($case.Name -eq 'LowHealthGlitchTests') {
+        $runDirectory = if ($case.Name -in @('LowHealthGlitchTests', 'ExplosionRenderTests', 'EnemyTintTests')) {
             Join-Path $repoRoot 'DX22_01_plane'
         } else { $repoRoot }
         Push-Location $runDirectory

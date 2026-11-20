@@ -15,16 +15,9 @@
 
 class TestModel : public Object {
 private:
-    /// モデルを描く全インスタンスで共有する頂点・インデックスバッファ。
-    MeshRenderer m_meshRenderer;
-
-    /// 各サブセットの MaterialIdx で参照する材質の一覧。
-    std::vector<std::unique_ptr<Material>> m_materials;
-    /// モデル内の描画範囲と、その範囲に使う材質の番号。
-    std::vector<SUBSET> m_subsets;
-
-    /// 材質と同じ番号で参照するテクスチャ。画像のない材質では nullptr。
-    std::vector<std::unique_ptr<Texture>> m_textures;
+    struct Resources;
+    /// 同じ読込設定を使う個体間で共有するメッシュ・材質・テクスチャ。
+    std::shared_ptr<Resources> m_resources;
 
 public:
     /// 同じモデルを使うオブジェクト同士で、メッシュ・材質・テクスチャを共有する。
@@ -39,13 +32,16 @@ public:
     void Update() override;
     /// このモデル自身が保持する位置・回転・倍率で描画する。
     void Draw(Camera* camera) override;
+    /// 現在の姿勢で個体色を適用する。tintのAは着色率で、透明度は変更しない。
+    void Draw(Camera* camera, const DirectX::SimpleMath::Color& tint);
     /// 同じモデルを共有する弾などが、自分の位置・回転・倍率で描画するときに使う。
     /// @param worldPosition モデルの原点を配置するワールド座標。
     /// @param rotationRadians X 軸のピッチ、Y 軸のヨー、Z 軸のロール（ラジアン）。
     /// @param modelScale モデルのローカル X・Y・Z 軸に沿った拡大率。
     void Draw(Camera* camera, const DirectX::SimpleMath::Vector3& worldPosition,
               const DirectX::SimpleMath::Vector3& rotationRadians,
-              const DirectX::SimpleMath::Vector3& modelScale);
+              const DirectX::SimpleMath::Vector3& modelScale,
+              const DirectX::SimpleMath::Color& tint = DirectX::SimpleMath::Color(1, 1, 1, 0));
     /// 使用した資源を解放して終了する。
     void Uninit() override;
 

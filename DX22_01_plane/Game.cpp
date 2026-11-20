@@ -7,6 +7,9 @@
 #include "Renderer.h"
 #include "input.h"
 #include "billboard.h"
+#include "ExplosionManager.h"
+#include "CParticle.h"
+#include "CMissile.h"
 
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
@@ -14,6 +17,7 @@
 #include "CPlayer.h"
 #include "CAutoturret.h"
 #include "CBossBattle.h"
+#include "CBossEnemy.h"
 #include "CBoarEnemy.h"
 #include "CGhostEnemy.h"
 #include "PoolManager.h"
@@ -22,11 +26,9 @@
 
 #ifdef _DEBUG
 #include "CPlayerUI.h"
-#include "CParticle.h"
 #include "CEnemy.h"
 #include "EnemyTarget.h"
 #include "CBullet.h"
-#include "CMissile.h"
 #include "CPresentBox.h"
 #include "CSpanner.h"
 #include "CStagePrimitive.h"
@@ -459,20 +461,26 @@ void Game::Draw() {
     // 空を最背面に描いてから、その時間帯の光で地形・敵・プレイヤーを描く。
     m_instance->m_sky.Draw(&m_instance->m_camera);
 
-    // テストオブジェクト描画
+    // 透明な爆発と粒子は、生成された順番に関係なく本体の後で描く。
+    const auto isEffect = [](Object* object) {
+        return dynamic_cast<ParticleManager*>(object) != nullptr ||
+               dynamic_cast<ExplosionManager*>(object) != nullptr ||
+               dynamic_cast<billboard*>(object) != nullptr ||
+               dynamic_cast<ExplosinManager*>(object) != nullptr;
+    };
     for (auto& a : m_instance->m_objects) {
-        if (!a->IsDead() && dynamic_cast<ParticleManager*>(a.get()) == nullptr) {
+        if (!a->IsDead() && !isEffect(a.get())) {
             a->Draw(&m_instance->m_camera);
-        }
-    }
-    // 加算合成の粒子は、後から出現した敵も含めて本体を描いた後に重ねる。
-    for (auto particles : m_instance->GetObjects<ParticleManager>()) {
-        if (!particles->IsDead()) {
-            particles->Draw(&m_instance->m_camera);
         }
     }
     if (m_instance->m_scene) {
         m_instance->m_scene->Draw(&m_instance->m_camera);
+    }
+    // 地形の深度で手前の壁を判定しつつ、奥の敵には爆発の色を重ねる。
+    for (auto& a : m_instance->m_objects) {
+        if (!a->IsDead() && isEffect(a.get())) {
+            a->Draw(&m_instance->m_camera);
+        }
     }
 
     // 突進の予測線は半透明なので、地面や敵を描き終えてから重ねる。
@@ -490,6 +498,9 @@ void Game::Draw() {
 
     for (auto ghost : m_instance->GetObjects<CGhostEnemy>()) {
         ghost->DrawEffects(&m_instance->m_camera);
+    }
+    for (auto boss : m_instance->GetObjects<CBossEnemy>()) {
+        boss->DrawEffects(&m_instance->m_camera);
     }
 
     // 透明なバリアは地形と敵を描き終えてから重ねる。

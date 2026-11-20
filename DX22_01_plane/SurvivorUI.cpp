@@ -11,6 +11,7 @@
 #include "CBossBattle.h"
 #include "CBoarEnemy.h"
 #include "CGhostEnemy.h"
+#include "EnemyRarity.h"
 #endif
 
 namespace {
@@ -37,7 +38,7 @@ void CPlayer::DrawSurvivorDebugUI() {
     }
 
     // ウィンドウ全体をスクロールできるため、画面の高さが小さくても全スキルを選べる。
-    ImGui::TextUnformatted(Text(u8"スキル名をクリックで取得 / 1段階強化"));
+    ImGui::TextWrapped("%s", Text(u8"スキル名で1段階強化 / -1で1段階下げる（Lv.0で解除）"));
     if (ImGui::Checkbox(Text(u8"ゲーム一時停止"), &m_debugPaused)) {
         // チェックを切り替えたフレームから自由視点を使い、解除時には保存した視点へ戻す。
         Game::GetInstance()->GetCamera()->SetDebugFreeCamera(m_debugPaused);
@@ -126,19 +127,65 @@ void CPlayer::DrawSurvivorDebugUI() {
             ImGui::PushID(spawner);
             ImGui::Checkbox(Text(u8"敵の自動出現"), &spawner->m_debugSpawnEnabled);
             // 上限を下げても現在の敵は削除せず、次回以降の自動出現を制限する。
-            ImGui::SliderInt(Text(u8"敵の出現上限"), &spawner->m_maxEnemyCount, 1, 60, "%d",
+            ImGui::SliderInt(Text(u8"開始時の出現上限"), &spawner->m_maxEnemyCount, 0,
+                             EnemySpawning::AliveLimit, "%d", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SliderInt(Text(u8"開始時の1回の出現数"), &spawner->m_enemyCount, 0,
+                             EnemySpawning::PackLimit, "%d", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SliderFloat(Text(u8"開始時の出現間隔（秒）"), &spawner->m_spawnInterval,
+                               EnemySpawning::MinimumInterval, 5.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+            const auto pressure = spawner->GetPressure(Game::GetInstance()->m_gameTime);
+            ImGui::Text(Text(u8"現在：%d体ずつ / %.2f秒間隔 / 上限%d体"), pressure.packSize,
+                        pressure.interval, pressure.maxAlive);
+            ImGui::Text(Text(u8"増加段階：%d / %d（生存60秒ごと）"), pressure.stage,
+                        EnemySpawning::RampMaxStage);
+            int counts[3]{};
+            for (auto enemy : Game::GetInstance()->GetObjects<EnemyTarget>()) {
+                if (!enemy->IsDead() && enemy->GetActive()) {
+                    ++counts[static_cast<int>(enemy->GetRarity())];
+                }
+            }
+            ImGui::Text(Text(u8"出現中 %d / %d体（通常 %d / 亜種 %d / 希少 %d）"),
+                        counts[0] + counts[1] + counts[2], pressure.maxAlive, counts[0], counts[1],
+                        counts[2]);
+            ImGui::SliderInt(Text(u8"亜種の基本確率（%%）"), &spawner->m_variantPercent, 0, 60, "%d",
                              ImGuiSliderFlags_AlwaysClamp);
-            ImGui::SliderFloat(Text(u8"基本出現間隔（秒）"), &spawner->m_spawnInterval, 0.75f, 10.0f, "%.2f",
-                               ImGuiSliderFlags_AlwaysClamp);
-            ImGui::TextWrapped("%s", Text(u8"出現間隔は時間経過でも短縮されます。既存の敵は動き続けます。"));
+            ImGui::SliderInt(Text(u8"希少種の基本確率（%%）"), &spawner->m_rarePercent, 0, 20, "%d",
+                             ImGuiSliderFlags_AlwaysClamp);
+            int rarityChoice = spawner->m_debugRarity + 1;
+            if (ImGui::Combo(Text(u8"出現する種別"), &rarityChoice,
+                             Text(u8"自動抽選\0通常種のみ\0亜種のみ\0希少種のみ\0"))) {
+                spawner->m_debugRarity = rarityChoice - 1;
+            }
+            ImGui::TextWrapped(
+                "%s", Text(u8"奥のエリアほど亜種・希少種が増えます。種別の変更は次の出現から反映。"));
+            ImGui::TextWrapped(
+                "%s", Text(u8"時間とともに出現数・上限が増えます。一時停止・スキル選択中は進みません。"));
             ImGui::PopID();
         }
+    }
+
+    if (ImGui::CollapsingHeader(Text(u8"亜種・希少種の強さ"))) {
+        for (const auto rarity : {EnemyRarity::Normal, EnemyRarity::Variant, EnemyRarity::Rare}) {
+            const auto stats = EnemyVariants::Get(rarity);
+            ImGui::Text(Text(u8"%s：HP %.0f倍 / 攻撃 %.1f倍 / 速度 %.2f倍 / EXP %d倍"),
+                        Text(EnemyVariants::Name(rarity)), stats.healthMultiplier, stats.damageMultiplier,
+                        stats.speedMultiplier, stats.experienceMultiplier);
+        }
+        ImGui::TextWrapped("%s", Text(u8"攻撃力の端数は切り上げ。予告時間は通常種と共通です。"));
+        ImGui::Text(Text(u8"プレゼント抽選：亜種 %d%% / 希少種 %d%%"),
+                    EnemyVariants::PresentChance(0, EnemyRarity::Variant),
+                    EnemyVariants::PresentChance(0, EnemyRarity::Rare));
+        ImGui::TextUnformatted(Text(u8"スライム：青い亜種 / 金の希少種"));
+        ImGui::TextUnformatted(Text(u8"フライ：紫の亜種 / 白銀の希少種"));
+        ImGui::TextUnformatted(Text(u8"イノシシ：青鋼の亜種 / 橙の希少種"));
+        ImGui::TextUnformatted(Text(u8"キノコ：紫の亜種 / 翡翠の希少種"));
+        ImGui::TextUnformatted(Text(u8"ゴースト：紅の亜種 / 金の希少種"));
     }
 
     ImGui::Separator();
     ImGui::TextDisabled("%s", Text(u8"マウスを重ねると説明と現在の効果を表示"));
     if (m_hp <= 0) {
-        ImGui::TextUnformatted(Text(u8"HPを上げるとスキルを取得できます。"));
+        ImGui::TextUnformatted(Text(u8"HPを上げるとスキルを変更できます。"));
     }
     for (int i = 0; i < static_cast<int>(UpgradeId::Count); ++i) {
         const auto id = static_cast<UpgradeId>(i);
@@ -146,8 +193,13 @@ void CPlayer::DrawSurvivorDebugUI() {
         const int rank = m_progression.Rank(id);
         const bool maxed = rank >= definition.maxRank;
         ImGui::PushID(i);
+        // 保存済みの細いウィンドウでも、減少ボタンと現在レベルを同じ行に収める。
+        const float decreaseWidth = ImGui::CalcTextSize("-1").x + ImGui::GetStyle().FramePadding.x * 2;
+        const float levelWidth = ImGui::CalcTextSize("Lv.5 / 5  MAX").x;
+        const float nameWidth = (std::max)(100.0f, ImGui::GetContentRegionAvail().x - decreaseWidth -
+                                                       levelWidth - ImGui::GetStyle().ItemSpacing.x * 2);
         ImGui::BeginDisabled(maxed || m_hp <= 0 || IsChoosingUpgrade());
-        if (ImGui::Button(Text(definition.name), ImVec2(210, 30))) {
+        if (ImGui::Button(Text(definition.name), ImVec2(nameWidth, 30))) {
             DebugGiveUpgrade(id);
         }
         ImGui::EndDisabled();
@@ -164,6 +216,15 @@ void CPlayer::DrawSurvivorDebugUI() {
             }
             ImGui::PopTextWrapPos();
             ImGui::EndTooltip();
+        }
+        ImGui::SameLine();
+        ImGui::BeginDisabled(m_progression.Rank(id) == 0 || m_hp <= 0 || IsChoosingUpgrade());
+        if (ImGui::Button("-1", ImVec2(decreaseWidth, 30))) {
+            DebugRemoveUpgrade(id);
+        }
+        ImGui::EndDisabled();
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+            ImGui::SetTooltip("%s", Text(u8"1段階下げる。Lv.0で未取得に戻ります。"));
         }
         ImGui::SameLine();
         ImGui::Text("Lv.%d / %d%s", m_progression.Rank(id), definition.maxRank,

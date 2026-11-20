@@ -128,6 +128,8 @@ private:
 
     // 実装はSurvivorCombat.cpp。報酬の確定と、実際の戦闘への反映を分けている。
     void ApplyUpgradeEffects(UpgradeId id, bool fromPresent);
+    /// 現在のスキルレベルから能力値と常設武器を更新する。取得時の回復は行わない。
+    void RefreshUpgradeStats(UpgradeId id);
     void UpdateAutoWeapons();
     void DeployTurret();
 
@@ -232,6 +234,8 @@ public:
     }
 
     bool DebugGiveUpgrade(UpgradeId id);
+    /// 指定したスキルを1段階下げ、Lv.0になった自動武器を解除する。
+    bool DebugRemoveUpgrade(UpgradeId id);
 #endif
     void Heal(int amount);
 

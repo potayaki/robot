@@ -174,6 +174,8 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CAutoturret.cpp" />
     <ClCompile Include="CBossBattle.cpp" />
+    <ClCompile Include="CForestStage.cpp" />
+    <ClCompile Include="ForestModel.cpp" />
     <ClCompile Include="CBossEnemy.cpp" />
     <ClCompile Include="EyeTurretModel.cpp" />
     <ClCompile Include="CBullet.cpp" />
@@ -265,6 +267,12 @@
     <ClInclude Include="CBossBattle.h" />
     <ClInclude Include="CBossEnemy.h" />
     <ClInclude Include="BossBattleRules.h" />
+    <ClInclude Include="BossCatalog.h" />
+    <ClInclude Include="CForestStage.h" />
+    <ClInclude Include="ForestLayout.h" />
+    <ClInclude Include="ForestProgress.h" />
+    <ClInclude Include="ForestModel.h" />
+    <ClInclude Include="BossAttackRules.h" />
     <ClInclude Include="EyeTurretModel.h" />
     <ClInclude Include="EyeTurretShape.h" />
     <ClInclude Include="CBullet.h" />
@@ -435,5 +443,13 @@
     <None Include="shader\stagePrimitiveCommon.hlsli" />
     <None Include="shader\stagePrimitiveVS.hlsl" />
     <None Include="shader\stagePrimitivePS.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="EnemyTint.cpp" />
+    <ClInclude Include="EnemyTint.h" />
+    <ClInclude Include="EnemyRarity.h" />
+    <ClInclude Include="EnemySpawnRules.h" />
+    <ClInclude Include="EnemyCrowd.h" />
+    <None Include="shader\enemyTintPS.hlsl" />
   </ItemGroup>
 </Project>

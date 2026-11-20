@@ -12,6 +12,8 @@ public:
     void Draw(Camera* camera) override;
     void Uninit() override;
     void OnHit(int& damage) override;
+    /// 出現時の種別を設定し、その種の最大HPで初期化する。
+    void SetRarity(EnemyRarity rarity) override;
 
     Collision::Sphere GetCollisionSphere() override {
         return {m_position, CollisionRadius};
@@ -42,8 +44,10 @@ private:
     std::shared_ptr<GhostModel> m_model;
     /// 生存中の霊弾。Ghost撃破時に消す。
     std::vector<SpiritShot> m_shots;
-    /// 現在の体力。
-    int m_hp = 6;
+    /// 通常種の最大HP。亜種・希少種の初期HPもこの値から計算する。
+    static constexpr int BaseHp = 6;
+    /// 現在の体力。出現時に種別の倍率を適用する。
+    int m_hp = BaseHp;
     /// プレイヤーから離れ始める水平距離（ワールド単位）。
     float m_nearDistance = 180.0f;
     /// この水平距離を超えたら接近する（ワールド単位）。

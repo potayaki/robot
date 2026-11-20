@@ -258,6 +258,20 @@ bool SurvivorProgression::DebugGrantUpgrade(UpgradeId id) {
     }
     return true;
 }
+
+bool SurvivorProgression::DebugRemoveUpgrade(UpgradeId id) {
+    const auto index = static_cast<size_t>(id);
+    if (index >= m_ranks.size() || m_ranks[index] == 0) {
+        return false;
+    }
+
+    --m_ranks[index];
+    // 最大から戻したスキルを候補へ含め、全強化済みの回復候補も更新する。
+    if (IsChoosing()) {
+        RefreshChoices();
+    }
+    return true;
+}
 #endif
 
 UpgradeId SurvivorProgression::GrantPresent() {

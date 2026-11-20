@@ -217,7 +217,17 @@ void billboard::Draw(Camera* cam) {
     Renderer::SetUV(0, 0, 1, 1);
 
     // --- 3. 描画処理 ---
-    Renderer::SetDepthEnable(true);
+    ID3D11DeviceContext* devicecontext = Renderer::GetDeviceContext();
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilState> previousDepth;
+    UINT previousStencilRef = 0;
+    devicecontext->OMGetDepthStencilState(previousDepth.GetAddressOf(), &previousStencilRef);
+    Microsoft::WRL::ComPtr<ID3D11BlendState> previousBlend;
+    FLOAT previousBlendFactor[4]{};
+    UINT previousSampleMask = 0;
+    devicecontext->OMGetBlendState(previousBlend.GetAddressOf(), previousBlendFactor, &previousSampleMask);
+
+    // 深度テストは維持し、透明な余白や半透明の炎で奥の物体を隠さない。
+    Renderer::SetDepthEnable(false);
 
     m_shader.SetGPU();
     m_vertexBuffer.SetGPU();
@@ -228,14 +238,14 @@ void billboard::Draw(Camera* cam) {
 
     m_material->SetGPU();
 
-    ID3D11DeviceContext* devicecontext = Renderer::GetDeviceContext();
     devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
     Renderer::SetBlendState(BS_ADDITIVE);
 
     devicecontext->DrawIndexed((UINT)m_indices.size(), 0, 0);
 
-    Renderer::SetBlendState(BS_ALPHABLEND);
+    devicecontext->OMSetBlendState(previousBlend.Get(), previousBlendFactor, previousSampleMask);
+    devicecontext->OMSetDepthStencilState(previousDepth.Get(), previousStencilRef);
 }
 
 void billboard::Uninit() {

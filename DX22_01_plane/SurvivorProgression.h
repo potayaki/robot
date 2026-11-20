@@ -194,5 +194,7 @@ public:
 #ifdef _DEBUG
     // 抽選を待たずに指定スキルを1段階取得する。経験値・選択待ち回数は消費しない。
     bool DebugGrantUpgrade(UpgradeId id);
+    // 指定スキルを1段階戻す。経験値・プレイヤーレベル・選択待ち回数は変更しない。
+    bool DebugRemoveUpgrade(UpgradeId id);
 #endif
 };

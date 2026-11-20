@@ -73,8 +73,10 @@ private:
     std::unique_ptr<TestModel> m_model;
     /// モデルを構成する各パーツ。
     std::array<std::unique_ptr<TestCube>, PartCount> m_parts;
-    /// 現在の体力。0以下になると死亡処理を行う。
-    int m_hp = 4;
+    /// 通常種の最大HP。亜種・希少種の初期HPもこの値から計算する。
+    static constexpr int BaseHp = 4;
+    /// 現在の体力。出現時に種別の倍率を適用する。
+    int m_hp = BaseHp;
     /// 急降下の残り秒数。
     float m_diveTimer = 0.0f;
     /// 次の急降下までの秒数。
@@ -97,6 +99,8 @@ public:
     /// 使用した資源を解放して終了する。
     void Uninit() override;
     void OnHit(int& damage) override;
+    /// 出現時の種別を設定し、最大HPと簡易モデルの配色を初期化する。
+    void SetRarity(EnemyRarity rarity) override;
 
     // モデルの大きさを変更したら、当たり判定の半径もここで調整する。
     Collision::Sphere GetCollisionSphere() override {

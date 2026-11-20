@@ -6,6 +6,7 @@
 #include "CPlayer.h"
 #include "Ground.h"
 #include "CBossBattle.h"
+#include "CForestStage.h"
 #ifdef _DEBUG
 #include "imgui.h"
 #endif
@@ -24,15 +25,18 @@ namespace {
         float m_yaw = 0;
         /// モデルの拡大縮小倍率。
         float m_scale = 8;
+        /// 撃破された個体の配色。第4成分は元の色から置き換える割合。
+        Color m_tint{1, 1, 1, 0};
 
     public:
         void Init() override {}
 
-        void Start(std::unique_ptr<BoarModel> model, Vector3 feet, float yaw, float scale) {
+        void Start(std::unique_ptr<BoarModel> model, Vector3 feet, float yaw, float scale, Color tint) {
             m_model = std::move(model);
             m_position = feet;
             m_yaw = yaw;
             m_scale = scale;
+            m_tint = tint;
             m_model->Update(BoarMotion::Death, 0);
         }
 
@@ -55,7 +59,7 @@ namespace {
 
         void Draw(Camera* camera) override {
             if (m_model) {
-                m_model->Draw(camera, m_position, m_yaw, m_scale);
+                m_model->Draw(camera, m_position, m_yaw, m_scale, m_tint);
             }
         }
 
@@ -78,6 +82,15 @@ void CBoarEnemy::Init() {
     m_position.y = m_groundY + m_collisionRadius;
 }
 
+void CBoarEnemy::SetRarity(EnemyRarity rarity) {
+    EnemyTarget::SetRarity(rarity);
+    m_hp = EnemyVariants::Health(BaseHp, GetRarity());
+    const BoarCharge defaults;
+    const float speed = EnemyVariants::Get(GetRarity()).speedMultiplier;
+    m_charge.m_walkSpeed = defaults.m_walkSpeed * speed;
+    m_charge.m_chargeSpeed = defaults.m_chargeSpeed * speed;
+}
+
 void CBoarEnemy::Update() {
     if (IsDead() || !m_model) {
         return;
@@ -96,7 +109,14 @@ void CBoarEnemy::Update() {
     }
     auto player = players[0];
     const Vector3 previousPosition = m_position;
-    const auto movement = m_charge.Update(dt, m_position, player->GetPosition(), m_chargeStartRange);
+    auto movement = m_charge.Update(dt, m_position, player->GetPosition(), m_chargeStartRange);
+    for (auto forest : Game::GetInstance()->GetObjects<CForestStage>()) {
+        m_position = forest->ConstrainMovement(previousPosition, m_position, m_collisionRadius);
+        if (movement.charged) {
+            movement.start = forest->ConstrainMovement(previousPosition, movement.start, m_collisionRadius);
+            movement.end = m_position;
+        }
+    }
     const auto direction = m_charge.Direction();
     m_rotation.y = std::atan2(direction.x, direction.z);
 
@@ -132,7 +152,8 @@ void CBoarEnemy::Update() {
 
 void CBoarEnemy::Draw(Camera* camera) {
     if (m_model && !IsDead()) {
-        m_model->Draw(camera, Vector3(m_position.x, m_groundY, m_position.z), m_rotation.y, m_modelScale);
+        m_model->Draw(camera, Vector3(m_position.x, m_groundY, m_position.z), m_rotation.y, m_modelScale,
+                      EnemyVariants::Tint(EnemySpecies::Boar, GetRarity()));
     }
 }
 
@@ -140,8 +161,12 @@ void CBoarEnemy::DrawTelegraph(Camera* camera) {
     if (IsDead() || !m_model || m_charge.GetState() != BoarCharge::State::Windup) {
         return;
     }
-    m_model->DrawTelegraph(camera, m_charge.PreviewStart(), m_charge.PreviewEnd(), m_groundY,
-                           m_collisionRadius, m_charge.Progress());
+    auto endpoint = m_charge.PreviewEnd();
+    for (auto forest : Game::GetInstance()->GetObjects<CForestStage>()) {
+        endpoint = forest->ConstrainMovement(m_charge.PreviewStart(), endpoint, m_collisionRadius);
+    }
+    m_model->DrawTelegraph(camera, m_charge.PreviewStart(), endpoint, m_groundY, m_collisionRadius,
+                           m_charge.Progress());
 }
 
 void CBoarEnemy::OnHit(int& damage) {
@@ -156,7 +181,7 @@ void CBoarEnemy::OnHit(int& damage) {
     if (m_model) {
         auto corpse = Game::GetInstance()->AddObject<BoarDeath>();
         corpse->Start(std::move(m_model), Vector3(m_position.x, m_groundY, m_position.z), m_rotation.y,
-                      m_modelScale);
+                      m_modelScale, EnemyVariants::Tint(EnemySpecies::Boar, GetRarity()));
     }
     Defeat(m_experience, m_presentChance);
 }

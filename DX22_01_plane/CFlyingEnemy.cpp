@@ -5,6 +5,7 @@
 #include "Game.h"
 #include "Ground.h"
 #include "CPlayer.h"
+#include "CForestStage.h"
 #include "CPresentBox.h"
 #include <algorithm>
 #include <cmath>
@@ -30,6 +31,16 @@ namespace {
     constexpr float DroneModelPitchOffset = 0.0f;
     constexpr float DroneModelYawOffset = 0.0f;
     constexpr float DroneModelRollOffset = 0.0f;
+
+    // 代替の簡易モデルにも種別色を適用し、通常種へ戻す場合は元の配色を再利用する。
+    const std::array<Color, 9> DronePartColors = {
+        Color(0.25f, 0.39f, 0.45f, 1.0f), // 機体
+        Color(0.16f, 0.23f, 0.27f, 1.0f), // 横アーム
+        Color(0.12f, 0.19f, 0.23f, 1.0f), Color(0.12f, 0.19f, 0.23f, 1.0f), // モーター
+        Color(0.59f, 0.68f, 0.70f, 1.0f), Color(0.59f, 0.68f, 0.70f, 1.0f),
+        Color(0.59f, 0.68f, 0.70f, 1.0f), Color(0.59f, 0.68f, 0.70f, 1.0f), // 回転翼
+        Color(0.14f, 0.85f, 0.88f, 1.0f) // 前面センサー
+    };
 } // namespace
 
 CFlyingEnemy::~CFlyingEnemy() {
@@ -49,14 +60,6 @@ void CFlyingEnemy::Init() {
     }
 
     // 既存の白いテクスチャを着色して、機体・アーム・回転翼・前面センサーを組み立てる。
-    const std::array<Color, PartCount> colors = {
-        Color(0.25f, 0.39f, 0.45f, 1.0f), // 機体
-        Color(0.16f, 0.23f, 0.27f, 1.0f), // 横アーム
-        Color(0.12f, 0.19f, 0.23f, 1.0f), Color(0.12f, 0.19f, 0.23f, 1.0f), // モーター
-        Color(0.59f, 0.68f, 0.70f, 1.0f), Color(0.59f, 0.68f, 0.70f, 1.0f),
-        Color(0.59f, 0.68f, 0.70f, 1.0f), Color(0.59f, 0.68f, 0.70f, 1.0f), // 回転翼
-        Color(0.14f, 0.85f, 0.88f, 1.0f) // 前面センサー
-    };
     const std::array<Vector3, PartCount> scales = {
         Vector3(0.70f, 0.28f, 0.50f),  Vector3(1.45f, 0.07f, 0.11f),  Vector3(0.27f, 0.13f, 0.27f),
         Vector3(0.27f, 0.13f, 0.27f),  Vector3(0.55f, 0.025f, 0.08f), Vector3(0.08f, 0.025f, 0.55f),
@@ -65,8 +68,22 @@ void CFlyingEnemy::Init() {
         m_parts[i] = std::make_unique<TestCube>();
         m_parts[i]->Init();
         m_parts[i]->SetTexture("assets/texture/white.png");
-        m_parts[i]->SetMaterial(colors[i]);
+        m_parts[i]->SetMaterial(DronePartColors[i]);
         m_parts[i]->SetScale(scales[i]);
+    }
+}
+
+void CFlyingEnemy::SetRarity(EnemyRarity rarity) {
+    EnemyTarget::SetRarity(rarity);
+    m_hp = EnemyVariants::Health(BaseHp, GetRarity());
+    const Color tint = EnemyVariants::Tint(EnemySpecies::Fly, GetRarity());
+    for (size_t i = 0; i < m_parts.size(); ++i) {
+        if (m_parts[i]) {
+            const auto base = DronePartColors[i];
+            const float brightness = (std::max)(0.3f, base.x * 0.299f + base.y * 0.587f + base.z * 0.114f);
+            const Color colored(tint.x * brightness, tint.y * brightness, tint.z * brightness, base.w);
+            m_parts[i]->SetMaterial(Color::Lerp(base, colored, tint.w));
+        }
     }
 }
 
@@ -75,6 +92,7 @@ void CFlyingEnemy::Update() {
         return;
     }
     const float deltaSeconds = GameTime::DeltaSeconds();
+    const float speed = EnemyVariants::Get(GetRarity()).speedMultiplier;
     GameTime::CountDown(m_attackCooldown, deltaSeconds);
     m_hoverPhase += m_hoverAngularSpeed * deltaSeconds; // 上下運動・回転翼も経過秒数に合わせる。
     m_rotorAngle += m_rotorSpeed * deltaSeconds;
@@ -82,6 +100,7 @@ void CFlyingEnemy::Update() {
     auto players = Game::GetInstance()->GetObjects<CPlayer>();
     auto grounds = Game::GetInstance()->GetObjects<Ground>();
     if (!players.empty() && players[0] != nullptr) {
+        const Vector3 previousPosition = m_position;
         CPlayer* player = players[0];
         const Vector3 playerPos = player->GetPosition();
         Vector3 toPlayer = playerPos - m_position;
@@ -99,16 +118,16 @@ void CFlyingEnemy::Update() {
         }
         if (m_diveTimer > 0) {
             GameTime::CountDown(m_diveTimer, deltaSeconds);
-            m_position += toPlayer * (m_diveSpeed * deltaSeconds);
+            m_position += toPlayer * (m_diveSpeed * speed * deltaSeconds);
             const float diveY = playerPos.y + m_diveHeightOffset;
-            m_position.y += std::clamp(diveY - m_position.y, -m_verticalSpeed * deltaSeconds,
-                                       m_verticalSpeed * deltaSeconds);
+            m_position.y += std::clamp(diveY - m_position.y, -m_verticalSpeed * speed * deltaSeconds,
+                                       m_verticalSpeed * speed * deltaSeconds);
         } else {
             if (horizontalDistance > m_approachRange) {
-                m_position += toPlayer * (m_approachSpeed * deltaSeconds);
+                m_position += toPlayer * (m_approachSpeed * speed * deltaSeconds);
             }
             if (horizontalDistance < m_retreatRange) {
-                m_position -= toPlayer * (m_retreatSpeed * deltaSeconds);
+                m_position -= toPlayer * (m_retreatSpeed * speed * deltaSeconds);
             }
             const float groundY = grounds.empty() ? -5.0f : grounds[0]->GetPosition().y;
             const float hoverY = (std::max)(groundY + m_groundClearance, playerPos.y + m_playerClearance) +
@@ -116,6 +135,10 @@ void CFlyingEnemy::Update() {
             // 補間率も秒に換算し、低FPSでホバリングの追従が遅くならないようにする。
             const float follow = 1.0f - std::pow(0.9f, deltaSeconds * 60.0f);
             m_position.y += (hoverY - m_position.y) * follow;
+        }
+
+        for (auto forest : Game::GetInstance()->GetObjects<CForestStage>()) {
+            m_position = forest->ConstrainMovement(previousPosition, m_position, GetCollisionSphere().radius);
         }
 
         // 急降下して触れた時だけダメージを与え、次の攻撃まで間隔を空ける。
@@ -126,16 +149,8 @@ void CFlyingEnemy::Update() {
         }
     }
 
-    // FBX と簡易ドローンのどちらでも、同じ飛行位置とプレイヤー方向を反映する。
+    // FBXの姿勢はDraw時に現在位置から計算する。ここでは簡易モデルの部品だけ更新する。
     if (m_model) {
-        const Vector3 rotation(DroneModelPitchOffset, m_rotation.y + DroneModelYawOffset,
-                               DroneModelRollOffset);
-        const Matrix rotationMatrix = Matrix::CreateFromYawPitchRoll(rotation.y, rotation.x, rotation.z);
-        // 中心のずれにも同じ拡大率・回転を適用し、向きが変わっても体と判定が離れないようにする。
-        const Vector3 centerOffset =
-            Vector3::TransformNormal(DroneModelLocalCenter * DroneModelScale, rotationMatrix);
-        m_model->SetPosition(m_position + Vector3(0, DroneModelOffsetY, 0) - centerOffset);
-        m_model->SetRotation(rotation);
         return;
     }
 
@@ -162,7 +177,16 @@ void CFlyingEnemy::Update() {
 
 void CFlyingEnemy::Draw(Camera* cam) {
     if (m_model) {
-        m_model->Draw(cam);
+        // 生成フレームや一時停止中の位置変更も、そのフレームの描画へ反映する。
+        const Vector3 rotation(DroneModelPitchOffset, m_rotation.y + DroneModelYawOffset,
+                               DroneModelRollOffset);
+        const Matrix rotationMatrix = Matrix::CreateFromYawPitchRoll(rotation.y, rotation.x, rotation.z);
+        // 中心のずれにも同じ拡大率・回転を適用し、向きが変わっても体と判定が離れないようにする。
+        const Vector3 centerOffset =
+            Vector3::TransformNormal(DroneModelLocalCenter * DroneModelScale, rotationMatrix);
+        m_model->Draw(cam, m_position + Vector3(0, DroneModelOffsetY, 0) - centerOffset, rotation,
+                      Vector3(DroneModelScale, DroneModelScale, DroneModelScale),
+                      EnemyVariants::Tint(EnemySpecies::Fly, GetRarity()));
         return;
     }
     for (const auto& part : m_parts) {

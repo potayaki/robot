@@ -2,6 +2,7 @@
 /// @brief Boarのモデル、テクスチャ、突進予測線の描画。
 
 #include "BoarModel.h"
+#include "EnemyTint.h"
 #include "Renderer.h"
 #include "Shader.h"
 #include "Texture.h"
@@ -40,6 +41,8 @@ namespace {
 } // namespace
 
 struct BoarModel::Resources {
+    /// 個体ごとの色を描画時だけ適用する共有資源。
+    std::shared_ptr<EnemyTint> m_tint;
     /// 描画頂点を保持するGPUバッファ。
     VertexBuffer<SkinVertex> vertices;
     /// モデルに使用するベースカラー画像。
@@ -88,6 +91,7 @@ bool BoarModel::Init() {
         return false;
     }
     auto resources = std::make_shared<Resources>();
+    resources->m_tint = EnemyTint::Acquire();
     const auto& image = m_rig.GetAlbedo();
     if (!resources->albedo.LoadFromFemory(image.data(), static_cast<int>(image.size()))) {
         return false;
@@ -161,7 +165,7 @@ void BoarModel::Update(BoarMotion motion, float deltaSeconds, float progress) {
     m_rig.Update(motion, deltaSeconds, progress);
 }
 
-void BoarModel::Draw(Camera* camera, const Vector3& feet, float yaw, float scale) {
+void BoarModel::Draw(Camera* camera, const Vector3& feet, float yaw, float scale, const Color& tint) {
     if (!m_resources || !camera) {
         return;
     }
@@ -195,6 +199,7 @@ void BoarModel::Draw(Camera* camera, const Vector3& feet, float yaw, float scale
     context->PSSetConstantBuffers(4, 1, resources.material.GetAddressOf());
     context->VSSetShader(resources.vertexShader.Get(), nullptr, 0);
     context->PSSetShader(resources.pixelShader.Get(), nullptr, 0);
+    EnemyTintScope tintScope(resources.m_tint, tint);
     context->IASetInputLayout(resources.layout.Get());
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_resources->albedo.SetGPU();

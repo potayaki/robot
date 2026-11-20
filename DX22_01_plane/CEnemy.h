@@ -84,6 +84,8 @@ public:
     void Onland();
     void OnHit(int& damage) override; //弾に当たったときの処理
     void SetVariant(SlimeVariant variant);
+    /// 出現時の通常種・亜種・希少種を設定し、その種の最大HPで初期化する。
+    void SetRarity(EnemyRarity rarity) override;
 
     void SetPosition(float x, float y, float z) {
         DirectX::SimpleMath::Vector3 p = {x, y, z};

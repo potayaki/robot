@@ -21,6 +21,8 @@ public:
     }
 
     void OnHit(int& damage) override;
+    /// 出現時の種別を設定し、最大HPと接近速度を初期化する。自爆の予告時間は維持する。
+    void SetRarity(EnemyRarity rarity) override;
 
     Collision::Sphere GetCollisionSphere() override {
         return {m_position, m_collisionRadius};
@@ -40,8 +42,10 @@ private:
     std::unique_ptr<MushroomModel> m_model;
     /// キノコの接近・起爆待ち・自爆の進行状態。
     MushroomFuse m_fuse;
-    /// 現在の体力。0以下になると死亡処理を行う。
-    int m_hp = 4;
+    /// 通常種の最大HP。亜種・希少種の初期HPもこの値から計算する。
+    static constexpr int BaseHp = 4;
+    /// 現在の体力。出現時に種別の倍率を適用する。
+    int m_hp = BaseHp;
     /// キノコの自爆が届く半径（ワールド単位）。
     static constexpr float BlastRadius = 65.0f;
     /// キノコの自爆がプレイヤーへ与えるダメージ量。

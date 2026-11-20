@@ -30,6 +30,7 @@ int EnemyTarget::SupportedIncomingDamage(int damage) const {
 }
 
 int EnemyTarget::SupportedOutgoingDamage(int damage) const {
+    damage = EnemyVariants::Damage(damage, GetRarity());
     return HasGhostSupport(this)
                ? GhostSupport::Outgoing(damage, CGhostEnemy::SupportSettings().outgoingMultiplier)
                : damage;
@@ -49,7 +50,7 @@ void EnemyTarget::Defeat(int experience, int presentChance) {
         return;
     }
     CPlayer* player = players[0];
-    player->OnEnemyDefeated(experience);
+    player->OnEnemyDefeated(EnemyVariants::Experience(experience, GetRarity()));
 
     const auto grounds = Game::GetInstance()->GetObjects<Ground>();
     const float groundY = grounds.empty() ? -5.0f : grounds[0]->GetPosition().y;
@@ -60,7 +61,8 @@ void EnemyTarget::Defeat(int experience, int presentChance) {
     }
 
     // 通常抽選に加え10体ごとに確定ドロップし、序盤でもプレゼントを試せるようにする。
-    if (rand() % 100 >= presentChance && player->GetKills() % 10 != 0) {
+    if (rand() % 100 >= EnemyVariants::PresentChance(presentChance, GetRarity()) &&
+        player->GetKills() % 10 != 0) {
         return;
     }
 

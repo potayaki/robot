@@ -6,16 +6,21 @@
 #include "Shader.h"
 #include "Texture.h"
 #include <memory>
+class EnemyTint;
 
 class GhostModel {
 public:
     static std::shared_ptr<GhostModel> Acquire();
     bool Init();
-    void Draw(Camera* camera, DirectX::SimpleMath::Vector3 center, float yaw);
+    /// ワールド座標の中心を基準に、通常サイズへ倍率を掛けて描画する。yawはラジアン。
+    void Draw(Camera* camera, DirectX::SimpleMath::Vector3 center, float yaw, float scale = 1.0f,
+              const DirectX::SimpleMath::Color& tint = DirectX::SimpleMath::Color(1, 1, 1, 0));
     void DrawBeam(Camera* camera, DirectX::SimpleMath::Vector3 start, DirectX::SimpleMath::Vector3 end,
                   float width, DirectX::SimpleMath::Color color, bool spirit = false);
 
 private:
+    /// モデルを共有しても個体色を次のGhostへ残さないための描画資源。
+    std::shared_ptr<EnemyTint> m_tint;
     /// 全Ghostで共有するFBX頂点とインデックス。
     MeshRenderer m_mesh;
     /// FBXの総インデックス数。

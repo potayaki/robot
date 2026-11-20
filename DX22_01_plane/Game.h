@@ -123,12 +123,20 @@ public:
     }
 
     //オブジェクトを追加する
-    template <typename T> std::vector<T*> GetObjects() {
+    template <typename T> std::vector<T*> GetObjects(bool includePending = false) {
         std::vector<T*> res;
         for (auto& a : m_instance->m_objects) {
             //dybamiccastで型をチェック
             if (T* derivedObj = dynamic_cast<T*>(a.get())) {
                 res.emplace_back(derivedObj);
+            }
+        }
+        // スポーン上限の確認時は、同じ更新中に追加された個体も数える。
+        if (includePending) {
+            for (auto& a : m_instance->m_addObjects) {
+                if (T* derivedObj = dynamic_cast<T*>(a.get())) {
+                    res.emplace_back(derivedObj);
+                }
             }
         }
         return res;
