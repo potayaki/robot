@@ -6,6 +6,7 @@
 #include <cmath>
 #include <limits>
 #include <random>
+#include <utility>
 
 namespace {
     // 速度は距離/秒、重力は距離/秒²。表示FPSに応じたフレーム数では管理しない。
@@ -76,15 +77,18 @@ void RobotDebris::Start(const RobotAnimationRig& rig, const aiMatrix4x4& modelTo
 
         Fragment fragment;
         fragment.position = (minimum + maximum) * 0.5f;
-        fragment.firstVertex = m_vertices.size();
-        fragment.vertexCount = group.size();
+        fragment.contactPoints.reserve(group.size());
         const auto fragmentIndex = static_cast<unsigned>(m_fragments.size());
         for (auto vertex : group) {
             vertex.position -= fragment.position;
             fragment.radius = (std::max)(fragment.radius, vertex.position.Length());
+            fragment.contactPoints.push_back(vertex.position);
             vertex.node = fragmentIndex; // 死亡表示では骨番号の欄を破片番号として使う。
             m_vertices.push_back(vertex);
         }
+        auto& points = fragment.contactPoints;
+        std::sort(points.begin(), points.end());
+        points.erase(std::unique(points.begin(), points.end()), points.end());
 
         aiVector3D outward = fragment.position - blastCenter;
         outward.y = 0.0f;
@@ -97,13 +101,13 @@ void RobotDebris::Start(const RobotAnimationRig& rig, const aiMatrix4x4& modelTo
         fragment.velocity.y = UpwardSpeed + 20.0f * random01(random);
         fragment.spinAxis = aiVector3D(random01(random) - 0.5f, 0.6f, random01(random) - 0.5f).Normalize();
         fragment.spinSpeed = 2.0f + 5.0f * random01(random);
-        m_fragments.push_back(fragment);
+        m_fragments.push_back(std::move(fragment));
     }
     m_matrices.resize(m_fragments.size());
     UpdateMatrices();
 }
 
-void RobotDebris::Update(float deltaSeconds) {
+void RobotDebris::Update(float deltaSeconds, const HeightAt& heightAt) {
     if (!IsActive() || !std::isfinite(deltaSeconds) || deltaSeconds <= 0.0f) {
         return;
     }
@@ -111,13 +115,13 @@ void RobotDebris::Update(float deltaSeconds) {
     // 実測した秒数を貯めて小分けに進める。低FPSでも接地を飛び越さず、一時停止も反映する。
     m_pendingSeconds += deltaSeconds;
     while (m_pendingSeconds + 1.0e-9 >= PhysicsStepSeconds) {
-        Step(static_cast<float>(PhysicsStepSeconds));
+        Step(static_cast<float>(PhysicsStepSeconds), heightAt);
         m_pendingSeconds -= PhysicsStepSeconds;
     }
     UpdateMatrices();
 }
 
-void RobotDebris::Step(float seconds) {
+void RobotDebris::Step(float seconds, const HeightAt& heightAt) {
     for (auto& fragment : m_fragments) {
         if (fragment.resting) {
             continue;
@@ -130,22 +134,24 @@ void RobotDebris::Step(float seconds) {
         fragment.rotation = (spin * fragment.rotation).Normalize();
 
         // 地面から十分遠い破片は、頂点を調べる接地処理を省略する。
-        if (fragment.position.y - fragment.radius > m_groundY) {
+        if (!heightAt && fragment.position.y - fragment.radius > m_groundY) {
             continue;
         }
         const aiMatrix3x3 rotation = fragment.rotation.GetMatrix();
-        float lowest = (std::numeric_limits<float>::max)();
-        for (size_t i = fragment.firstVertex; i < fragment.firstVertex + fragment.vertexCount; ++i) {
-            const auto& point = m_vertices[i].position;
-            const float y = rotation.b1 * point.x + rotation.b2 * point.y + rotation.b3 * point.z;
-            lowest = (std::min)(lowest, y);
+        float restingY = (std::numeric_limits<float>::lowest)();
+        for (const auto& point : fragment.contactPoints) {
+            const auto offset = rotation * point;
+            const float surface =
+                heightAt ? heightAt(fragment.position.x + offset.x, fragment.position.z + offset.z)
+                         : m_groundY;
+            restingY = (std::max)(restingY, surface - offset.y);
         }
-        if (fragment.position.y + lowest >= m_groundY) {
+        if (fragment.position.y >= restingY) {
             continue;
         }
 
         // 実際の頂点の最下部を床に合わせる。大きな胴体も脚の先端も床へ沈めない。
-        fragment.position.y = m_groundY - lowest;
+        fragment.position.y = restingY;
         if (fragment.velocity.y < 0.0f) {
             fragment.velocity.y *= -Bounce;
         }

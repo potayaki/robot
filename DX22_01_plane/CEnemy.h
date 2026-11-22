@@ -48,9 +48,6 @@ private:
     /// 移動速度（距離/秒）。プレイヤーは60。
     float m_speed = 30.0f;
 
-    /// 地面に接しているか。空中ではfalseにする。
-    bool m_isGrounded = false;
-
     /// プレゼントのドロップ率
     int m_dropPercent = 1;
 
@@ -81,7 +78,6 @@ public:
     /// 使用した資源を解放して終了する。
     void Uninit() override;
 
-    void Onland();
     void OnHit(int& damage) override; //弾に当たったときの処理
     void SetVariant(SlimeVariant variant);
     /// 出現時の通常種・亜種・希少種を設定し、その種の最大HPで初期化する。

@@ -119,6 +119,19 @@ int main() {
     slow.Update(1.0f);
     assert(MatrixDifference(settled, slow.GetMatrices()) == 0); // 着地した残骸は落ち着いて停止する。
 
+    const auto slope = [](float x, float z) { return -5 + (x - 120) * 0.14f + (z + 400) * 0.08f; };
+    RobotDebris hillside;
+    hillside.Start(rig, world, groundY);
+    hillside.Update(8, slope);
+    std::vector<float> clearance(hillside.GetMatrices().size(), 1000.0f);
+    for (const auto& vertex : hillside.GetVertices()) {
+        const auto point = hillside.GetMatrices()[vertex.node] * vertex.position;
+        clearance[vertex.node] = (std::min)(clearance[vertex.node], point.y - slope(point.x, point.z));
+    }
+    for (float gap : clearance) {
+        assert(std::abs(gap) < 0.001f); // 各破片の最下点が、その地点の斜面に接する。
+    }
+
     debris.Reset();
     assert(!debris.IsActive() && debris.GetVertices().empty() && debris.GetMatrices().empty());
     debris.Start(rig, world, groundY);

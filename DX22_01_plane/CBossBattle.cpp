@@ -8,6 +8,7 @@
 #include "ForestLayout.h"
 #include "Game.h"
 #include "Ground.h"
+#include "GroundProjection.h"
 #include "imgui.h"
 #include <cmath>
 
@@ -77,8 +78,6 @@ void CBossBattle::BeginBattle(CPlayer* player) {
     m_activeKind = m_roster.Next();
     m_victoryNotice = 0;
     m_position = player->GetPosition(); // 開始地点を固定し、プレイヤーについてこないバリアにする。
-    const auto grounds = Game::GetInstance()->GetObjects<Ground>();
-    m_position.y = grounds.empty() ? -5.0f : grounds[0]->GetPosition().y;
     const auto forests = Game::GetInstance()->GetObjects<CForestStage>();
     const bool forest = !forests.empty();
     m_battleArea = forest ? forests[0]->GetArea(player->GetPosition()) : ForestLayout::Area::Entrance;
@@ -87,6 +86,8 @@ void CBossBattle::BeginBattle(CPlayer* player) {
         constexpr float ArenaCenterMargin = 55.0f;
         m_position = ForestLayout::ConstrainRoom(m_position, ArenaCenterMargin, m_battleArea);
     }
+    const Ground* ground = Ground::Current();
+    m_position.y = ground ? ground->HeightAt(m_position.x, m_position.z) : ForestLayout::GroundY;
     RemoveNormalEnemies();
 
     // カメラの前方に出す。開始直後からプレイヤーと接触しない距離を確保する。
@@ -94,8 +95,7 @@ void CBossBattle::BeginBattle(CPlayer* player) {
     const float angle = Game::GetInstance()->GetCamera()->GetCameraDirection();
     const Vector3 forward(-std::sin(angle), 0, -std::cos(angle));
     const float spawnDistance = GetBossSpawnDistance();
-    const Vector3 height(0, BossHeight(m_activeKind), 0);
-    Vector3 position = m_position + forward * spawnDistance + height;
+    Vector3 position = m_position + forward * spawnDistance;
     if (forest) {
         // 壁際でカメラ正面が森の外を向く場合も、プレイヤーから離して配置する。
         const float roomLowZ = ForestLayout::RoomMinZ(m_battleArea);
@@ -106,13 +106,13 @@ void CBossBattle::BeginBattle(CPlayer* player) {
             inward = forward;
         }
         inward.Normalize();
-        position = ConstrainPosition(m_position + inward * spawnDistance + height, BossRadius(m_activeKind));
+        position = ConstrainPosition(m_position + inward * spawnDistance, BossRadius(m_activeKind));
         constexpr int SpawnDirections = 8;
         constexpr float MinimumBossSpawnDistance = 70.0f;
         for (int i = 0; i < SpawnDirections; ++i) {
             const float candidateAngle = angle + DirectX::XM_2PI * i / SpawnDirections;
             const Vector3 direction(-std::sin(candidateAngle), 0, -std::cos(candidateAngle));
-            const Vector3 candidate = m_position + direction * spawnDistance + height;
+            const Vector3 candidate = m_position + direction * spawnDistance;
             const Vector3 constrained = ConstrainPosition(candidate, BossRadius(m_activeKind));
             Vector3 offset = constrained - player->GetPosition();
             offset.y = 0;
@@ -122,6 +122,8 @@ void CBossBattle::BeginBattle(CPlayer* player) {
             }
         }
     }
+    position.y = (ground ? ground->HeightAt(position.x, position.z) : ForestLayout::GroundY) +
+                 BossHeight(m_activeKind);
     auto boss = Game::GetInstance()->AddObject<CBossEnemy>();
     boss->Configure(m_bossHp, position, m_activeKind);
     if (m_stageBossKind) {
@@ -340,11 +342,13 @@ void CBossBattle::DrawBarrier(Camera* cam) {
     if (!IsBattleActive() || !m_ready || !cam) {
         return;
     }
-    const float bottom = m_position.y + 0.5f;
-    const float top = bottom + 100.0f;
-    const auto point = [&](float angle, float radius, float height) {
-        return Vector3(m_position.x + std::cos(angle) * radius, height,
-                       m_position.z + std::sin(angle) * radius);
+    const GroundProjection ground(Ground::Current(), m_position.y);
+    constexpr float bottom = 0.8f;
+    const Vector3 wallHeight(0, 100, 0);
+    const auto point = [&](float angle, float radius) {
+        return ground.Point(
+            Vector3(m_position.x + std::cos(angle) * radius, 0, m_position.z + std::sin(angle) * radius),
+            bottom);
     };
     const auto quad = [&](int index, const Vector3& a, const Vector3& b, const Vector3& c, const Vector3& d,
                           const Color& color) {
@@ -360,15 +364,19 @@ void CBossBattle::DrawBarrier(Camera* cam) {
         const float a = DirectX::XM_2PI * i / BarrierSegments;
         const float b = DirectX::XM_2PI * (i + 1) / BarrierSegments;
         const float r = m_arenaRadius;
+        const Vector3 from = point(a, r);
+        const Vector3 to = point(b, r);
+        const Vector3 upperFrom = from + wallHeight;
+        const Vector3 upperTo = to + wallHeight;
+        const Vector3 rib = point(a + 0.004f, r);
         // 半透明の壁と明るい輪で境界を示し、壁越しでもボスを見失わない濃さにする。
-        quad(i * 24, point(a, r, bottom), point(b, r, bottom), point(a, r, top), point(b, r, top),
-             Color(0.15f, 0.65f, 1, 0.055f));
-        quad(i * 24 + 6, point(a, r - 2, bottom), point(b, r - 2, bottom), point(a, r + 2, bottom),
-             point(b, r + 2, bottom), Color(0.2f, 0.7f, 1, 0.8f));
-        quad(i * 24 + 12, point(a, r, top - 1), point(b, r, top - 1), point(a, r, top + 1),
-             point(b, r, top + 1), Color(0.2f, 0.7f, 1, 0.35f));
-        quad(i * 24 + 18, point(a, r, bottom), point(a + 0.004f, r, bottom), point(a, r, top),
-             point(a + 0.004f, r, top), Color(0.2f, 0.7f, 1, i % 4 == 0 ? 0.3f : 0.0f));
+        quad(i * 24, from, to, upperFrom, upperTo, Color(0.15f, 0.65f, 1, 0.055f));
+        quad(i * 24 + 6, point(a, r - 2), point(b, r - 2), point(a, r + 2), point(b, r + 2),
+             Color(0.2f, 0.7f, 1, 0.8f));
+        quad(i * 24 + 12, upperFrom - Vector3::UnitY, upperTo - Vector3::UnitY, upperFrom + Vector3::UnitY,
+             upperTo + Vector3::UnitY, Color(0.2f, 0.7f, 1, 0.35f));
+        quad(i * 24 + 18, from, rib, upperFrom, rib + wallHeight,
+             Color(0.2f, 0.7f, 1, i % 4 == 0 ? 0.3f : 0.0f));
     }
     m_buffer.Modify(m_vertices);
 

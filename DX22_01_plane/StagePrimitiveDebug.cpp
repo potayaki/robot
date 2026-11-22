@@ -31,11 +31,11 @@ void CStagePrimitive::DrawDebugUI() {
         part->SetShape(shape);
         part->SetScale(40, PrimitiveMesh::IsFlat(shape) ? 1.0f : 40.0f, 40);
         const auto players = Game::GetInstance()->GetObjects<CPlayer>();
-        const auto grounds = Game::GetInstance()->GetObjects<Ground>();
-        const float groundY = grounds.empty() ? 0 : grounds[0]->GetPosition().y;
         const float yaw = Game::GetInstance()->GetCamera()->GetCameraDirection();
         Vector3 position = players.empty() ? Vector3::Zero : players[0]->GetPosition();
         position += Vector3(-std::sin(yaw), 0, -std::cos(yaw)) * 100.0f;
+        const Ground* ground = Ground::Current();
+        const float groundY = ground ? ground->HeightAt(position.x, position.z) : 0.0f;
         position.y = groundY + (PrimitiveMesh::IsFlat(shape) ? 0.2f : 20.0f);
         part->SetPosition(position);
         selectedId = part->m_id;

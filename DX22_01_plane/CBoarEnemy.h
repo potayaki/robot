@@ -57,6 +57,4 @@ private:
     float m_collisionRadius = 14.0f;
     /// 元の高さ約3.5を、ゲーム内の高さ約28へ合わせる。
     float m_modelScale = 8.0f;
-    /// 足元や破片の着地に使用する地面の高さ。
-    float m_groundY = -5.0f;
 };

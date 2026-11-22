@@ -132,14 +132,8 @@ void CBullet::Update() {
 
     // 弾の半径を含め、今フレームの軌道が地面に最初に触れる位置を求める。
     float groundHitFraction = 2.0f; // 1より大きい値は「このフレームでは当たらない」。
-    const std::vector<Ground*> grounds = Game::GetInstance()->GetObjects<Ground>();
-    if (!grounds.empty() && grounds[0] != nullptr) {
-        const float groundCollisionY = grounds[0]->GetPosition().y + m_colRadius;
-        if (previousPosition.y <= groundCollisionY) {
-            groundHitFraction = 0.0f;
-        } else if (m_position.y <= groundCollisionY) {
-            groundHitFraction = (groundCollisionY - previousPosition.y) / (m_position.y - previousPosition.y);
-        }
+    if (const Ground* ground = Ground::Current()) {
+        groundHitFraction = ground->FirstHit(previousPosition, m_position, m_colRadius).value_or(2.0f);
     }
 
     // 複数の敵が重なっていても、弾の軌道上で最初に当たる敵を選ぶ。

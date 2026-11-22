@@ -5,12 +5,15 @@
 
 #include "RobotAnimationRig.h"
 #include <array>
+#include <functional>
 
 // 6本脚の接地点をワールド座標で保持し、IK（逆運動学）で関節を曲げる。
 // 足運びは「右後・右前・左中」と「右中・左後・左前」の3本ずつを交互に動かす。
 // 距離は特記がなければゲーム内のワールド単位、時間は秒、角度はラジアン。
 class RobotSpiderIK {
 public:
+    using HeightAt = std::function<float(float, float)>;
+
     /// 素材に含まれる脚の総数。
     static constexpr int LegCount = 6;
 
@@ -96,12 +99,13 @@ public:
     bool Init(const RobotAnimationRig& rig);
 
     // アニメーションの時間を進めず、設定と表示姿勢を更新する。一時停止中にも使用できる。
-    void ApplySettings(RobotAnimationRig& rig, const Settings& requested);
+    void ApplySettings(RobotAnimationRig& rig, const Settings& requested, const HeightAt& heightAt = {});
     void Reset(); // 接地の追跡と胴体の揺れを解除する。設定値と素材の基準姿勢は残す。
 
     // worldはモデルからワールドへの変換、groundYは地面の高さ、groundedは本体の接地状態。
     /// 経過時間と入力に合わせて状態を更新する。
-    void Update(RobotAnimationRig& rig, float dt, const aiMatrix4x4& world, float groundY, bool grounded);
+    void Update(RobotAnimationRig& rig, float dt, const aiMatrix4x4& world, float groundY, bool grounded,
+                const HeightAt& terrain = {});
 
     const std::array<Foot, LegCount>& GetFeet() const {
         return m_feet;
@@ -188,14 +192,15 @@ private:
     aiMatrix4x4 m_previousWorld;
 
     aiVector3D GetHome(const Leg& leg) const;
-    void ResetContacts(const aiMatrix4x4& world, float groundY, bool grounded);
-    bool UpdateSwingingFeet(float dt, const aiMatrix4x4& world, float groundY, bool grounded, bool moving,
-                            const aiVector3D& velocity, float stepSeconds);
-    void BeginTripodStep(int group, const aiMatrix4x4& world, float groundY, const aiVector3D& velocity,
-                         float duration, float stepSeconds);
+    void ResetContacts(const aiMatrix4x4& world, const HeightAt& heightAt, bool grounded);
+    bool UpdateSwingingFeet(float dt, const aiMatrix4x4& world, const HeightAt& heightAt, bool grounded,
+                            bool moving, const aiVector3D& velocity, float stepSeconds);
+    void BeginTripodStep(int group, const aiMatrix4x4& world, const HeightAt& heightAt,
+                         const aiVector3D& velocity, float duration, float stepSeconds);
     void UpdateBodyMotion(float dt, const aiMatrix4x4& world, bool grounded, float speed,
                           const aiVector3D& acceleration);
-    void Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& world, float groundY, bool grounded);
-    void Solve(RobotAnimationRig& rig, const aiMatrix4x4& world);
+    void Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& world, const HeightAt& heightAt,
+              bool grounded);
+    void Solve(RobotAnimationRig& rig, const aiMatrix4x4& world, const HeightAt& heightAt);
     void TransformBranch(RobotAnimationRig& rig, int root, const aiMatrix4x4& transform);
 };

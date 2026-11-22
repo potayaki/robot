@@ -3,6 +3,7 @@
 
 #include "BoarModel.h"
 #include "EnemyTint.h"
+#include "GroundProjection.h"
 #include "Renderer.h"
 #include "Shader.h"
 #include "Texture.h"
@@ -141,7 +142,7 @@ bool BoarModel::Init() {
     Renderer::GetDeviceContext()->UpdateSubresource(resources->material.Get(), 0, nullptr, &material, 0, 0);
 
     resources->telegraphShader.Create("shader/chargeTelegraphVS.hlsl", "shader/chargeTelegraphPS.hlsl");
-    resources->telegraphVertices.resize(15); // 太い帯6頂点、中心線6頂点、先端の矢印3頂点。
+    resources->telegraphVertices.resize(3 * GroundProjection::MaxStripVertices);
     resources->telegraphBuffer.Create(resources->telegraphVertices);
     D3D11_RASTERIZER_DESC rasterizer{};
     rasterizer.FillMode = D3D11_FILL_SOLID;
@@ -211,38 +212,26 @@ void BoarModel::Draw(Camera* camera, const Vector3& feet, float yaw, float scale
     context->VSSetConstantBuffers(6, 1, previousBones.GetAddressOf());
 }
 
-void BoarModel::DrawTelegraph(Camera* camera, Vector3 start, Vector3 end, float groundY, float halfWidth,
-                              float progress) {
+void BoarModel::DrawTelegraph(Camera* camera, Vector3 start, Vector3 end, const GroundProjection& ground,
+                              float halfWidth, float progress) {
     if (!m_resources || !camera) {
         return;
     }
     camera->SetCamera();
-    start.y = end.y = groundY + 0.15f; // 地面と重なってちらつかないよう、少しだけ上へ出す。
     Vector3 direction = end - start;
+    direction.y = 0;
     if (direction.LengthSquared() < 0.001f) {
         return;
     }
     direction.Normalize();
     const Vector3 side(direction.z, 0, -direction.x);
     auto& vertices = m_resources->telegraphVertices;
-    auto put = [&](unsigned index, const Vector3& position, const Color& color) {
-        vertices[index].position = position;
-        vertices[index].color = color;
-    };
-    auto strip = [&](unsigned first, float width, const Color& color) {
-        const Vector3 offset = side * width;
-        const Vector3 corners[] = {start - offset, start + offset, end - offset, end + offset};
-        const unsigned indices[] = {0, 1, 2, 2, 1, 3};
-        for (unsigned i = 0; i < 6; ++i) {
-            put(first + i, corners[indices[i]], color);
-        }
-    };
+    vertices.clear();
     const float alpha = 0.20f + 0.15f * progress;
-    strip(0, halfWidth, Color(1.0f, 0.02f, 0.02f, alpha));
-    strip(6, 1.2f, Color(1.0f, 0.08f, 0.04f, 0.65f));
-    put(12, end, Color(1, 0.04f, 0.02f, 0.7f));
-    put(13, end - direction * 20.0f - side * halfWidth, vertices[12].color);
-    put(14, end - direction * 20.0f + side * halfWidth, vertices[12].color);
+    ground.AppendStrip(vertices, start, end, side * halfWidth, Color(1.0f, 0.02f, 0.02f, alpha));
+    ground.AppendStrip(vertices, start, end, side * 1.2f, Color(1.0f, 0.08f, 0.04f, 0.65f));
+    ground.AppendStrip(vertices, end - direction * 20.0f, end, side * halfWidth, Color(1, 0.04f, 0.02f, 0.7f),
+                       0);
     m_resources->telegraphBuffer.Modify(vertices);
 
     // 半透明の予測線は不透明な地形・敵の後に描く。深度は書かず、描画状態は元に戻す。

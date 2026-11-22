@@ -1,9 +1,11 @@
 ﻿/// @file CBossEnemy.cpp
 /// @brief 種族ごとの攻撃と予告を共通のボス戦へ接続する。
 #include "CBossEnemy.h"
+#include "Ground.h"
 #include "CBossBattle.h"
 #include "CPlayer.h"
 #include "Game.h"
+#include "GroundProjection.h"
 #include <cmath>
 
 using namespace DirectX::SimpleMath;
@@ -23,7 +25,10 @@ namespace {
     constexpr int SporeDamage = 12;
     constexpr int SpiritDamage = 12;
     constexpr int CircleSegments = 48;
-    constexpr int EffectVertexCapacity = 3 * CircleSegments * 9;
+    // 外周の帯と、半径方向に二分した塗りの計5三角形を胞子3か所分確保する。
+    constexpr int CircleVertexCount = CircleSegments * 15;
+    constexpr int EffectVertexCapacity =
+        (std::max)(3 * CircleVertexCount, CircleVertexCount + GroundProjection::MaxStripVertices);
 
     Vector3 HorizontalDirection(Vector3 from, Vector3 to) {
         Vector3 direction = to - from;
@@ -112,6 +117,7 @@ Vector3 CBossEnemy::Constrain(const Vector3& position, float radius) const {
 
 void CBossEnemy::EnterPhase(CPlayer* player) {
     if (GetPhase() == Phase::Windup) {
+        const Ground* ground = Ground::Current();
         m_attackHit = false;
         m_attackStart = m_position;
         m_chargeDirection = HorizontalDirection(m_position, player->GetPosition());
@@ -119,8 +125,9 @@ void CBossEnemy::EnterPhase(CPlayer* player) {
         m_attackTarget = player->GetCollisionSphere().center;
         if (m_kind == BossKind::Fly) {
             m_attackTarget += m_chargeDirection * 70.0f;
-            m_attackTarget.y = m_groundY + BossRadius(m_kind);
             m_attackTarget = Constrain(m_attackTarget, BossRadius(m_kind));
+            m_attackTarget.y = (ground ? ground->HeightAt(m_attackTarget.x, m_attackTarget.z) : m_groundY) +
+                               BossRadius(m_kind);
         } else if (m_kind == BossKind::Boar) {
             m_attackTarget = Constrain(m_attackStart + m_chargeDirection * (BoarSpeed * BoarChargeSeconds),
                                        BossRadius(m_kind));
@@ -129,7 +136,7 @@ void CBossEnemy::EnterPhase(CPlayer* player) {
             for (size_t i = 0; i < m_spores.size(); ++i) {
                 m_spores[i] =
                     Constrain(m_attackTarget + side * (static_cast<float>(i) - 1.0f) * 100.0f, SporeRadius);
-                m_spores[i].y = m_groundY + 1.0f;
+                m_spores[i].y = (ground ? ground->HeightAt(m_spores[i].x, m_spores[i].z) : m_groundY) + 1.0f;
             }
         }
         if (m_kind == BossKind::Fly || m_kind == BossKind::Boar) {
@@ -219,13 +226,22 @@ void CBossEnemy::UpdateMovement(CPlayer* player, float seconds) {
         // 発射後に横へ退避する。移動中も照準・被弾の対象になる。
         m_position += Vector3(direction.z, 0, -direction.x) * (m_orbitSign * 90.0f * seconds);
     }
-    if (m_kind == BossKind::Fly && (phase == Phase::Approach || phase == Phase::Recover)) {
-        const float hover = m_groundY + BossHeight(m_kind) + std::sin(m_elapsed * 2.5f) * 7.0f;
-        m_position.y += std::clamp(hover - m_position.y, -65.0f * seconds, 65.0f * seconds);
+    m_position = Constrain(m_position, BossRadius(m_kind));
+    const Ground* ground = Ground::Current();
+    if (ground) {
+        m_groundY = ground->HeightAt(m_position.x, m_position.z);
+    }
+    if (m_kind == BossKind::Fly) {
+        if (phase == Phase::Approach || phase == Phase::Recover) {
+            const float hover = m_groundY + BossHeight(m_kind) + std::sin(m_elapsed * 2.5f) * 7.0f;
+            m_position.y += std::clamp(hover - m_position.y, -65.0f * seconds, 65.0f * seconds);
+        }
+        m_position.y = (std::max)(m_position.y, m_groundY + BossRadius(m_kind));
     } else if (m_kind == BossKind::Ghost) {
         m_position.y = m_groundY + BossHeight(m_kind) + std::sin(m_elapsed * 2.5f) * 5.0f;
+    } else {
+        m_position.y = m_groundY + BossHeight(m_kind);
     }
-    m_position = Constrain(m_position, BossRadius(m_kind));
     const auto target = player->GetCollisionSphere();
     const float hitRadius = BossRadius(m_kind) + target.radius;
     const bool striking = phase == Phase::Charge && (m_kind == BossKind::Fly || m_kind == BossKind::Boar);
@@ -238,12 +254,13 @@ void CBossEnemy::UpdateMovement(CPlayer* player, float seconds) {
         m_attackHit = striking;
     }
     if (m_kind == BossKind::Mushroom && phase == Phase::Charge && m_damageCooldown <= 0) {
+        const float targetGround = ground ? ground->HeightAt(target.center.x, target.center.z) : m_groundY;
         for (const auto& center : m_spores) {
             Vector3 horizontal = target.center - center;
             horizontal.y = 0;
             const float reach = SporeRadius + target.radius;
             if (horizontal.LengthSquared() <= reach * reach &&
-                target.center.y - target.radius <= m_groundY + 35.0f) {
+                target.center.y - target.radius <= targetGround + 35.0f) {
                 player->TakeDamage(SupportedOutgoingDamage(SporeDamage));
                 m_damageCooldown = 0.85f;
                 break;
@@ -254,17 +271,24 @@ void CBossEnemy::UpdateMovement(CPlayer* player, float seconds) {
 
 void CBossEnemy::UpdateShots(CPlayer* player, float seconds) {
     const auto target = player->GetCollisionSphere();
+    const Ground* ground = m_shots.empty() ? nullptr : Ground::Current();
     for (auto& shot : m_shots) {
         const Vector3 before = shot.position;
         shot.position += shot.velocity * (std::min)(seconds, shot.remaining);
         shot.remaining -= seconds;
+        if (ground) {
+            if (const auto hit = ground->FirstHit(before, shot.position, SpiritRadius)) {
+                shot.position = Vector3::Lerp(before, shot.position, *hit);
+                shot.remaining = 0;
+            }
+        }
         const float radius = SpiritRadius + target.radius;
         if (Collision::DistanceSquaredPointToSegment(target.center, {before, shot.position}) <=
             radius * radius) {
             player->TakeDamage(SupportedOutgoingDamage(SpiritDamage));
             shot.remaining = 0;
         }
-        if (shot.position.y <= m_groundY + SpiritRadius ||
+        if ((!ground && shot.position.y <= m_groundY + SpiritRadius) ||
             (Constrain(shot.position, SpiritRadius) - shot.position).LengthSquared() > 0.01f) {
             shot.remaining = 0;
         }
@@ -363,10 +387,6 @@ void CBossEnemy::DrawEffects(Camera* camera) {
         return;
     }
     const bool warning = GetPhase() == Phase::Windup;
-    if (m_boar && warning) {
-        m_boar->DrawTelegraph(camera, m_attackStart, m_attackTarget, m_groundY, BossRadius(m_kind),
-                              m_attack.Progress());
-    }
     if (m_ghost) {
         if (warning) {
             m_ghost->DrawBeam(camera, m_position, m_attackTarget, 3, Color(0.7f, 0.3f, 1, 1));
@@ -375,36 +395,42 @@ void CBossEnemy::DrawEffects(Camera* camera) {
             m_ghost->DrawBeam(camera, shot.position - Vector3(0, 2, 0), shot.position + Vector3(0, 2, 0),
                               SpiritRadius * 2, Color(0.35f, 0.85f, 1, 1), true);
         }
+        return;
     }
-    if (!m_effectsReady || (!warning && GetPhase() != Phase::Charge)) {
+    if (!warning && GetPhase() != Phase::Charge) {
+        return;
+    }
+    const GroundProjection ground(Ground::Current(), m_groundY);
+    if (m_boar && warning) {
+        m_boar->DrawTelegraph(camera, m_attackStart, m_attackTarget, ground, BossRadius(m_kind),
+                              m_attack.Progress());
+    }
+    if (!m_effectsReady) {
         return;
     }
     std::vector<VERTEX_3D> vertices;
     vertices.reserve(EffectVertexCapacity);
     const auto ring = [&](Vector3 center, float radius, Color color) {
-        center.y = m_groundY + 0.7f;
-        const auto vertex = [&](Vector3 position, Color tint) {
-            VERTEX_3D result{};
-            result.position = position;
-            result.color = tint;
-            result.uv = Vector2(0.5f, 0.5f);
-            vertices.push_back(result);
-        };
+        const Color fill(color.x, color.y, color.z, warning ? 0.08f : 0.22f);
+        const auto middle = ground.Vertex(center, fill);
+        auto outer = ground.Vertex(center + Vector3::UnitX * radius, color);
+        auto inner = ground.Vertex(center + Vector3::UnitX * (radius - 2), color);
+        auto half = ground.Vertex(center + Vector3::UnitX * (radius * 0.5f), fill);
         for (int i = 0; i < CircleSegments; ++i) {
-            const float a = DirectX::XM_2PI * i / CircleSegments;
-            const float b = DirectX::XM_2PI * (i + 1) / CircleSegments;
-            const Vector3 da(std::cos(a), 0, std::sin(a));
-            const Vector3 db(std::cos(b), 0, std::sin(b));
-            const Vector3 corners[] = {center + da * (radius - 2), center + da * radius,
-                                       center + db * (radius - 2), center + db * (radius - 2),
-                                       center + da * radius,       center + db * radius};
-            for (const auto& point : corners) {
-                vertex(point, color);
-            }
-            const Color fill(color.x, color.y, color.z, warning ? 0.08f : 0.22f);
-            vertex(center, fill);
-            vertex(center + da * radius, fill);
-            vertex(center + db * radius, fill);
+            const float angle = DirectX::XM_2PI * (i + 1) / CircleSegments;
+            const Vector3 direction(std::cos(angle), 0, std::sin(angle));
+            const auto nextOuter = ground.Vertex(center + direction * radius, color);
+            const auto nextInner = ground.Vertex(center + direction * (radius - 2), color);
+            const auto nextHalf = ground.Vertex(center + direction * (radius * 0.5f), fill);
+            vertices.insert(vertices.end(), {inner, outer, nextInner, nextInner, outer, nextOuter});
+            auto fillOuter = outer;
+            auto nextFillOuter = nextOuter;
+            fillOuter.color = nextFillOuter.color = fill;
+            vertices.insert(vertices.end(), {middle, half, nextHalf, half, fillOuter, nextHalf, nextHalf,
+                                             fillOuter, nextFillOuter});
+            outer = nextOuter;
+            inner = nextInner;
+            half = nextHalf;
         }
     };
     if (m_kind == BossKind::Mushroom) {
@@ -413,20 +439,9 @@ void CBossEnemy::DrawEffects(Camera* camera) {
         }
     } else if (m_kind == BossKind::Fly) {
         ring(m_attackTarget, BossRadius(m_kind), Color(1, 0.35f, 0.1f, 0.9f));
-        Vector3 start = m_attackStart;
-        Vector3 end = m_attackTarget;
-        start.y = end.y = m_groundY + 0.8f;
-        const Vector3 direction = HorizontalDirection(start, end);
+        const Vector3 direction = HorizontalDirection(m_attackStart, m_attackTarget);
         const Vector3 side = Vector3(direction.z, 0, -direction.x) * BossRadius(m_kind);
-        const Vector3 corners[] = {start - side, start + side, end - side,
-                                   end - side,   start + side, end + side};
-        for (const auto& point : corners) {
-            VERTEX_3D vertex{};
-            vertex.position = point;
-            vertex.uv = Vector2(0.5f, 0.5f);
-            vertex.color = Color(1, 0.35f, 0.1f, 0.18f);
-            vertices.push_back(vertex);
-        }
+        ground.AppendStrip(vertices, m_attackStart, m_attackTarget, side, Color(1, 0.35f, 0.1f, 0.18f));
     }
     if (vertices.empty()) {
         return;

@@ -17,8 +17,9 @@ void CMushroomEnemy::Init() {
         Destroy();
         return;
     }
-    const auto grounds = Game::GetInstance()->GetObjects<Ground>();
-    m_position.y = (grounds.empty() ? -5.0f : grounds[0]->GetPosition().y) + m_collisionRadius;
+    const Ground* ground = Ground::Current();
+    m_position.y =
+        (ground ? ground->HeightAt(m_position.x, m_position.z) : ForestLayout::GroundY) + m_collisionRadius;
 }
 
 void CMushroomEnemy::SetRarity(EnemyRarity rarity) {
@@ -47,13 +48,13 @@ void CMushroomEnemy::Update() {
         m_position += direction * (travel / distance);
         m_rotation.y = std::atan2(direction.x, direction.z);
     }
-    const auto grounds = game->GetObjects<Ground>();
-    const float groundY = grounds.empty() ? -5.0f : grounds[0]->GetPosition().y;
-    // 跳ねるモデルに判定球を追従させる。予備動作に入ったら地面に接地する。
-    m_position.y = groundY + m_collisionRadius + m_fuse.HopHeight();
     for (auto forest : game->GetObjects<CForestStage>()) {
         m_position = forest->ConstrainMovement(previousPosition, m_position, m_collisionRadius);
     }
+    const Ground* ground = Ground::Current();
+    const float groundY = ground ? ground->HeightAt(m_position.x, m_position.z) : ForestLayout::GroundY;
+    // 跳ねるモデルに判定球を追従させる。予備動作に入ったら地面に接地する。
+    m_position.y = groundY + m_collisionRadius + m_fuse.HopHeight();
     if (!m_fuse.Exploded()) {
         return;
     }

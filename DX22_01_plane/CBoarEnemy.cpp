@@ -5,6 +5,7 @@
 #include "Game.h"
 #include "CPlayer.h"
 #include "Ground.h"
+#include "GroundProjection.h"
 #include "CBossBattle.h"
 #include "CForestStage.h"
 #ifdef _DEBUG
@@ -75,11 +76,9 @@ void CBoarEnemy::Init() {
         Destroy(); // 読み込みに失敗した透明な敵を、当たり判定だけ残して出現させない。
         return;
     }
-    const auto grounds = Game::GetInstance()->GetObjects<Ground>();
-    if (!grounds.empty()) {
-        m_groundY = grounds[0]->GetPosition().y;
-    }
-    m_position.y = m_groundY + m_collisionRadius;
+    const Ground* ground = Ground::Current();
+    m_position.y =
+        (ground ? ground->HeightAt(m_position.x, m_position.z) : ForestLayout::GroundY) + m_collisionRadius;
 }
 
 void CBoarEnemy::SetRarity(EnemyRarity rarity) {
@@ -96,12 +95,6 @@ void CBoarEnemy::Update() {
         return;
     }
     const float dt = GameTime::DeltaSeconds();
-    const auto grounds = Game::GetInstance()->GetObjects<Ground>();
-    if (!grounds.empty()) {
-        m_groundY = grounds[0]->GetPosition().y;
-    }
-    m_position.y = m_groundY + m_collisionRadius;
-
     const auto players = Game::GetInstance()->GetObjects<CPlayer>();
     if (players.empty() || players[0]->GetHp() <= 0) {
         m_model->Update(BoarMotion::Idle, dt);
@@ -117,10 +110,18 @@ void CBoarEnemy::Update() {
             movement.end = m_position;
         }
     }
+    const Ground* ground = Ground::Current();
+    const auto standingHeight = [&](const Vector3& position) {
+        return (ground ? ground->HeightAt(position.x, position.z) : ForestLayout::GroundY) +
+               m_collisionRadius;
+    };
+    m_position.y = standingHeight(m_position);
     const auto direction = m_charge.Direction();
     m_rotation.y = std::atan2(direction.x, direction.z);
 
     if (movement.charged && !m_charge.HasHit()) {
+        movement.start.y = standingHeight(movement.start);
+        movement.end.y = standingHeight(movement.end);
         // 高速移動では移動後の点だけを調べるとすり抜けるため、通った区間全体で判定する。
         const auto target = player->GetCollisionSphere();
         const float radius = m_collisionRadius + target.radius;
@@ -152,7 +153,7 @@ void CBoarEnemy::Update() {
 
 void CBoarEnemy::Draw(Camera* camera) {
     if (m_model && !IsDead()) {
-        m_model->Draw(camera, Vector3(m_position.x, m_groundY, m_position.z), m_rotation.y, m_modelScale,
+        m_model->Draw(camera, m_position - Vector3(0, m_collisionRadius, 0), m_rotation.y, m_modelScale,
                       EnemyVariants::Tint(EnemySpecies::Boar, GetRarity()));
     }
 }
@@ -165,7 +166,8 @@ void CBoarEnemy::DrawTelegraph(Camera* camera) {
     for (auto forest : Game::GetInstance()->GetObjects<CForestStage>()) {
         endpoint = forest->ConstrainMovement(m_charge.PreviewStart(), endpoint, m_collisionRadius);
     }
-    m_model->DrawTelegraph(camera, m_charge.PreviewStart(), endpoint, m_groundY, m_collisionRadius,
+    const GroundProjection ground(Ground::Current(), m_position.y - m_collisionRadius);
+    m_model->DrawTelegraph(camera, m_charge.PreviewStart(), endpoint, ground, m_collisionRadius,
                            m_charge.Progress());
 }
 
@@ -180,7 +182,7 @@ void CBoarEnemy::OnHit(int& damage) {
 
     if (m_model) {
         auto corpse = Game::GetInstance()->AddObject<BoarDeath>();
-        corpse->Start(std::move(m_model), Vector3(m_position.x, m_groundY, m_position.z), m_rotation.y,
+        corpse->Start(std::move(m_model), m_position - Vector3(0, m_collisionRadius, 0), m_rotation.y,
                       m_modelScale, EnemyVariants::Tint(EnemySpecies::Boar, GetRarity()));
     }
     Defeat(m_experience, m_presentChance);
@@ -219,7 +221,9 @@ void CBoarEnemy::DrawDebugUI() {
         forward.Normalize();
         auto boar = Game::GetInstance()->AddObject<CBoarEnemy>();
         Vector3 position = player->GetPosition() + forward * 150.0f;
-        position.y = boar->m_groundY + boar->m_collisionRadius;
+        const Ground* ground = Ground::Current();
+        position.y = (ground ? ground->HeightAt(position.x, position.z) : ForestLayout::GroundY) +
+                     boar->m_collisionRadius;
         boar->SetPosition(position);
     }
     ImGui::EndDisabled();

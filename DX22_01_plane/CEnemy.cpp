@@ -66,21 +66,6 @@ void CEnemy::Update() {
     // 攻撃待ちとダッシュの周期を、フレーム数ではなく秒で進める。
     m_moveTime = std::fmod(m_moveTime + deltaSeconds, m_dashPeriod);
     GameTime::AdvanceCooldown(m_attackTimer, deltaSeconds);
-    //地面との当たり判定-----------------------------------------------------------------------
-    std::vector<Ground*> grounds = Game::GetInstance()->GetObjects<Ground>();
-    if (!grounds.empty()) { //groundsの中が空っぽかそうか１つ以上作られたか
-        Ground* plane = grounds[0];
-        float planeY = plane->GetPosition().y + GetCollisionSphere().radius; //床座標の取得 +　自身の半径
-
-        if (m_position.y <= planeY) {
-            m_position.y = planeY;
-            Onland();
-        } else {
-            //空中状態
-            m_isGrounded = false;
-        }
-    }
-
     //移動-----------------------------------------------------------
     const auto previousPosition = m_position;
     std::vector<CPlayer*> player = Game::GetInstance()->GetObjects<CPlayer>();
@@ -127,6 +112,9 @@ void CEnemy::Update() {
             m_attackTimer += m_contactInterval; // 接触攻撃は1秒間隔。
         }
     }
+    if (const Ground* ground = Ground::Current()) {
+        m_position.y = ground->HeightAt(m_position.x, m_position.z) + GetCollisionSphere().radius;
+    }
 }
 
 void CEnemy::SetVariant(SlimeVariant variant) {
@@ -170,10 +158,6 @@ void CEnemy::Uninit() {
         delete m_body;
         m_body = nullptr;
     }
-}
-
-void CEnemy::Onland() {
-    m_isGrounded = true;
 }
 
 void CEnemy::OnHit(int& damage) {

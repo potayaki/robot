@@ -39,8 +39,8 @@ private:
     /// 2波目以降で大型スライムを選ぶ累積上限。
     int m_bruteThreshold = 80;
 
-    /// ドローンの出現時の高さ。
-    float m_droneSpawnHeight = 40.0f;
+    /// ドローンの出現位置での地面からの高さ。
+    float m_droneSpawnHeight = 45.0f;
 
     /// 地面オブジェクトがない場合のスライムの足元高さ。
     float m_slimeSpawnHeight = -3.0f;

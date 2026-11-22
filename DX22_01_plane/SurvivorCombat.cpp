@@ -3,6 +3,7 @@
 
 #include "CPlayer.h"
 #include "Game.h"
+#include "Ground.h"
 #include "EnemyTarget.h"
 #include "CAutoturret.h"
 #include "CParticle.h"
@@ -166,7 +167,11 @@ void CPlayer::TakeDamage(int damage) {
 }
 
 Vector3 CPlayer::GetTurretFollowPosition() const {
-    return EyeTurretShape::CompanionAnchor(m_position, m_rotation.y);
+    Vector3 anchor = EyeTurretShape::CompanionAnchor(m_position, m_rotation.y);
+    if (const Ground* ground = Ground::Current()) {
+        anchor.y += ground->HeightAt(anchor.x, anchor.z) - ground->HeightAt(m_position.x, m_position.z);
+    }
+    return anchor;
 }
 
 void CPlayer::DeployTurret() {

@@ -11,7 +11,7 @@
 class ForestModel {
 public:
     /// FBXを高さ1・底面中央原点へ正規化する。画像指定時は元のUVへ割り当てる。
-    bool Load(const char* path, const char* texturePath = nullptr);
+    bool Load(const char* path, const char* texturePath = nullptr, bool windAffected = false);
     /// feetは足元のワールド座標、yawはラジアン、heightはワールド単位の高さ。
     void Draw(Camera* camera, const DirectX::SimpleMath::Vector3& feet, float yaw, float height);
 

@@ -1,5 +1,6 @@
 ﻿/// @brief 森の移動境界、ボス戦との交差領域、実素材の向きと材質色を検証する。
 #include "../DX22_01_plane/ForestLayout.h"
+#include "../DX22_01_plane/ForestMeadow.h"
 #include "../DX22_01_plane/BossBattleRules.h"
 #include "../DX22_01_plane/BossCatalog.h"
 #include "../DX22_01_plane/FbxImportSettings.h"
@@ -16,6 +17,56 @@
 using DirectX::SimpleMath::Vector3;
 
 namespace {
+    void CheckMeadowCover() {
+        using ForestMeadow::Cover;
+        for (float z = ForestLayout::MinZ; z < ForestLayout::CampMaxZ; z += 20) {
+            assert(Cover(ForestLayout::PathCenter(z), z) == 0);
+        }
+        for (float z : {-450.0f, 1850.0f}) {
+            const float center = ForestLayout::PathCenter(z);
+            assert(Cover(center + 50, z) > 0 && Cover(center + 50, z) < 1);
+            assert(Cover(center + 150, z) == 1);
+        }
+        assert(Cover(-810, 1530) == 0 && Cover(880, 2140) == 0);
+        assert(Cover(-400, ForestLayout::GateZ) == 0);
+        assert(Cover(400, ForestLayout::CourtyardMaxZ) == 0);
+    }
+
+    void CheckRollingTerrain() {
+        using namespace ForestLayout;
+        // 各セルの対角線の両側で、足や弾が描画メッシュと同じ高さを参照する。
+        for (int z = -1000; z < CampMaxZ; z += TerrainCell) {
+            for (int x = -760; x < 760; x += TerrainCell) {
+                const float a = GroundVertexHeight(x, z);
+                const float b = GroundVertexHeight(x + TerrainCell, z);
+                const float c = GroundVertexHeight(x, z + TerrainCell);
+                const float d = GroundVertexHeight(x + TerrainCell, z + TerrainCell);
+                const float quarter = TerrainCell * 0.25f;
+                assert(std::abs(GroundHeight(x + quarter, z + quarter) - (2 * a + b + c) * 0.25f) < 0.001f);
+                assert(std::abs(GroundHeight(x + 3 * quarter, z + 3 * quarter) - (b + c + 2 * d) * 0.25f) <
+                       0.001f);
+            }
+        }
+        for (const Area area : {Area::Entrance, Area::Camp}) {
+            float ascent = 0;
+            float descent = 0;
+            for (float z = RoomMinZ(area) + 20; z <= RoomMaxZ(area); z += 20) {
+                const float delta = GroundHeight(PathCenter(z), z) - GroundHeight(PathCenter(z - 20), z - 20);
+                ascent += (std::max)(0.0f, delta);
+                descent += (std::max)(0.0f, -delta);
+                assert(std::abs(delta) < 13.0f);
+            }
+            assert(ascent > 75 && descent > 75);
+        }
+        for (float gateZ : GatePositions) {
+            for (float x = MinX; x <= MaxX; x += TerrainCell) {
+                for (float dz : {-GateHalfDepth, 0.0f, GateHalfDepth}) {
+                    assert(GroundHeight(x, gateZ + dz) == GroundY);
+                }
+            }
+        }
+    }
+
     bool InsideForest(const Vector3& position, float radius) {
         return position.x >= ForestLayout::MinX + radius - 0.001f &&
                position.x <= ForestLayout::MaxX - radius + 0.001f &&
@@ -232,11 +283,13 @@ namespace {
 
 int main() {
     try {
+        CheckMeadowCover();
+        CheckRollingTerrain();
         CheckForestBounds();
         CheckBossBoundaries();
         for (const auto name :
              {"CommonTree_1", "CommonTree_3", "PineTree_1", "BirchTree_1", "Rock_Moss_2", "Rock_1", "Bush_1",
-              "Grass_Short", "Flowers", "TreeStump_Moss", "WoodLog_Moss"}) {
+              "Grass_Short", "Flowers", "TreeStump_Moss", "WoodLog_Moss", "Plant_1"}) {
             CheckForestAsset(name);
         }
         constexpr char palette[] = "DX22_01_plane/assets/model/Stage/lowpolynaturepacklite/colormap.png";
@@ -244,6 +297,10 @@ int main() {
         constexpr char lite[] = "lowpolynaturepacklite/models/";
         CheckForestAsset("tent_blue", lite, {646.821f, 454.330f, 693.852f}, palette);
         CheckForestAsset("tent_red", lite, {646.821f, 454.330f, 693.852f}, palette);
+        CheckForestAsset("grass03", lite, {74.357f, 202.802f, 95.625f}, palette);
+        for (const auto flower : {"flower02_pink", "flower02_yellow", "flower02_orange"}) {
+            CheckForestAsset(flower, lite, {153.175f, 194.535f, 86.479f}, palette);
+        }
         constexpr char dungeon[] = "FBX-20261116T081522Z-1-001/FBX/";
         CheckForestAsset("Arch", dungeon, {410.436f, 401.007f, 99.261f});
         CheckForestAsset("Arch_bars", dungeon, {247.826f, 338.815f, 3.033f});

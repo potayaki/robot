@@ -8,9 +8,10 @@
 #include "CPlayer.h"
 #include "Game.h"
 #include "AimCursor.h"
+#include "ForestTerrain.h"
+#include <algorithm>
 #ifdef _DEBUG
 #include "imgui.h"
-#include <algorithm>
 #include <cmath>
 #endif
 using namespace DirectX::SimpleMath;
@@ -84,7 +85,6 @@ void Camera::Update() {
         std::vector<CPlayer*> player = Game::GetInstance()->GetObjects<CPlayer>();
         if (!player.empty()) { //プレイヤーがいるとき
             Vector3 playerpos = player[0]->GetPosition();
-            m_position = playerpos + m_followOffset; //プレイヤーの位置＋オフセットでカメラ位置を決定
             SetTarget(playerpos);
 
             //offsetのx,zを回転させる
@@ -96,6 +96,15 @@ void Camera::Update() {
             rotatedOffset.z = cos(m_cameraDirection) * radius;
 
             m_position = playerpos + rotatedOffset; //プレイヤーの周囲を回転しながら追従
+            // 下り坂でカメラが登り側へ回ったときも、足元への視線を地中に通さない。
+            constexpr int samples = 6;
+            constexpr float clearance = 7.0f;
+            for (int i = 1; i <= samples; ++i) {
+                const float t = static_cast<float>(i) / samples;
+                const Vector3 point = playerpos + rotatedOffset * t;
+                const float minY = ForestLayout::GroundHeight(point.x, point.z) + clearance;
+                m_position.y = (std::max)(m_position.y, playerpos.y + (minY - playerpos.y) / t);
+            }
         }
     }
 

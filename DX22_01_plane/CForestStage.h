@@ -4,6 +4,7 @@
 #include "ForestModel.h"
 #include "ForestLayout.h"
 #include "ForestProgress.h"
+#include "ForestGrass.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 #include "Material.h"
@@ -25,12 +26,20 @@ class CForestStage : public Object {
     std::vector<std::unique_ptr<ForestModel>> m_models;
     /// 固定シードで配置する樹木・岩・草花。
     std::vector<Prop> m_props;
-    /// 草地、土の道、石畳を頂点色で表現する平面メッシュ。
+    /// 外周の土手、草地、土の道、石畳を頂点色で描く地表メッシュ。
     VertexBuffer<VERTEX_3D> m_groundVertices;
     /// 地表面の三角形インデックス。
     IndexBuffer m_groundIndices;
     /// 地表面に使用する照明付き材質。
     Material m_groundMaterial;
+    /// 頂点色の上に土粒と石の細かな模様を重ねる共有テクスチャ。
+    Texture m_groundDetail{};
+    /// 草原を覆う細い葉のインスタンス。
+    ForestGrass m_grass;
+    /// 草、花、地表の明暗に同じ風の時刻を渡す定数バッファ。
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_windBuffer;
+    /// ゲーム時間で進む風の周期内の経過秒数。
+    double m_windSeconds = 0;
     /// 地表面のインデックス数。
     unsigned m_groundIndexCount = 0;
     /// このプレイの開門状態。シーンの再生成で閉じた状態に戻る。

@@ -7,6 +7,9 @@
 
 class CGhostEnemy : public EnemyTarget {
 public:
+    /// 地表からGhost中心までの浮遊高度（ワールド単位）。
+    static constexpr float HoverHeight = 36.0f;
+
     void Init() override;
     void Update() override;
     void Draw(Camera* camera) override;
@@ -55,8 +58,6 @@ private:
     float m_farDistance = 260.0f;
     /// 水平移動速度（ワールド単位/秒）。
     float m_moveSpeed = 65.0f;
-    /// 地面からGhost中心までの高さ（ワールド単位）。
-    float m_hoverHeight = 36.0f;
     /// 浮遊動作の経過秒数。
     float m_elapsed = 0;
     /// 次の霊弾までの残り秒数。支援中はリセットする。

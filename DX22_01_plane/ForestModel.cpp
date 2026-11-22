@@ -35,8 +35,10 @@ namespace {
                     VERTEX_3D vertex{};
                     vertex.position = Vector3(position.x, position.y, position.z);
                     vertex.normal = Vector3(normal.x, normal.y, normal.z);
-                    vertex.color = Color(diffuse.r * color.r, diffuse.g * color.g, diffuse.b * color.b,
-                                         diffuse.a * color.a);
+                    // FBXの線形色を、UNORMの描画先や草地の頂点色と同じ表示色にそろえる。
+                    const Color linear(diffuse.r * color.r, diffuse.g * color.g, diffuse.b * color.b,
+                                       diffuse.a * color.a);
+                    vertex.color = Color(DirectX::XMColorRGBToSRGB(linear));
                     if (mesh->HasTextureCoords(0)) {
                         vertex.uv =
                             Vector2(mesh->mTextureCoords[0][index].x, mesh->mTextureCoords[0][index].y);
@@ -74,7 +76,7 @@ namespace {
     };
 } // namespace
 
-bool ForestModel::Load(const char* path, const char* texturePath) {
+bool ForestModel::Load(const char* path, const char* texturePath, bool windAffected) {
     ForestMesh source;
     if (!source.Load(path)) {
         return false;
@@ -103,7 +105,8 @@ bool ForestModel::Load(const char* path, const char* texturePath) {
     m_material = std::move(material);
     m_texture = std::move(texture);
     m_rasterizer = std::move(state);
-    m_shader.Create("shader/litTextureVS.hlsl", "shader/litTexturePS.hlsl");
+    m_shader.Create(windAffected ? "shader/forestFoliageVS.hlsl" : "shader/groundSkyVS.hlsl",
+                    "shader/forestSceneryPS.hlsl");
     m_indexCount = static_cast<unsigned int>(source.GetIndices().size());
     return true;
 }

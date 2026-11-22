@@ -35,6 +35,9 @@ private:
     /// 攻撃が命中したときに与えるダメージ量。
     int m_damage = 1;
 
+    /// 生成時と周回中で同じ地表からの高さを使う。
+    void UpdatePosition();
+
 public:
     COrbitalOrb();
     ~COrbitalOrb();

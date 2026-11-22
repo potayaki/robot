@@ -208,7 +208,8 @@ aiVector3D RobotSpiderIK::GetHome(const Leg& leg) const {
     return home;
 }
 
-void RobotSpiderIK::ApplySettings(RobotAnimationRig& rig, const Settings& requested) {
+void RobotSpiderIK::ApplySettings(RobotAnimationRig& rig, const Settings& requested,
+                                  const HeightAt& heightAt) {
     m_settings = requested;
     const Settings defaults; // NaNなどの異常な入力に対して使う初期値。
     m_settings.strideLength = ValidSetting(m_settings.strideLength, defaults.strideLength,
@@ -235,13 +236,16 @@ void RobotSpiderIK::ApplySettings(RobotAnimationRig& rig, const Settings& reques
         // 開き具合を変更した瞬間だけ接地点を外側／内側へ動かす。
         // 歩行中の前後位置と進行率は保つ。停止後にIdleの足位置へ戻さない。
         const auto shift = Horizontal(aiMatrix3x3(m_previousWorld) * (leg.home - previousHome));
-        m_feet[index].position += shift;
-        m_feet[index].start += shift;
-        m_feet[index].target += shift;
+        for (auto point : {&m_feet[index].position, &m_feet[index].start, &m_feet[index].target}) {
+            if (m_grounded && heightAt) {
+                point->y += heightAt(point->x + shift.x, point->z + shift.z) - heightAt(point->x, point->z);
+            }
+            *point += shift;
+        }
     }
 
     if (m_tracking) {
-        Solve(rig, m_previousWorld); // 時間を進めないため、一時停止中でも配置を確認できる。
+        Solve(rig, m_previousWorld, heightAt); // 一時停止中も現在の地表に合わせて配置する。
     }
 }
 
@@ -269,27 +273,29 @@ void RobotSpiderIK::Reset() {
     m_turnSteps = 0;
 }
 
-void RobotSpiderIK::ResetContacts(const aiMatrix4x4& world, float groundY, bool grounded) {
+void RobotSpiderIK::ResetContacts(const aiMatrix4x4& world, const HeightAt& heightAt, bool grounded) {
     // 初回・ワープ・着地では、古い接地点を持ち越さず現在の胴体の周囲へ置き直す。
     for (size_t index = 0; index < m_feet.size(); ++index) {
         auto& foot = m_feet[index];
         foot = {};
         foot.position = world * m_legs[index].home;
         if (grounded) {
-            foot.position.y = groundY;
+            foot.position.y = heightAt(foot.position.x, foot.position.z);
         }
     }
 }
 
 void RobotSpiderIK::Update(RobotAnimationRig& rig, float dt, const aiMatrix4x4& world, float groundY,
-                           bool grounded) {
+                           bool grounded, const HeightAt& terrain) {
     if (!m_initialized || dt <= 0.0f) {
         return;
     }
 
+    const HeightAt flat = [groundY](float, float) { return groundY; };
+    const auto& heightAt = terrain ? terrain : flat;
     const bool teleported = (Position(world) - m_previousPosition).Length() > TeleportResetDistance;
     if (!m_tracking || teleported || dt > LongFrameResetSeconds) {
-        Step(rig, dt, world, groundY, grounded);
+        Step(rig, dt, world, heightAt, grounded);
         m_previousWorld = world;
         return;
     }
@@ -308,13 +314,13 @@ void RobotSpiderIK::Update(RobotAnimationRig& rig, float dt, const aiMatrix4x4& 
         aiQuaternion::Interpolate(rotation, oldRotation, newRotation, alpha);
         const aiMatrix4x4 interpolated(oldScale + (newScale - oldScale) * alpha, rotation.Normalize(),
                                        oldPosition + (newPosition - oldPosition) * alpha);
-        Step(rig, dt / steps, interpolated, groundY, grounded);
+        Step(rig, dt / steps, interpolated, heightAt, grounded);
     }
 
     m_previousWorld = world;
 }
 
-void RobotSpiderIK::Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& world, float groundY,
+void RobotSpiderIK::Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& world, const HeightAt& heightAt,
                          bool grounded) {
     const auto position = Position(world);
     const auto displacement = position - m_previousPosition;
@@ -325,7 +331,7 @@ void RobotSpiderIK::Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& wo
         Reset();
         m_tracking = true;
         m_previousPosition = position;
-        ResetContacts(world, groundY, grounded);
+        ResetContacts(world, heightAt, grounded);
         m_grounded = grounded;
     }
 
@@ -339,7 +345,7 @@ void RobotSpiderIK::Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& wo
     m_previousPosition = position;
 
     if (grounded && !m_grounded) {
-        ResetContacts(world, groundY, grounded);
+        ResetContacts(world, heightAt, grounded);
         m_body.velocity.y -= LandingBodyImpulse;
     }
     m_grounded = grounded;
@@ -382,7 +388,7 @@ void RobotSpiderIK::Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& wo
 
             foot.start = foot.position;
             foot.target = foot.position;
-            foot.target.y = groundY;
+            foot.target.y = heightAt(foot.target.x, foot.target.z);
             foot.progress = 0.0f;
             foot.duration = StopLandingSeconds;
             foot.liftHeight = 0.0f;
@@ -392,7 +398,7 @@ void RobotSpiderIK::Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& wo
     }
 
     // 先に今の一歩を進める。全て着地できた場合だけ、次の3本を持ち上げられる。
-    const bool swinging = UpdateSwingingFeet(dt, world, groundY, grounded, moving, velocity, stepSeconds);
+    const bool swinging = UpdateSwingingFeet(dt, world, heightAt, grounded, moving, velocity, stepSeconds);
 
     if (!grounded) {
         for (size_t index = 0; index < m_feet.size(); ++index) {
@@ -435,7 +441,7 @@ void RobotSpiderIK::Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& wo
         if (group >= 0) {
             const bool shortStep = moving && (!m_wasMoving || m_turnSteps > 0);
             const float duration = shortStep ? stepSeconds * ShortStepDurationRatio : stepSeconds;
-            BeginTripodStep(group, world, groundY, velocity, duration, stepSeconds);
+            BeginTripodStep(group, world, heightAt, velocity, duration, stepSeconds);
             m_nextTripod = (group + 1) % TripodCount;
             if (m_turnSteps > 0) {
                 --m_turnSteps;
@@ -446,11 +452,12 @@ void RobotSpiderIK::Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& wo
     m_wasMoving = moving;
     m_previousVelocity = velocity;
     UpdateBodyMotion(dt, world, grounded, speed, acceleration);
-    Solve(rig, world);
+    Solve(rig, world, heightAt);
 }
 
-bool RobotSpiderIK::UpdateSwingingFeet(float dt, const aiMatrix4x4& world, float groundY, bool grounded,
-                                       bool moving, const aiVector3D& velocity, float stepSeconds) {
+bool RobotSpiderIK::UpdateSwingingFeet(float dt, const aiMatrix4x4& world, const HeightAt& heightAt,
+                                       bool grounded, bool moving, const aiVector3D& velocity,
+                                       float stepSeconds) {
     bool stillSwinging = false; // この更新を終えても空中に残っている足があるか。
     for (size_t index = 0; index < m_feet.size(); ++index) {
         auto& foot = m_feet[index];
@@ -463,7 +470,7 @@ bool RobotSpiderIK::UpdateSwingingFeet(float dt, const aiMatrix4x4& world, float
             // 方向転換時は空中の足の着地先だけを追従させる。
             const float leadSeconds = (std::max)(0.0f, remaining - dt) + stepSeconds * LandingLeadRatio;
             foot.target = world * m_legs[index].home + velocity * leadSeconds;
-            foot.target.y = groundY;
+            foot.target.y = heightAt(foot.target.x, foot.target.z);
         }
 
         // 現在位置・速度から着地点までをHermite補間する。
@@ -494,6 +501,9 @@ bool RobotSpiderIK::UpdateSwingingFeet(float dt, const aiMatrix4x4& world, float
         foot.arcOffset =
             foot.liftHeight > 0.0f ? foot.outward * (m_settings.swingOutward * arcHeight) : aiVector3D();
         foot.position += foot.arcOffset;
+        if (grounded) {
+            foot.position.y = (std::max)(foot.position.y, heightAt(foot.position.x, foot.position.z));
+        }
 
         if (progress >= 1.0f) {
             foot.swinging = false;
@@ -509,7 +519,7 @@ bool RobotSpiderIK::UpdateSwingingFeet(float dt, const aiMatrix4x4& world, float
     return stillSwinging;
 }
 
-void RobotSpiderIK::BeginTripodStep(int group, const aiMatrix4x4& world, float groundY,
+void RobotSpiderIK::BeginTripodStep(int group, const aiMatrix4x4& world, const HeightAt& heightAt,
                                     const aiVector3D& velocity, float duration, float stepSeconds) {
     // 着地までの移動に加え、次の支持期間の途中まで本体が進む量を先読みする。
     const auto lead = velocity * (duration + stepSeconds * LandingLeadRatio);
@@ -517,7 +527,7 @@ void RobotSpiderIK::BeginTripodStep(int group, const aiMatrix4x4& world, float g
         auto& foot = m_feet[index];
         foot.start = foot.position;
         foot.target = world * m_legs[index].home + lead;
-        foot.target.y = groundY;
+        foot.target.y = heightAt(foot.target.x, foot.target.z);
         foot.progress = 0.0f;
         foot.duration = duration;
         foot.liftHeight = m_settings.stepHeight;
@@ -567,15 +577,29 @@ void RobotSpiderIK::TransformBranch(RobotAnimationRig& rig, int root, const aiMa
     }
 }
 
-void RobotSpiderIK::Solve(RobotAnimationRig& rig, const aiMatrix4x4& world) {
+void RobotSpiderIK::Solve(RobotAnimationRig& rig, const aiMatrix4x4& world, const HeightAt& heightAt) {
     auto inverseWorld = world;
     inverseWorld.Inverse();
 
     // まず胴体の揺れと高さを反映する。その後、固定された接地点へ各脚を届かせる。
     aiMatrix4x4 pitch;
     aiMatrix4x4 roll;
-    aiMatrix4x4::RotationX(m_tilt.value.x, pitch);
-    aiMatrix4x4::RotationZ(m_tilt.value.z, roll);
+    auto tilt = m_tilt.value;
+    if (m_grounded && heightAt) {
+        // 6本の支持面に腰を沿わせ、下り側の脚だけが伸び切るのを防ぐ。
+        constexpr float supportRadius = 9.0f;
+        const auto center = Position(world);
+        const auto incline = [&](const aiVector3D& axis) {
+            const auto halfSpan = Horizontal(aiMatrix3x3(world) * axis).Normalize() * supportRadius;
+            const auto high = center + halfSpan;
+            const auto low = center - halfSpan;
+            return std::atan2(heightAt(high.x, high.z) - heightAt(low.x, low.z), 2 * supportRadius);
+        };
+        tilt.x -= incline(aiVector3D(0, 0, 1));
+        tilt.z += incline(aiVector3D(1, 0, 0));
+    }
+    aiMatrix4x4::RotationX(tilt.x, pitch);
+    aiMatrix4x4::RotationZ(tilt.z, roll);
     const int root = rig.FindNode("Root_M");
     auto body = Around(roll * pitch, Position(m_rest[root]));
     const auto offset = aiMatrix3x3(inverseWorld) * (m_body.value + aiVector3D(0, m_settings.bodyHeight, 0));

@@ -2,6 +2,7 @@
 /// @brief プレイヤーのロボット表示、足のIK、死亡時の分解表示。
 
 #include "PlayerRobotModel.h"
+#include "Ground.h"
 
 #include <cstddef>
 #include <iostream>
@@ -14,6 +15,13 @@
 using namespace DirectX::SimpleMath;
 
 namespace {
+    RobotSpiderIK::HeightAt CurrentGroundHeight() {
+        if (const auto* ground = Ground::Current()) {
+            return [ground](float x, float z) { return ground->HeightAt(x, z); };
+        }
+        return {};
+    }
+
     constexpr float RobotScale = 0.025f; // 素材全体をゲーム内サイズへ変換する倍率。
     constexpr float LowerBodyScale = 1.40f; // 腰と6本脚だけを拡大。上半身の大きさは保つ。
     constexpr float PlayerCollisionRadius = 10.0f; // 判定の中心から底面までモデルを下げる量。
@@ -118,7 +126,8 @@ void PlayerRobotModel::Advance(RobotMotion motion, float deltaSeconds, float pla
                  upperBodyPitch);
 
     if (useIK) {
-        m_spiderIK.Update(m_rig, deltaSeconds, ToAssimp(GetWorldMatrix()), groundY, grounded);
+        m_spiderIK.Update(m_rig, deltaSeconds, ToAssimp(GetWorldMatrix()), groundY, grounded,
+                          CurrentGroundHeight());
     } else {
         // 素材のアニメーションをプレビューした後は、古い接地点を使わずIKを再開する。
         m_spiderIK.Reset();
@@ -176,7 +185,7 @@ void PlayerRobotModel::DrawIKDebugUI() {
 
     if (changed) {
         // 時間を進めず骨行列だけ作り直す。一時停止中でも足の開きや腰の高さを確認できる。
-        m_spiderIK.ApplySettings(m_rig, tuning);
+        m_spiderIK.ApplySettings(m_rig, tuning, CurrentGroundHeight());
     }
 
     ImGui::TextWrapped("%s",
@@ -215,7 +224,7 @@ void PlayerRobotModel::BeginBreakApart(float groundY) {
 }
 
 void PlayerRobotModel::AdvanceBreakApart(float deltaSeconds) {
-    m_debris.Update(deltaSeconds);
+    m_debris.Update(deltaSeconds, CurrentGroundHeight());
 }
 
 void PlayerRobotModel::RestoreBody() {

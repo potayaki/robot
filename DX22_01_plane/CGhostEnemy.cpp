@@ -21,8 +21,9 @@ void CGhostEnemy::Init() {
     if (!m_model) {
         Destroy();
     }
-    const auto grounds = Game::GetInstance()->GetObjects<Ground>();
-    m_position.y = (grounds.empty() ? -5.0f : grounds[0]->GetPosition().y) + m_hoverHeight;
+    const Ground* ground = Ground::Current();
+    m_position.y =
+        (ground ? ground->HeightAt(m_position.x, m_position.z) : ForestLayout::GroundY) + HoverHeight;
 }
 
 void CGhostEnemy::SetRarity(EnemyRarity rarity) {
@@ -77,12 +78,12 @@ void CGhostEnemy::Update() {
     m_position += direction * GhostSupport::Travel(distance, speed, dt, m_nearDistance, m_farDistance);
     m_rotation.y = std::atan2(direction.x, direction.z);
     m_elapsed += dt;
-    const auto grounds = Game::GetInstance()->GetObjects<Ground>();
-    const float groundY = grounds.empty() ? -5.0f : grounds[0]->GetPosition().y;
-    m_position.y = groundY + m_hoverHeight + std::sin(m_elapsed * 2.5f) * 4.0f;
     for (auto forest : forests) {
         m_position = forest->ConstrainMovement(previousPosition, m_position, CollisionRadius);
     }
+    const Ground* ground = Ground::Current();
+    const float groundY = ground ? ground->HeightAt(m_position.x, m_position.z) : ForestLayout::GroundY;
+    m_position.y = groundY + HoverHeight + std::sin(m_elapsed * 2.5f) * 4.0f;
 
     const auto playerSphere = player->GetCollisionSphere();
     for (auto& shot : m_shots) {
@@ -96,14 +97,17 @@ void CGhostEnemy::Update() {
                 shot.remaining = 0;
             }
         }
+        if (ground) {
+            if (const auto hit = ground->FirstHit(before, shot.position, ShotRadius)) {
+                shot.position = Vector3::Lerp(before, shot.position, *hit);
+                shot.remaining = 0;
+            }
+        }
         const float radius = playerSphere.radius + ShotRadius;
         // 移動区間全体で判定し、低FPSでもプレイヤーを飛び越えない。
         if (Collision::DistanceSquaredPointToSegment(playerSphere.center, {before, shot.position}) <=
             radius * radius) {
             player->TakeDamage(SupportedOutgoingDamage(m_shotDamage));
-            shot.remaining = 0;
-        }
-        if (shot.position.y <= groundY + ShotRadius) {
             shot.remaining = 0;
         }
     }
@@ -199,14 +203,18 @@ void CGhostEnemy::DrawDebugUI() {
     if (ImGui::Button(text(u8"Ghostを正面に出す"))) {
         auto ghost = Game::GetInstance()->AddObject<CGhostEnemy>();
         const auto position = player->GetPosition() + forward * 220.0f;
-        ghost->SetPosition(position.x, ghost->GetPosition().y, position.z);
+        const Ground* ground = Ground::Current();
+        const float feet = ground ? ground->HeightAt(position.x, position.z) : ForestLayout::GroundY;
+        ghost->SetPosition(position.x, feet + HoverHeight, position.z);
     }
     if (ImGui::Button(text(u8"支援確認用スライムを4体出す"))) {
         const Vector3 side(forward.z, 0, -forward.x);
         for (int i = 0; i < 4; ++i) {
             auto enemy = Game::GetInstance()->AddObject<CEnemy>();
             const auto position = player->GetPosition() + forward * 250.0f + side * (float(i) - 1.5f) * 45.0f;
-            enemy->SetPosition(position.x, enemy->GetPosition().y, position.z);
+            const Ground* ground = Ground::Current();
+            const float feet = ground ? ground->HeightAt(position.x, position.z) : ForestLayout::GroundY;
+            enemy->SetPosition(position.x, feet + enemy->GetCollisionSphere().radius, position.z);
         }
     }
     ImGui::EndDisabled();

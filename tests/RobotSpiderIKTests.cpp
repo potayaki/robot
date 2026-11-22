@@ -83,6 +83,33 @@ void CheckStrideAndStopping(const RobotAnimationRig& original) {
     }
 }
 
+void CheckSlopedContacts(const RobotAnimationRig& original) {
+    auto rig = original;
+    RobotSpiderIK ik;
+    assert(ik.Init(rig));
+    const auto heightAt = [](float x, float z) { return -5 + 0.25f * x + 0.35f * z; };
+    constexpr float dt = 1.0f / 60;
+    for (int frame = 0; frame < 120; ++frame) {
+        const float z = static_cast<float>((std::min)(frame, 90)) * 0.70f;
+        const float ground = heightAt(0, z);
+        const auto previous = ik.GetFeet();
+        rig.Update(RobotMotion::Idle, dt);
+        ik.Update(rig, dt, World(aiVector3D(0, ground, z)), ground, true, heightAt);
+        for (size_t i = 0; i < ik.GetFeet().size(); ++i) {
+            const auto& foot = ik.GetFeet()[i];
+            const float clearance = foot.position.y - heightAt(foot.position.x, foot.position.z);
+            assert(clearance >= -0.001f);
+            if (!foot.swinging) {
+                assert(std::abs(clearance) < 0.001f);
+                assert((ik.GetSolvedContacts()[i] - foot.position).Length() < 0.15f);
+                if (frame > 0 && !previous[i].swinging) {
+                    assert((foot.position - previous[i].position).Length() < 0.001f);
+                }
+            }
+        }
+    }
+}
+
 void CheckLiveSettings(const RobotAnimationRig& original) {
     auto rig = original;
     RobotSpiderIK ik;
@@ -258,6 +285,7 @@ int main() {
     original.SetLowerBodyScale(1.40f);
     CheckStrideAndStopping(original);
     CheckLiveSettings(original);
+    CheckSlopedContacts(original);
     CheckExpandedStride(original);
     const int joints[][4] = {{3, 4, 5, 6},     {9, 10, 11, 12},  {15, 16, 17, 18},
                              {27, 28, 29, 30}, {33, 34, 35, 36}, {39, 40, 41, 42}};

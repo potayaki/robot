@@ -175,6 +175,7 @@
     <ClCompile Include="CAutoturret.cpp" />
     <ClCompile Include="CBossBattle.cpp" />
     <ClCompile Include="CForestStage.cpp" />
+    <ClCompile Include="ForestGrass.cpp" />
     <ClCompile Include="ForestModel.cpp" />
     <ClCompile Include="CBossEnemy.cpp" />
     <ClCompile Include="EyeTurretModel.cpp" />
@@ -270,7 +271,10 @@
     <ClInclude Include="BossBattleRules.h" />
     <ClInclude Include="BossCatalog.h" />
     <ClInclude Include="CForestStage.h" />
+    <ClInclude Include="ForestGrass.h" />
+    <ClInclude Include="ForestMeadow.h" />
     <ClInclude Include="ForestLayout.h" />
+    <ClInclude Include="ForestTerrain.h" />
     <ClInclude Include="ForestProgress.h" />
     <ClInclude Include="ForestModel.h" />
     <ClInclude Include="BossAttackRules.h" />
@@ -305,6 +309,7 @@
     <ClInclude Include="GameTime.h" />
     <ClInclude Include="GolfBall.h" />
     <ClInclude Include="Ground.h" />
+    <ClInclude Include="GroundProjection.h" />
     <ClInclude Include="imconfig.h" />
     <ClInclude Include="imgui.h" />
     <ClInclude Include="imgui_impl_dx11.h" />
@@ -408,6 +413,13 @@
     <None Include="shader\skyPS.hlsl" />
     <None Include="shader\groundSkyVS.hlsl" />
     <None Include="shader\groundSkyPS.hlsl" />
+    <None Include="shader\forestSceneryPS.hlsl" />
+    <None Include="shader\forestGroundPS.hlsl" />
+    <None Include="shader\forestFoliageVS.hlsl" />
+    <None Include="shader\forestGrassVS.hlsl" />
+    <None Include="shader\forestGrassPS.hlsl" />
+    <None Include="shader\meadowWind.hlsli" />
+    <None Include="shader\skyFog.hlsli" />
     <None Include="shader\boarVS.hlsl" />
     <None Include="shader\chargeTelegraphVS.hlsl" />
     <None Include="shader\chargeTelegraphPS.hlsl" />

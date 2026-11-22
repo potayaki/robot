@@ -3,6 +3,7 @@
 
 #pragma once
 #include "RobotAnimationRig.h"
+#include <functional>
 
 // 死亡時の表示専用。現在の姿勢を部品へ焼き付け、骨格から独立して飛ばす。
 // GPUに依存しないため、分解前後の形状・接地・FPS差を実際のFBXで検証できる。
@@ -20,10 +21,8 @@ class RobotDebris {
         float spinSpeed = 0.0f;
         /// 地面との接触判定に使う破片の半径。
         float radius = 0.0f;
-        /// この破片の頂点が始まる配列内の位置。
-        size_t firstVertex = 0;
-        /// 描画対象となる頂点の数。
-        size_t vertexCount = 0;
+        /// 接地判定用の重複しない頂点（破片の中心を原点とする）。
+        std::vector<aiVector3D> contactPoints;
         /// 破片が地面で静止したか。
         bool resting = false;
     };
@@ -39,13 +38,14 @@ class RobotDebris {
     /// 破片の固定時間更新へまだ渡していない経過秒数。
     double m_pendingSeconds = 0.0;
 
-    void Step(float seconds);
+    using HeightAt = std::function<float(float, float)>;
+    void Step(float seconds, const HeightAt& heightAt);
     void UpdateMatrices();
 
 public:
     void Start(const RobotAnimationRig& rig, const aiMatrix4x4& modelToWorld, float groundY);
     /// 経過時間と入力に合わせて状態を更新する。
-    void Update(float deltaSeconds);
+    void Update(float deltaSeconds, const HeightAt& heightAt = {});
     void Reset();
 
     bool IsActive() const {

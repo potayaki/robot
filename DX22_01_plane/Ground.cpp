@@ -2,7 +2,12 @@
 /// @brief 地形グリッドの作成とテクスチャ付きの地面描画。
 
 #include "Ground.h"
+#include "ForestLayout.h"
+#include "Game.h"
 #include "stb_image.h"
+#include <array>
+#include <cmath>
+#include <limits>
 using namespace DirectX::SimpleMath;
 
 //=======================================
@@ -66,11 +71,57 @@ void Ground::Init() {
 //=======================================
 void Ground::Update() {}
 
+Ground* Ground::Current() {
+    const auto grounds = Game::GetInstance()->GetObjects<Ground>();
+    return grounds.empty() ? nullptr : grounds.front();
+}
+
+float Ground::HeightAt(float x, float z) const {
+    return m_forestSurface ? ForestLayout::GroundHeight(x, z) : m_position.y;
+}
+
+std::optional<float> Ground::FirstHit(const Vector3& from, const Vector3& to, float clearance) const {
+    float gap = from.y - HeightAt(from.x, from.z) - clearance;
+    if (gap <= 0) {
+        return 0.0f;
+    }
+    // 地面の三角形の辺は X、Z、X+Z がセル幅の整数倍になる直線上にある。
+    // 線分をこれらの辺で区切ると、各区間の地表との高低差は一次式で解ける。
+    const Vector3 delta = to - from;
+    const std::array<double, 3> start{from.x, from.z, double(from.x) + from.z};
+    const std::array<double, 3> travel{delta.x, delta.z, double(delta.x) + delta.z};
+    std::array<double, 3> next, stride{};
+    next.fill(std::numeric_limits<double>::infinity());
+    for (size_t i = 0; m_forestSurface && i < next.size(); ++i) {
+        if (travel[i] == 0) {
+            continue;
+        }
+        const double cell = start[i] / ForestLayout::TerrainCell;
+        const double boundary = travel[i] > 0 ? std::floor(cell) + 1 : std::ceil(cell) - 1;
+        next[i] = (boundary * ForestLayout::TerrainCell - start[i]) / travel[i];
+        stride[i] = ForestLayout::TerrainCell / std::abs(travel[i]);
+    }
+    float previous = 0;
+    while (previous < 1.0f) {
+        const auto edge = std::min_element(next.begin(), next.end());
+        const float fraction = static_cast<float>((std::min)(1.0, *edge));
+        const Vector3 point = Vector3::Lerp(from, to, fraction);
+        const float nextGap = point.y - HeightAt(point.x, point.z) - clearance;
+        if (nextGap <= 0) {
+            return std::lerp(previous, fraction, gap / (gap - nextGap));
+        }
+        *edge += stride[edge - next.begin()];
+        previous = fraction;
+        gap = nextGap;
+    }
+    return std::nullopt;
+}
+
 //=======================================
 //描画処理
 //=======================================
 void Ground::Draw(Camera* cam) {
-    if (!m_surfaceVisible) {
+    if (m_forestSurface) {
         return;
     }
     //カメラを選択する

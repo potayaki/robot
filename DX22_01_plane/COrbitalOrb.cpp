@@ -4,6 +4,7 @@
 #include "COrbitalOrb.h"
 #include <DirectXMath.h>
 #include "Game.h"
+#include "Ground.h"
 #include "EnemyTarget.h"
 
 COrbitalOrb::COrbitalOrb() {
@@ -34,9 +35,16 @@ void COrbitalOrb::SetOrbitalParam(Object* player, float startAngle, float radius
     m_radius = radius;
     m_speed = speed;
     // 報酬選択中はUpdateが止まるため、生成時点でも正しい周回位置を表示する。
-    m_position =
-        player->GetPosition() +
-        DirectX::SimpleMath::Vector3(radius * cosf(startAngle), m_heightOffset, radius * sinf(startAngle));
+    UpdatePosition();
+}
+
+void COrbitalOrb::UpdatePosition() {
+    const auto player = m_parentPlayer->GetPosition();
+    m_position = player + DirectX::SimpleMath::Vector3(m_radius * cosf(m_angle), m_heightOffset,
+                                                       m_radius * sinf(m_angle));
+    if (const Ground* ground = Ground::Current()) {
+        m_position.y += ground->HeightAt(m_position.x, m_position.z) - ground->HeightAt(player.x, player.z);
+    }
     if (m_body) {
         m_body->SetPosition(m_position);
     }
@@ -55,18 +63,7 @@ void COrbitalOrb::Update() {
         m_angle -= DirectX::XM_2PI;
     }
 
-    // プレイヤーの現在位置を取得
-    DirectX::SimpleMath::Vector3 playerPos = m_parentPlayer->GetPosition();
-
-    // プレイヤーの周囲を回るXZ座標を計算
-    m_position.x = playerPos.x + m_radius * cosf(m_angle);
-    m_position.y = playerPos.y + m_heightOffset; // プレイヤーの少し上に浮かす
-    m_position.z = playerPos.z + m_radius * sinf(m_angle);
-
-    // 見た目のモデルに座標を適用
-    if (m_body) {
-        m_body->SetPosition(m_position.x, m_position.y, m_position.z);
-    }
+    UpdatePosition();
 
     //--------------------
     // 敵との当たり判定

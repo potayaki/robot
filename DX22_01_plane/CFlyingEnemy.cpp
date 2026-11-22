@@ -98,7 +98,7 @@ void CFlyingEnemy::Update() {
     m_rotorAngle += m_rotorSpeed * deltaSeconds;
 
     auto players = Game::GetInstance()->GetObjects<CPlayer>();
-    auto grounds = Game::GetInstance()->GetObjects<Ground>();
+    const Ground* ground = Ground::Current();
     if (!players.empty() && players[0] != nullptr) {
         const Vector3 previousPosition = m_position;
         CPlayer* player = players[0];
@@ -129,7 +129,8 @@ void CFlyingEnemy::Update() {
             if (horizontalDistance < m_retreatRange) {
                 m_position -= toPlayer * (m_retreatSpeed * speed * deltaSeconds);
             }
-            const float groundY = grounds.empty() ? -5.0f : grounds[0]->GetPosition().y;
+            const float groundY =
+                ground ? ground->HeightAt(m_position.x, m_position.z) : ForestLayout::GroundY;
             const float hoverY = (std::max)(groundY + m_groundClearance, playerPos.y + m_playerClearance) +
                                  std::sin(m_hoverPhase) * m_hoverAmplitude;
             // 補間率も秒に換算し、低FPSでホバリングの追従が遅くならないようにする。
@@ -139,6 +140,10 @@ void CFlyingEnemy::Update() {
 
         for (auto forest : Game::GetInstance()->GetObjects<CForestStage>()) {
             m_position = forest->ConstrainMovement(previousPosition, m_position, GetCollisionSphere().radius);
+        }
+        if (ground) {
+            const float minY = ground->HeightAt(m_position.x, m_position.z) + GetCollisionSphere().radius;
+            m_position.y = (std::max)(m_position.y, minY);
         }
 
         // 急降下して触れた時だけダメージを与え、次の攻撃まで間隔を空ける。

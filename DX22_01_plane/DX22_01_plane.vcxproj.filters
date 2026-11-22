@@ -45,6 +45,9 @@
     <ClCompile Include="CForestStage.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="ForestGrass.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
     <ClCompile Include="ForestModel.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -66,7 +69,16 @@
     <ClInclude Include="CForestStage.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="ForestGrass.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="ForestMeadow.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
     <ClInclude Include="ForestLayout.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="ForestTerrain.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="ForestProgress.h">
@@ -474,6 +486,9 @@
     <ClInclude Include="Ground.h">
       <Filter>ヘッダー ファイル\Object\Environment</Filter>
     </ClInclude>
+    <ClInclude Include="GroundProjection.h">
+      <Filter>ヘッダー ファイル\Object\Environment</Filter>
+    </ClInclude>
     <ClInclude Include="imconfig.h">
       <Filter>ヘッダー ファイル\Imgui</Filter>
     </ClInclude>
@@ -736,6 +751,27 @@
       <Filter>リソース ファイル\PS</Filter>
     </None>
     <None Include="shader\groundSkyPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\forestSceneryPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\forestGroundPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\forestFoliageVS.hlsl">
+      <Filter>リソース ファイル\VS</Filter>
+    </None>
+    <None Include="shader\forestGrassVS.hlsl">
+      <Filter>リソース ファイル\VS</Filter>
+    </None>
+    <None Include="shader\forestGrassPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\meadowWind.hlsli">
+      <Filter>リソース ファイル\VS</Filter>
+    </None>
+    <None Include="shader\skyFog.hlsli">
       <Filter>リソース ファイル\PS</Filter>
     </None>
     <None Include="shader\mushroomWarningPS.hlsl">

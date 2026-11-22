@@ -68,7 +68,7 @@ private:
     int m_hp = 250;
     /// HPバーに使用する最大体力。
     int m_maxHp = 250;
-    /// この戦場の地面のワールドY座標。
+    /// 現在のボスの足元にある地表のワールドY座標。
     float m_groundY = -5.0f;
     /// ホバリング・予告点滅に使う経過秒数。
     float m_elapsed = 0.0f;

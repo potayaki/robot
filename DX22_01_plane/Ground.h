@@ -9,6 +9,7 @@
 #include "Texture.h"
 #include "Object.h"
 #include "Material.h"
+#include <optional>
 
 //-----------------------------------------------------------------------------
 //Groundクラス　床
@@ -39,13 +40,21 @@ class Ground : public Object {
     int m_sizeX = 0;
     /// 地形グリッドのZ方向の分割数。
     int m_sizeZ = 0;
-    /// ステージ固有の地表メッシュがある場合に、重複する床描画を抑える。
-    bool m_surfaceVisible = true;
+    /// 森ステージの地表メッシュを使い、同じ地形から接地高さを求める。
+    bool m_forestSurface = false;
 
 public:
-    void SetSurfaceVisible(bool visible) {
-        m_surfaceVisible = visible;
+    void UseForestSurface() {
+        m_forestSurface = true;
     }
+
+    /// 現在のシーンにある床。まだ生成されていなければnullptr。
+    static Ground* Current();
+    /// 指定したワールドXZ座標での地表のワールドY座標。
+    float HeightAt(float x, float z) const;
+    /// 地表に初めて触れる線分上の比率。clearanceは地表から確保する高さ。
+    std::optional<float> FirstHit(const DirectX::SimpleMath::Vector3& from,
+                                  const DirectX::SimpleMath::Vector3& to, float clearance = 0) const;
 
     /// 使用前の状態と必要な資源を初期化する。
     void Init() override;

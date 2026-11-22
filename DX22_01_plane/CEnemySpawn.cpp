@@ -96,8 +96,7 @@ void CEnemySpawn::Update() {
     }
     const int packSize = EnemySpawning::PackSize(pressure.packSize, livingEnemies, pressure.maxAlive);
     const auto playerPos = players[0]->GetPosition();
-    const auto grounds = game->GetObjects<Ground>();
-    const float groundY = grounds.empty() ? m_slimeSpawnHeight : grounds[0]->GetPosition().y;
+    const Ground* ground = Ground::Current();
     const auto area = forest ? forest->GetArea(playerPos) : ForestLayout::Area::Entrance;
     const int areaDepth = forest ? static_cast<int>(area) : 0;
     const int variantPercent = std::clamp(m_variantPercent + areaDepth * 5, 0, 100);
@@ -125,6 +124,7 @@ void CEnemySpawn::Update() {
         }
         const float x = spawnPosition.x;
         const float z = spawnPosition.z;
+        const float groundY = ground ? ground->HeightAt(x, z) : ForestLayout::GroundY;
 
         // エリアの構成を既存の種類選択の範囲へ振り分ける。
         int kind = m_slimesOnly ? m_droneThreshold + rand() % (100 - m_droneThreshold) : rand() % 100;
@@ -156,20 +156,19 @@ void CEnemySpawn::Update() {
         EnemyTarget* spawned = nullptr;
         if (kind < m_boarThreshold && m_boarResources) {
             auto boar = game->AddObject<CBoarEnemy>();
-            // Initで足元に合わせた高さは保ち、出現するXZ座標だけを変更する。
-            boar->SetPosition(x, boar->GetPosition().y, z);
+            boar->SetPosition(x, groundY + boar->GetCollisionSphere().radius, z);
             spawned = boar;
         } else if (kind < m_mushroomThreshold) {
             auto mushroom = game->AddObject<CMushroomEnemy>();
-            mushroom->SetPosition(x, mushroom->GetPosition().y, z);
+            mushroom->SetPosition(x, groundY + mushroom->GetCollisionSphere().radius, z);
             spawned = mushroom;
         } else if (kind < m_ghostThreshold && m_ghostResources) {
             auto ghost = game->AddObject<CGhostEnemy>();
-            ghost->SetPosition(x, ghost->GetPosition().y, z);
+            ghost->SetPosition(x, groundY + CGhostEnemy::HoverHeight, z);
             spawned = ghost;
         } else if (kind < m_droneThreshold) {
             CFlyingEnemy* drone = game->AddObject<CFlyingEnemy>();
-            drone->SetPosition(x, m_droneSpawnHeight, z);
+            drone->SetPosition(x, groundY + m_droneSpawnHeight, z);
             spawned = drone;
         } else {
             CEnemy* enemy = game->AddObject<CEnemy>();
@@ -178,7 +177,8 @@ void CEnemySpawn::Update() {
             } else if (kind < m_bruteThreshold && pressure.stage > 0) {
                 enemy->SetVariant(SlimeVariant::Brute);
             }
-            enemy->SetPosition(x, groundY + enemy->GetCollisionSphere().radius, z);
+            const float feet = ground ? groundY : m_slimeSpawnHeight;
+            enemy->SetPosition(x, feet + enemy->GetCollisionSphere().radius, z);
             enemy->SetScale(1.0f, 1.0f, 1.0f);
             spawned = enemy;
         }

@@ -14,6 +14,7 @@
 #include "CEnemy.h"
 #include "CFlyingEnemy.h"
 #include <cmath>
+#include <utility>
 #include "CBullet.h"
 #include "billboard.h"
 #include "CParticle.h"
@@ -59,23 +60,30 @@ void Stage1Scene::Init() {
     //プレイヤーの生成
     //--------------------
     CPlayer* player = Game::GetInstance()->AddObject<CPlayer>();
-    player->SetPosition(ForestLayout::PathCenter(-850.0f), -3.0f, -850.0f)->SetScale(1.0f, 1.0f, 1.0f);
+    constexpr float startZ = -850.0f;
+    const float startX = ForestLayout::PathCenter(startZ);
+    player
+        ->SetPosition(
+            startX, ForestLayout::GroundHeight(startX, startZ) + player->GetCollisionSphere().radius, startZ)
+        ->SetScale(1.0f, 1.0f, 1.0f);
     m_mySceneObjects.push_back(player);
 
     //--------------------
     //地面の生成
     //--------------------
     Ground* plane = Game::GetInstance()->AddObject<Ground>();
-    plane->SetPosition(0.0f, -5.0f, 0.0f)->SetScale(5000.0f, 5000.0f, 5000.0f);
-    plane->SetSurfaceVisible(false);
+    plane->SetPosition(0.0f, ForestLayout::GroundY, 0.0f)->SetScale(5000.0f, 5000.0f, 5000.0f);
+    plane->UseForestSurface();
     m_mySceneObjects.push_back(plane);
 
     m_mySceneObjects.push_back(Game::GetInstance()->AddObject<CForestStage>());
 
-    // 入り口から見える距離に最初の群れを配置する。
-    for (const auto& position : {Vector3(-65, 5, -350), Vector3(70, 5, -245), Vector3(-110, 5, -110)}) {
+    // 最初の群れは道の曲がり角と、その先の草地に分けて配置する。
+    for (const auto& [z, offsetX] :
+         {std::pair{-430.0f, 75.0f}, std::pair{-270.0f, -130.0f}, std::pair{-80.0f, 48.0f}}) {
         auto slime = Game::GetInstance()->AddObject<CEnemy>();
-        slime->SetPosition(position.x, position.y, position.z);
+        const float x = ForestLayout::PathCenter(z) + offsetX;
+        slime->SetPosition(x, ForestLayout::GroundHeight(x, z) + slime->GetCollisionSphere().radius, z);
     }
 
     //--------------------

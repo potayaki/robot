@@ -7,6 +7,8 @@
 #include "Camera.h"
 #include <memory>
 
+class GroundProjection;
+
 // モデル・画像・シェーダーは全Boarで共有し、アニメーションの姿勢だけ個別に持つ。
 class BoarModel {
 public:
@@ -23,7 +25,7 @@ public:
     void Draw(Camera* camera, const DirectX::SimpleMath::Vector3& feet, float yaw, float scale,
               const DirectX::SimpleMath::Color& tint = DirectX::SimpleMath::Color(1, 1, 1, 0));
     void DrawTelegraph(Camera* camera, DirectX::SimpleMath::Vector3 start, DirectX::SimpleMath::Vector3 end,
-                       float groundY, float halfWidth, float progress);
+                       const GroundProjection& ground, float halfWidth, float progress);
 
 private:
     struct Resources;

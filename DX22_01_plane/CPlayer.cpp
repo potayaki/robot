@@ -75,9 +75,9 @@ void CPlayer::Update() {
         // 操作は止めても死亡演出は更新する。開始処理はモデル側で1回だけ実行される。
         m_body->SetPosition(m_position);
         m_body->SetRotation(Vector3(0.0f, m_lowerBodyYaw, 0.0f));
-        const auto grounds = Game::GetInstance()->GetObjects<Ground>();
-        const float groundY =
-            grounds.empty() ? m_position.y - GetCollisionSphere().radius : grounds[0]->GetPosition().y;
+        const Ground* ground = Ground::Current();
+        const float groundY = ground ? ground->HeightAt(m_position.x, m_position.z)
+                                     : m_position.y - GetCollisionSphere().radius;
         m_body->BeginBreakApart(groundY);
         m_body->AdvanceBreakApart(deltaSeconds);
         m_velocity = Vector3::Zero;
@@ -93,7 +93,6 @@ void CPlayer::Update() {
     GameTime::AdvanceCooldown(m_currentBulletTime, deltaSeconds);
     GameTime::AdvanceCooldown(m_currentMissileTime, deltaSeconds);
 
-    isGrounded();
     const Vector3 previousPosition = m_position;
     Move();
     UpdateAutoWeapons();
@@ -117,8 +116,8 @@ void CPlayer::Update() {
     const float upperBodyYaw = m_rotation.y - m_lowerBodyYaw;
     m_body->SetPosition(m_position.x, m_position.y, m_position.z);
     m_body->SetRotation(Vector3(0.0f, m_lowerBodyYaw, 0.0f));
-    const auto grounds = Game::GetInstance()->GetObjects<Ground>();
-    const float groundY = grounds.empty() ? -5.0f : grounds[0]->GetPosition().y;
+    const Ground* ground = Ground::Current();
+    const float groundY = ground ? ground->HeightAt(m_position.x, m_position.z) : ForestLayout::GroundY;
     m_body->Advance(displayMotion, deltaSeconds, animationRate, upperBodyYaw, m_upperBodyPitch, groundY,
                     m_isGrounded && m_velocity.y <= 0.0f, procedural);
 }
@@ -208,10 +207,6 @@ void CPlayer::Move() {
         m_position.z += movedir.z * moveSpeed * GameTime::DeltaSeconds();
     }
 
-    if (Input::GetKeyTrigger(VK_SPACE) && m_isGrounded) {
-        m_velocity.y = m_jumpSpeed;
-    }
-
     for (auto forest : Game::GetInstance()->GetObjects<CForestStage>()) {
         m_position = forest->ConstrainMovement(previousPosition, m_position, GetCollisionSphere().radius);
     }
@@ -219,6 +214,11 @@ void CPlayer::Move() {
     // 射撃位置を決める前に体全体をバリアの内側へ戻す。ジャンプ中も同じ境界を使う。
     for (auto battle : Game::GetInstance()->GetObjects<CBossBattle>()) {
         m_position = battle->ConstrainPosition(m_position, GetCollisionSphere().radius);
+    }
+    isGrounded();
+    if (Input::GetKeyTrigger(VK_SPACE) && m_isGrounded) {
+        m_velocity.y = m_jumpSpeed;
+        m_isGrounded = false;
     }
 
     // 移動・バリア補正後の位置から毎フレーム照準を更新する。クリックしていなくても追従する。
@@ -238,17 +238,12 @@ void CPlayer::Move() {
 }
 
 void CPlayer::isGrounded() {
-    std::vector<Ground*> grounds = Game::GetInstance()->GetObjects<Ground>();
-    if (!grounds.empty()) { //groundsの中が空っぽかそうか１つ以上作られたか
-        Ground* plane = grounds[0];
-        float planeY = plane->GetPosition().y + GetCollisionSphere().radius; //床座標の取得 +半径
-
-        if (m_position.y <= planeY) { //床に着いているか
-            m_position.y = planeY;
+    if (const Ground* ground = Ground::Current()) {
+        const float standingY = ground->HeightAt(m_position.x, m_position.z) + GetCollisionSphere().radius;
+        // 接地中は下り坂にも追従し、ジャンプ中は足元が地表に触れた時点で着地する。
+        if (m_isGrounded || m_position.y <= standingY) {
+            m_position.y = standingY;
             Onland();
-        } else {
-            //空中状態
-            m_isGrounded = false;
         }
     }
 }
@@ -262,24 +257,20 @@ bool CPlayer::TryGetAimTarget(Vector3& targetPosition) const {
         return false;
     }
 
-    std::vector<Ground*> grounds = Game::GetInstance()->GetObjects<Ground>();
-    if (grounds.empty()) {
+    const Ground* ground = Ground::Current();
+    if (!ground) {
         return false;
     }
 
-    const float groundY = grounds[0]->GetPosition().y;
     // 地面や敵が無い方向では、弾の飛行距離に合わせた遠方を目標にする。
     constexpr float maxAimDistance = 3000.0f;
     float nearestDistance = maxAimDistance;
     targetPosition = rayOrigin + direction * nearestDistance;
 
     // カメラの照準線が地面に当たる場合は、その交点を目標候補にする。
-    if (direction.y < -0.001f) {
-        const float groundDistance = (groundY - rayOrigin.y) / direction.y;
-        if (groundDistance > 0.0f && groundDistance < nearestDistance) {
-            nearestDistance = groundDistance;
-            targetPosition = rayOrigin + direction * groundDistance;
-        }
+    if (const auto hit = ground->FirstHit(rayOrigin, targetPosition)) {
+        nearestDistance = *hit * maxAimDistance;
+        targetPosition = rayOrigin + direction * nearestDistance;
     }
 
     // 敵が地面より手前に見えている場合は敵の中心を狙い、TPSの発射位置との視差を補正する。

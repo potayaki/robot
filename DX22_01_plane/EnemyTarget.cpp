@@ -52,11 +52,11 @@ void EnemyTarget::Defeat(int experience, int presentChance) {
     CPlayer* player = players[0];
     player->OnEnemyDefeated(EnemyVariants::Experience(experience, GetRarity()));
 
-    const auto grounds = Game::GetInstance()->GetObjects<Ground>();
-    const float groundY = grounds.empty() ? -5.0f : grounds[0]->GetPosition().y;
+    const Ground* ground = Ground::Current();
     const bool dropSpanner = rand() % 100 < std::clamp(CSpanner::m_spawnChancePercent, 0, 100);
     if (dropSpanner) {
         auto spanner = Game::GetInstance()->AddObject<CSpanner>();
+        const float groundY = ground ? ground->HeightAt(m_position.x, m_position.z) : -5.0f;
         spanner->SetPosition(m_position.x, groundY, m_position.z);
     }
 
@@ -70,5 +70,7 @@ void EnemyTarget::Defeat(int experience, int presentChance) {
     auto present = Game::GetInstance()->AddObject<CPresentBox>();
 
     // 空中の敵を倒した場合も、拾える地面の高さに報酬を配置する。
-    present->SetPosition(m_position.x + (dropSpanner ? 25.0f : 0.0f), groundY + 10.0f, m_position.z);
+    const float x = m_position.x + (dropSpanner ? 25.0f : 0.0f);
+    const float groundY = ground ? ground->HeightAt(x, m_position.z) : -5.0f;
+    present->SetPosition(x, groundY + 10.0f, m_position.z);
 }

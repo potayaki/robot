@@ -29,8 +29,8 @@ namespace {
         gate.OnBossDefeated(BossKind::Ghost);
         assert(gate.OpenAmount() == halfway && !gate.IsOpen());
 
-        const Vector3 before(0, 5, ForestLayout::GateZ - 300);
-        const Vector3 after(0, 200, ForestLayout::GateZ + 300);
+        const Vector3 before(ForestLayout::GateCentersX[0], 5, ForestLayout::GateZ - 300);
+        const Vector3 after(ForestLayout::GateCentersX[0], 200, ForestLayout::GateZ + 300);
         const auto waiting = ForestLayout::ConstrainMovement(before, after, 10, gate.IsOpen());
         assert(waiting.z == ForestLayout::GateZ - ForestLayout::GateHalfDepth - 10);
         gate.Update(ForestGateProgress::OpeningSeconds * 0.5f);
@@ -95,51 +95,72 @@ namespace {
 
     void CheckMultipleGateMovement() {
         constexpr float radius = 10;
-        const Vector3 before(0, 5, ForestLayout::GateZ - 200);
-        const Vector3 beyond(0, 99, ForestLayout::KeepMaxZ + 1000);
+        const Vector3 beyond(ForestLayout::PathCenter(ForestLayout::KeepMaxZ), 99,
+                             ForestLayout::KeepMaxZ + 1000);
         for (int open = 0; open <= ForestLayout::GateCount; ++open) {
             const auto reachableArea = static_cast<Area>(open);
-            const auto reached = ForestLayout::ConstrainMovement(before, beyond, radius, open);
-            assert(reached.z == ForestLayout::RoomMaxZ(reachableArea) - radius);
-            assert(reached.y == beyond.y && ForestLayout::IsWalkable(reached, radius, open));
+            Vector3 position(ForestLayout::PathCenter(-850), 5, -850);
+            const float endZ = ForestLayout::RoomMaxZ(reachableArea) - radius;
+            for (float z = position.z + 50; z <= endZ; z += 50) {
+                const Vector3 next(ForestLayout::PathCenter(z), 5, z);
+                assert(ForestLayout::ConstrainMovement(position, next, radius, open) == next);
+                assert(ForestLayout::ConstrainMovement(next, position, radius, open) == position);
+                position = next;
+            }
+            const Vector3 throughEnd(ForestLayout::PathCenter(endZ), 99, endZ + 200);
+            const auto reached = ForestLayout::ConstrainMovement(position, throughEnd, radius, open);
+            assert(reached.z == endZ && reached.y == throughEnd.y);
+            assert(ForestLayout::IsWalkable(reached, radius, open));
             assert(ForestLayout::GetArea(beyond, open) == reachableArea);
-            assert(ForestLayout::ConstrainMovement(reached, before, radius, open) == before);
         }
         for (int gate = 0; gate < ForestLayout::GateCount; ++gate) {
             const float threshold = ForestLayout::GatePositions[gate] + ForestLayout::GateHalfDepth;
-            assert(ForestLayout::GetArea(Vector3(0, 5, threshold - 1)) == static_cast<Area>(gate));
-            assert(ForestLayout::GetArea(Vector3(0, 5, threshold)) == static_cast<Area>(gate + 1));
+            const float gateX = ForestLayout::GateCentersX[gate];
+            assert(ForestLayout::GetArea(Vector3(gateX, 5, threshold - 1)) == static_cast<Area>(gate));
+            assert(ForestLayout::GetArea(Vector3(gateX, 5, threshold)) == static_cast<Area>(gate + 1));
         }
-        // 最初の門を通れる斜線でも、次の門で開口を外れる場合はそこで止める。
+        // ひと続きの移動でも、進行方向に最初に当たる仕切り壁で止める。
         const auto secondWall =
-            ForestLayout::ConstrainMovement(Vector3(0, 5, 800), Vector3(500, 90, 5000), radius, 3);
+            ForestLayout::ConstrainMovement(Vector3(ForestLayout::GateCentersX[0], 5, 700),
+                                            Vector3(ForestLayout::GateCentersX[0], 90, 5000), radius, 3);
         assert(secondWall.z == ForestLayout::GatePositions[1] - ForestLayout::GateHalfDepth - radius);
         const auto reverseSecondWall =
-            ForestLayout::ConstrainMovement(Vector3(0, 5, 4400), Vector3(500, 90, 500), radius, 3);
+            ForestLayout::ConstrainMovement(Vector3(ForestLayout::GateCentersX[2], 5, 4500),
+                                            Vector3(ForestLayout::GateCentersX[2], 90, 500), radius, 3);
         assert(reverseSecondWall.z == ForestLayout::GatePositions[1] + ForestLayout::GateHalfDepth + radius);
+        // 2つの開口を結ぶ斜線なら、両方の門を1回の移動で抜けられる。
+        const Vector3 entrance(360, 5, 725);
+        const Vector3 courtyard(-430, 90, 2925);
+        assert(ForestLayout::ConstrainMovement(entrance, courtyard, radius, 2) == courtyard);
+        assert(ForestLayout::ConstrainMovement(courtyard, entrance, radius, 2) == entrance);
         assert(ForestLayout::GetArea(beyond, -1) == Area::Entrance);
         assert(ForestLayout::GetArea(beyond, 100) == Area::Keep);
     }
 
     void CheckGateMovement(int gate) {
         const float gateZ = ForestLayout::GatePositions[gate];
+        const float gateX = ForestLayout::GateCentersX[gate];
         const int openGateCount = gate + 1;
         for (float radius : {10.0f, 12.0f, 18.0f, 35.0f, 55.0f}) {
             const float front = gateZ - ForestLayout::GateHalfDepth - radius;
             const float back = gateZ + ForestLayout::GateHalfDepth + radius;
             const float opening = ForestLayout::GateHalfWidth - radius;
+            for (float z : {front, gateZ, back}) {
+                assert(ForestLayout::PathCenter(z) == gateX);
+            }
             for (float height : {5.0f, 100.0f, 1000.0f}) {
-                const Vector3 before(0, 5, front - 200);
-                const Vector3 after(0, height, back + 200);
+                const Vector3 before(gateX, 5, front - 200);
+                const Vector3 after(gateX, height, back + 200);
                 const auto closed = ForestLayout::ConstrainMovement(before, after, radius, gate);
-                assert(closed == Vector3(0, height, front));
+                assert(closed == Vector3(gateX, height, front));
                 assert(!ForestLayout::IsWalkable(after, radius, gate));
                 assert(ForestLayout::IsWalkable(closed, radius, gate));
                 assert(ForestLayout::ConstrainMovement(before, after, radius, openGateCount) == after);
                 assert(ForestLayout::ConstrainMovement(after, before, radius, openGateCount) == before);
 
                 // 大きな1フレーム移動とジャンプでも、開口の左右にある壁を越えない。
-                for (float x : {-500.0f, -opening - 0.1f, opening + 0.1f, 500.0f}) {
+                for (float x : {-600.0f, gateX - opening - 0.1f, 0.0f, gateX + opening + 0.1f, 600.0f}) {
+                    assert(!ForestLayout::IsWalkable(Vector3(x, height, gateZ), radius, openGateCount));
                     const Vector3 wallBefore(x, 5, front - 200);
                     const Vector3 wallAfter(x, height, back + 1000);
                     const auto hit =
@@ -150,7 +171,7 @@ namespace {
                     assert(reverse == Vector3(x, 5, back));
                 }
                 // 体全体が開口へ収まれば、その境界に沿って通過できる。
-                for (float x : {-opening, opening}) {
+                for (float x : {gateX - opening, gateX + opening}) {
                     const Vector3 edgeBefore(x, 5, front - 100);
                     const Vector3 edgeAfter(x, height, back + 100);
                     assert(ForestLayout::ConstrainMovement(edgeBefore, edgeAfter, radius, openGateCount) ==
@@ -159,31 +180,33 @@ namespace {
             }
 
             // 目的地だけは通行可能な斜め移動も、途中で壁に当たれば手前で止める。
-            const Vector3 diagonalFrom(500, 5, front - 100);
-            const Vector3 diagonalTo(0, 77, back + 100);
+            const Vector3 diagonalFrom(gateX + 350, 5, front - 100);
+            const Vector3 diagonalTo(gateX, 77, back + 100);
             const auto diagonal =
                 ForestLayout::ConstrainMovement(diagonalFrom, diagonalTo, radius, openGateCount);
             assert(diagonal.z == front && diagonal.y == 77);
             assert(ForestLayout::IsWalkable(diagonal, radius, openGateCount));
 
             // 門の中から柱へ横移動したときはXを止め、逆方向へは離れられる。
-            const Vector3 corridor(0, 8, gateZ);
-            const Vector3 side(500, 91, gateZ);
-            const auto pillar = ForestLayout::ConstrainMovement(corridor, side, radius, openGateCount);
-            assert(pillar == Vector3(opening, 91, gateZ));
-            assert(ForestLayout::ConstrainMovement(pillar, corridor, radius, openGateCount) == corridor);
-            const Vector3 slide(opening, 91, back + 100);
-            assert(ForestLayout::ConstrainMovement(pillar, slide, radius, openGateCount) == slide);
+            const Vector3 corridor(gateX, 8, gateZ);
+            for (float side : {-1.0f, 1.0f}) {
+                const Vector3 wall(gateX + side * 350, 91, gateZ);
+                const auto pillar = ForestLayout::ConstrainMovement(corridor, wall, radius, openGateCount);
+                assert(pillar == Vector3(gateX + side * opening, 91, gateZ));
+                assert(ForestLayout::ConstrainMovement(pillar, corridor, radius, openGateCount) == corridor);
+                const Vector3 slide(pillar.x, 91, back + 100);
+                assert(ForestLayout::ConstrainMovement(pillar, slide, radius, openGateCount) == slide);
+            }
 
             // 外周を大きく越える要求も、丸める前の経路で門の壁に当てる。
             for (float farX : {-100000.0f, 100000.0f}) {
-                const Vector3 hugeBefore(0, 5, front - 30);
+                const Vector3 hugeBefore(gateX, 5, front - 30);
                 const Vector3 hugeAfter(farX, 73, back + 1000);
                 const auto huge =
                     ForestLayout::ConstrainMovement(hugeBefore, hugeAfter, radius, openGateCount);
                 assert(huge.z == front && huge.y == hugeAfter.y);
                 assert(ForestLayout::IsWalkable(huge, radius, openGateCount));
-                const Vector3 reverseBefore(0, 5, back + 30);
+                const Vector3 reverseBefore(gateX, 5, back + 30);
                 const Vector3 reverseAfter(farX, 94, front - 1000);
                 const auto reverseHuge =
                     ForestLayout::ConstrainMovement(reverseBefore, reverseAfter, radius, openGateCount);
@@ -226,9 +249,6 @@ namespace {
                 }
             }
         }
-        assert(ForestLayout::PathCenter(ForestLayout::GateZ) == 0);
-        assert(std::abs(ForestLayout::PathCenter(ForestLayout::GateZ - 0.001f)) < 0.01f);
-        assert(std::abs(ForestLayout::PathCenter(ForestLayout::GateZ + 0.001f)) < 0.01f);
     }
 } // namespace
 
