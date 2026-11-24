@@ -6,6 +6,7 @@
 #include "ForestLayout.h"
 #include "ForestMeadow.h"
 #include "Renderer.h"
+#include "shader/meadowViewDistance.hlsli"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -29,7 +30,6 @@ namespace {
     constexpr int MeadowHalfWidth = 1280;
     constexpr int MeadowStartZ = -1440;
     constexpr float CellSize = static_cast<float>(TileSize) / CellsPerSide;
-    constexpr float FadeEnd = 620.0f; // forestGrassVSが葉を縮め切る視距離。
     constexpr UINT VerticesPerBlade = 9;
 } // namespace
 
@@ -154,7 +154,7 @@ void ForestGrass::Draw(Camera* camera) const {
     for (const auto& tile : m_tiles) {
         const Vector3 center = Vector3::Transform(tile.center, view);
         const float farZ = center.z + tile.radius;
-        const float farDistance = FadeEnd + tile.radius;
+        const float farDistance = GrassBladeFadeEnd + tile.radius;
         if (farZ > 0 && center.LengthSquared() < farDistance * farDistance &&
             std::abs(center.x) <= farZ * tanX + tile.radius &&
             std::abs(center.y) <= farZ * tanY + tile.radius) {

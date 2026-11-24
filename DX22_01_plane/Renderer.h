@@ -171,8 +171,6 @@ public:
         return m_pDeviceContext;
     }
 
-    static HRESULT CompileShader(const char* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel,
-                                 void** ppShaderObject, int* pShaderObjectSize);
     static HRESULT CreateVertexShader(ID3D11VertexShader** ppVertexShader, ID3D11InputLayout** ppVertexLayout,
                                       D3D11_INPUT_ELEMENT_DESC* pLayout, unsigned int numElements,
                                       const char* szFileName);

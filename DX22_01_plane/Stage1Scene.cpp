@@ -203,4 +203,5 @@ void Stage1Scene::Uninit() {
     m_mySceneObjects.clear();
     CPresentBox::UnloadResource(); // 共有モデルの解放
     CSpanner::UnloadResource();
+    CParticle::UnloadResources();
 }

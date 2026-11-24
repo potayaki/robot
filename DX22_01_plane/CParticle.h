@@ -6,12 +6,6 @@
 パーティクルのクラス
 */
 #include "Object.h"
-#include "TestCube.h"
-
-#include "Texture.h"
-#include "VertexBuffer.h"
-#include "IndexBuffer.h"
-#include "Material.h"
 
 #include "PoolManager.h"
 
@@ -35,25 +29,6 @@ private:
 
     /// 旧フレーム単位の縮小率を秒単位へ換算する基準FPS。
     float m_referenceFramesPerSecond = 60.0f;
-
-    /// キャラクターや弾の本体を描画するモデル。
-    static TestCube* m_body;
-    /// Initを呼んだ粒子の累計数。共有描画資源の生成はPreloadで一度だけ行う。
-    static int m_instanceCount;
-
-    //Spark用のパーティクルの情報
-    /// 火花粒子で共有する画像。
-    static Texture* m_sparkTexture;
-    /// 火花粒子で共有する描画シェーダー。
-    static Shader* m_sparkShader;
-    /// 描画頂点を保持するGPUバッファ。
-    static VertexBuffer<VERTEX_3D>* m_sparkVB;
-    /// 描画する頂点の順番を保持するGPUバッファ。
-    static IndexBuffer* m_sparkIB;
-    /// 火花粒子で共有する材質。
-    static Material* m_sparkMaterial;
-    /// 粒子同士を遮らず、地形による遮蔽だけを判定する深度設定。
-    static Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_sparkDepthState;
 
     /// 飛んでいく方向とスピード
     DirectX::SimpleMath::Vector3 m_velocity;
@@ -109,7 +84,10 @@ public:
         m_isActive = isActive;
     }
 
+    /// ステージ内の全粒子が共有する描画資源を初期化する。
     static void Preload();
+    /// ステージの粒子プールを破棄した後に共有資源を解放する。
+    static void UnloadResources();
 };
 
 using ParticleManager = PoolManager<CParticle, 5000>; // 最大5000個の粒子を再利用する。

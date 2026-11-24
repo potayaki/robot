@@ -1,4 +1,5 @@
 #include "common.hlsl"
+#include "meadowViewDistance.hlsli"
 #include "meadowWind.hlsli"
 
 struct FoliageVertex
@@ -12,7 +13,8 @@ struct FoliageVertex
 FoliageVertex main(VS_IN input)
 {
     float4 worldPoint = mul(input.pos, World);
-    float2 root = mul(float4(0, 0, 0, 1), World).xz;
+    float4 rootWorld = mul(float4(0, 0, 0, 1), World);
+    float2 root = rootWorld.xz;
     float height = length(mul(float4(0, 1, 0, 0), World).xyz);
     float t = saturate(input.pos.y); // ForestModel normalizes meshes to unit height.
     float phase = MeadowPhase();
@@ -22,6 +24,10 @@ FoliageVertex main(VS_IN input)
     worldPoint.xz += MeadowLean(root, phase, gust, seed) * (0.42 * bend);
     worldPoint.y -= gust * 0.024 * bend;
 
+    // Shrink each whole clump around its planted root as it approaches the draw limit.
+    float rootDistance = length(mul(rootWorld, View).xyz);
+    float fade = 1 - smoothstep(GroundCoverFadeStart, GroundCoverFadeEnd, rootDistance);
+    worldPoint.xyz = lerp(rootWorld.xyz, worldPoint.xyz, fade);
     float4 viewPoint = mul(worldPoint, View);
     float3 normal = normalize(mul(float4(input.nrm.xyz, 0), World).xyz);
     float sun = saturate(-dot(light.Direction.xyz, normal));

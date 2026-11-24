@@ -421,6 +421,7 @@
     <None Include="shader\forestGrassVS.hlsl" />
     <None Include="shader\forestGrassPS.hlsl" />
     <None Include="shader\meadowWind.hlsli" />
+    <None Include="shader\meadowViewDistance.hlsli" />
     <None Include="shader\skyFog.hlsli" />
     <None Include="shader\sunShadow.hlsli" />
     <None Include="shader\boarVS.hlsl" />

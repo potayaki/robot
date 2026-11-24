@@ -5,6 +5,7 @@
 #include "Application.h"
 #include "Game.h"
 #include "CPlayer.h"
+#include "shader/meadowViewDistance.hlsli"
 #include <array>
 #include <cmath>
 #include <random>
@@ -152,6 +153,8 @@ void CForestStage::Init() {
             place(i % 3 == 0 ? Rock : Bush, x, z, range(32, 76), 11);
         }
     }
+
+
     place(TallOak, -850, 155, 475, 10);
     place(Rock, 1090, 420, 245, 65);
     place(Pine, 1165, 515, 480, 16);
@@ -484,7 +487,7 @@ void CForestStage::Draw(Camera* camera) {
         const Vector3 center = Vector3::Transform(prop.feet + Vector3(0, prop.height * 0.5f, 0), view);
         const float radius = prop.height * 2.5f; // 横長の笠石と倒木も含む保守的な境界。
         const bool groundCover = prop.model == Grass || prop.model == Flowers || prop.model >= TallGrass;
-        const float drawDistance = groundCover ? 900.0f : 2600.0f;
+        const float drawDistance = groundCover ? GroundCoverFadeEnd : 2600.0f;
         const float farZ = center.z + radius;
         if (farZ < 0 || std::abs(center.x) > farZ * tanHalfX + radius ||
             std::abs(center.y) > farZ * tanHalfY + radius ||

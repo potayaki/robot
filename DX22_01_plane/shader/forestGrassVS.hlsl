@@ -1,4 +1,5 @@
 #include "common.hlsl"
+#include "meadowViewDistance.hlsli"
 #include "meadowWind.hlsli"
 
 struct BladeInstance
@@ -33,7 +34,7 @@ BladeVertex main(BladeInstance blade, uint vertexID : SV_VertexID)
     float2 restDirection = float2(cos(blade.traits.z), sin(blade.traits.z));
 
     float3 rootView = mul(float4(blade.root.xyz, 1), View).xyz;
-    float fade = 1 - smoothstep(480, 620, length(rootView));
+    float fade = 1 - smoothstep(GrassBladeFadeStart, GrassBladeFadeEnd, length(rootView));
     // Retain a readable ribbon width when viewed across the original blade direction.
     float2 right = normalize(float2(View._11, View._31));
     float2 widthAxis = right + float2(-right.y, right.x) * (0.28 * sin(blade.traits.z));

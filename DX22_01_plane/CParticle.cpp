@@ -4,19 +4,30 @@
 #include "CParticle.h"
 #include "Game.h"
 #include "Renderer.h"
+#include "TestCube.h"
 #include <cmath>
+#include <optional>
 
-// static変数の実体を定義
-TestCube* CParticle::m_body = nullptr;
-int CParticle::m_instanceCount = 0;
+namespace {
+    struct ParticleResources {
+        /// 破片粒子で共有する立方体モデル。
+        TestCube m_body;
+        /// 火花粒子で共有する画像とシェーダー。
+        Texture m_sparkTexture;
+        Shader m_sparkShader;
+        /// 火花を描画する板の頂点とインデックス。
+        VertexBuffer<VERTEX_3D> m_sparkVB;
+        IndexBuffer m_sparkIB;
+        /// 板に設定する材質。
+        Material m_sparkMaterial;
+        /// 地形で火花を遮蔽し、粒子同士は遮らない深度設定。
+        Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_sparkDepthState;
 
-//Spark用のstatic変数の実体を定義
-Texture* CParticle::m_sparkTexture = nullptr;
-Shader* CParticle::m_sparkShader = nullptr;
-VertexBuffer<VERTEX_3D>* CParticle::m_sparkVB = nullptr;
-IndexBuffer* CParticle::m_sparkIB = nullptr;
-Material* CParticle::m_sparkMaterial = nullptr;
-Microsoft::WRL::ComPtr<ID3D11DepthStencilState> CParticle::m_sparkDepthState;
+        ParticleResources();
+    };
+
+    std::optional<ParticleResources> resources;
+} // namespace
 
 CParticle::CParticle() {
     if (m_type == Test) {
@@ -31,9 +42,7 @@ CParticle::~CParticle() {
 }
 
 void CParticle::Init() {
-    // 「一番最初の1個目」が作られた時だけ、モデルを読み込む
     Preload();
-    m_instanceCount++; // 生成されたらカウントを増やす
 }
 
 void CParticle::Update() {
@@ -69,19 +78,22 @@ void CParticle::Update() {
 }
 
 void CParticle::Draw(Camera* cam) {
-    if (m_type == Test && m_body) {
-        m_body->SetPosition(m_position.x, m_position.y, m_position.z);
-        m_body->SetRotation(m_rotation);
-        m_body->SetScale(m_scale.x, m_scale.y, m_scale.z); // ★ スケールを適用！
-        m_body->Draw(cam);
+    if (!resources) {
+        return;
+    }
+    if (m_type == Test) {
+        resources->m_body.SetPosition(m_position.x, m_position.y, m_position.z);
+        resources->m_body.SetRotation(m_rotation);
+        resources->m_body.SetScale(m_scale.x, m_scale.y, m_scale.z);
+        resources->m_body.Draw(cam);
     }
     //  Sparkの場合は、板（ビルボード）として画像を描く
-    else if ((m_type == Spark || m_type == MuzzleSpark || m_type == MuzzleFlash) && m_sparkTexture) {
+    else if (m_type == Spark || m_type == MuzzleSpark || m_type == MuzzleFlash) {
         ID3D11DeviceContext* dc = Renderer::GetDeviceContext();
         Microsoft::WRL::ComPtr<ID3D11DepthStencilState> previousDepth;
         UINT previousStencilRef = 0;
         dc->OMGetDepthStencilState(previousDepth.GetAddressOf(), &previousStencilRef);
-        dc->OMSetDepthStencilState(m_sparkDepthState.Get(), 0);
+        dc->OMSetDepthStencilState(resources->m_sparkDepthState.Get(), 0);
         Renderer::SetBlendState(BS_ADDITIVE); // 加算合成（光るモード）
 
         cam->SetCamera(0); // 3Dカメラを使用
@@ -98,11 +110,11 @@ void CParticle::Draw(Camera* cam) {
         Renderer::SetWorldMatrix(&worldMtx);
         Renderer::SetUV(0, 0, 1, 1);
 
-        m_sparkShader->SetGPU();
-        m_sparkVB->SetGPU();
-        m_sparkIB->SetGPU();
-        m_sparkTexture->SetGPU();
-        m_sparkMaterial->SetGPU();
+        resources->m_sparkShader.SetGPU();
+        resources->m_sparkVB.SetGPU();
+        resources->m_sparkIB.SetGPU();
+        resources->m_sparkTexture.SetGPU();
+        resources->m_sparkMaterial.SetGPU();
 
         MATERIAL mtrl{};
         mtrl.Diffuse = m_color; // パーティクルの色をマテリアルに反映
@@ -124,50 +136,48 @@ void CParticle::Draw(Camera* cam) {
 void CParticle::Uninit() {}
 
 void CParticle::Preload() {
-    if (m_body == nullptr) {
-        m_body = new TestCube;
-        m_body->Init();
-        m_body->SetScale(0.5f, 0.5f, 0.5f);
+    if (!resources) {
+        resources.emplace();
     }
+}
 
-    if (m_sparkTexture == nullptr) {
-        m_sparkTexture = new Texture();
-        m_sparkTexture->Load("assets/texture/spark.png"); // ★ ここで画像をロード！
+void CParticle::UnloadResources() {
+    resources.reset();
+}
 
-        m_sparkShader = new Shader();
-        m_sparkShader->Create("shader/unlitTextureVS.hlsl", "shader/particlePS.hlsl");
+ParticleResources::ParticleResources() {
+    m_body.Init();
+    m_body.SetScale(0.5f, 0.5f, 0.5f);
+    m_sparkTexture.Load("assets/texture/spark.png");
+    m_sparkShader.Create("shader/unlitTextureVS.hlsl", "shader/particlePS.hlsl");
 
-        D3D11_DEPTH_STENCIL_DESC depth{};
-        depth.DepthEnable = TRUE;
-        depth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-        depth.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-        Renderer::GetDevice()->CreateDepthStencilState(&depth, m_sparkDepthState.GetAddressOf());
+    D3D11_DEPTH_STENCIL_DESC depth{};
+    depth.DepthEnable = TRUE;
+    depth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    depth.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+    Renderer::GetDevice()->CreateDepthStencilState(&depth, m_sparkDepthState.GetAddressOf());
 
-        // 板の頂点（4つの角）
-        std::vector<VERTEX_3D> vertices(4);
-        vertices[0].position = DirectX::SimpleMath::Vector3(-0.5f, 0.5f, 0);
-        vertices[1].position = DirectX::SimpleMath::Vector3(0.5f, 0.5f, 0);
-        vertices[2].position = DirectX::SimpleMath::Vector3(-0.5f, -0.5f, 0);
-        vertices[3].position = DirectX::SimpleMath::Vector3(0.5f, -0.5f, 0);
-        for (int i = 0; i < 4; i++) {
-            vertices[i].color = DirectX::SimpleMath::Color(1, 1, 1, 1);
-        }
-        vertices[0].uv = DirectX::SimpleMath::Vector2(0, 0);
-        vertices[1].uv = DirectX::SimpleMath::Vector2(1, 0);
-        vertices[2].uv = DirectX::SimpleMath::Vector2(0, 1);
-        vertices[3].uv = DirectX::SimpleMath::Vector2(1, 1);
-
-        m_sparkVB = new VertexBuffer<VERTEX_3D>();
-        m_sparkVB->Create(vertices);
-
-        std::vector<unsigned int> indices = {0, 1, 2, 3};
-        m_sparkIB = new IndexBuffer();
-        m_sparkIB->Create(indices);
-
-        m_sparkMaterial = new Material();
-        MATERIAL mtrl;
-        mtrl.Diffuse = DirectX::SimpleMath::Color(1, 1, 1, 1);
-        mtrl.TextureEnable = true;
-        m_sparkMaterial->Create(mtrl);
+    // 板の頂点（4つの角）
+    std::vector<VERTEX_3D> vertices(4);
+    vertices[0].position = DirectX::SimpleMath::Vector3(-0.5f, 0.5f, 0);
+    vertices[1].position = DirectX::SimpleMath::Vector3(0.5f, 0.5f, 0);
+    vertices[2].position = DirectX::SimpleMath::Vector3(-0.5f, -0.5f, 0);
+    vertices[3].position = DirectX::SimpleMath::Vector3(0.5f, -0.5f, 0);
+    for (int i = 0; i < 4; i++) {
+        vertices[i].color = DirectX::SimpleMath::Color(1, 1, 1, 1);
     }
+    vertices[0].uv = DirectX::SimpleMath::Vector2(0, 0);
+    vertices[1].uv = DirectX::SimpleMath::Vector2(1, 0);
+    vertices[2].uv = DirectX::SimpleMath::Vector2(0, 1);
+    vertices[3].uv = DirectX::SimpleMath::Vector2(1, 1);
+
+    m_sparkVB.Create(vertices);
+
+    std::vector<unsigned int> indices = {0, 1, 2, 3};
+    m_sparkIB.Create(indices);
+
+    MATERIAL mtrl{};
+    mtrl.Diffuse = DirectX::SimpleMath::Color(1, 1, 1, 1);
+    mtrl.TextureEnable = true;
+    m_sparkMaterial.Create(mtrl);
 }

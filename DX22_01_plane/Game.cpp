@@ -100,10 +100,12 @@ void Game::Init() {
 
 #ifdef _DEBUG
     m_instance->m_collisionDebug.Init();
+    m_instance->m_scene = new Stage1Scene;
 #endif
-
+#ifndef _DEBUG
     //最初のシーンを読み込む
     m_instance->m_scene = new TitleScene;
+#endif // !_DEBUG
 }
 
 // 更新
@@ -598,14 +600,10 @@ void Game::Uninit() {
 
     billboard::ReleaseTextures("smoke"); //ビルボードのテクスチャ解放
 
-    /*
-    for (auto& a : m_instance->m_objects) {
-        a->Uninit();
-    }
-    for (auto& a : m_instance->m_UIs) {
-        a->Uninit();
-    }
-    */
+    // シーンと共有描画資源を、描画デバイスが有効なうちに破棄する。
+    delete m_instance;
+    m_instance = nullptr;
+
     // ImGui終了処理
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
@@ -614,8 +612,6 @@ void Game::Uninit() {
     Input::Release();
     // 描画終了処理
     Renderer::Uninit();
-
-    delete m_instance;
 }
 
 Game* Game::GetInstance() {

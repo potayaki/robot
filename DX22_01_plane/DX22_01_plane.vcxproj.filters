@@ -777,6 +777,9 @@
     <None Include="shader\meadowWind.hlsli">
       <Filter>リソース ファイル\VS</Filter>
     </None>
+    <None Include="shader\meadowViewDistance.hlsli">
+      <Filter>リソース ファイル\VS</Filter>
+    </None>
     <None Include="shader\skyFog.hlsli">
       <Filter>リソース ファイル\PS</Filter>
     </None>

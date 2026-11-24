@@ -4,6 +4,8 @@
 #include "Renderer.h"
 #include "Application.h"
 #include "GameSettings.h"
+#include <filesystem>
+#include <wrl/client.h>
 
 using namespace DirectX::SimpleMath;
 
@@ -117,18 +119,18 @@ HRESULT Renderer::Init() {
     // ラスタライザステート設定
     D3D11_RASTERIZER_DESC rasterizerDesc{};
     rasterizerDesc.FillMode = D3D11_FILL_SOLID; //ソリッド
-    //rasterizerDesc.FillMode = D3D11_FILL_WIREFRAME; //ワイヤーフレーム
     rasterizerDesc.CullMode = D3D11_CULL_BACK; //ポリゴン裏をカリング
-    //rasterizerDesc.CullMode = D3D11_CULL_FRONT; //ポリゴン表をカリング
-    //rasterizerDesc.CullMode = D3D11_CULL_NONE; //カリングしない(裏も表も表示される)
     rasterizerDesc.DepthClipEnable = TRUE;
     rasterizerDesc.MultisampleEnable = g_msaaSampleCount > 1;
-    ID3D11RasterizerState* rs{};
-    hr = m_pDevice->CreateRasterizerState(&rasterizerDesc, &rs);
+    hr = m_pDevice->CreateRasterizerState(&rasterizerDesc, &m_pRasterizerStateSolid);
     if (FAILED(hr)) {
         return hr;
     }
-    m_pDeviceContext->RSSetState(rs);
+    m_pDeviceContext->RSSetState(m_pRasterizerStateSolid);
+
+    rasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
+    rasterizerDesc.CullMode = D3D11_CULL_NONE;
+    m_pDevice->CreateRasterizerState(&rasterizerDesc, &m_pRasterizerStateWire);
 
     // ブレンド ステート生成
     D3D11_BLEND_DESC BlendDesc{};
@@ -276,30 +278,6 @@ HRESULT Renderer::Init() {
         return hr;
     }
     SetUV(0, 0, 1, 1);
-
-    D3D11_RASTERIZER_DESC rsDesc;
-    ZeroMemory(&rsDesc, sizeof(rsDesc));
-    rsDesc.FrontCounterClockwise = FALSE; // 頂点順序
-    rsDesc.DepthBias = 0;
-    rsDesc.DepthBiasClamp = 0.0f;
-    rsDesc.SlopeScaledDepthBias = 0.0f;
-    rsDesc.DepthClipEnable = TRUE;
-    rsDesc.ScissorEnable = FALSE;
-    rsDesc.MultisampleEnable = g_msaaSampleCount > 1;
-    rsDesc.AntialiasedLineEnable = FALSE;
-
-    // 1. 通常モード（Solid）
-    rsDesc.FillMode = D3D11_FILL_SOLID; // 塗りつぶし
-    rsDesc.CullMode = D3D11_CULL_BACK; // 裏面を描画しない
-    GetDevice()->CreateRasterizerState(&rsDesc, &m_pRasterizerStateSolid);
-
-    // 2. ワイヤーフレームモード（Wireframe）
-    rsDesc.FillMode = D3D11_FILL_WIREFRAME; // 線だけ
-    rsDesc.CullMode = D3D11_CULL_NONE; // 全面描画（裏も見せる）
-    GetDevice()->CreateRasterizerState(&rsDesc, &m_pRasterizerStateWire);
-
-    // 初期設定はSolid
-    GetDeviceContext()->RSSetState(m_pRasterizerStateSolid);
 
     return S_OK;
 }
@@ -607,97 +585,32 @@ HRESULT Renderer::ResizeWindow(int width, int height) {
 //--------------------------------------------------------------------------------------
 // シェーダーをファイル拡張子に合わせてコンパイル
 //--------------------------------------------------------------------------------------
-HRESULT Renderer::CompileShader(const char* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel,
-                                void** ppShaderObject, int* pShaderObjectSize) {
-    //拡張子csoのファイル名を作成
-    char csoFileName[256];
-    const char* dot = strrchr(szFileName, '.'); // 最後の '.' を探す
-    if (dot) {
-        int basenameLen = (int)(dot - szFileName);
-        strncpy(csoFileName, szFileName, basenameLen); // 拡張子がある場合は拡張子を除いたファイル名をコピー
-        csoFileName[basenameLen] = '\0'; // 終端文字を追加
-    } else {
-        strcpy(csoFileName, szFileName); // 拡張子がない場合はそのままコピー
-    }
-    strcat(csoFileName, ".cso"); // ".cso" 拡張子を付加
+namespace {
+    HRESULT LoadShaderBytecode(const char* fileName, LPCSTR entryPoint, LPCSTR profile, ID3DBlob** bytecode) {
+        // シェーダーのパスは従来どおりShift-JISとして解釈する。
+        wchar_t sourcePath[512];
+        if (!MultiByteToWideChar(932, 0, fileName, -1, sourcePath, ARRAYSIZE(sourcePath))) {
+            return HRESULT_FROM_WIN32(GetLastError());
+        }
+        std::filesystem::path compiledPath(sourcePath);
+        compiledPath.replace_extension(L".cso");
+        if (SUCCEEDED(D3DReadFileToBlob(compiledPath.c_str(), bytecode))) {
+            return S_OK;
+        }
 
-    //csoファイルがあれば開く
-    FILE* fp;
-    int ret = fopen_s(&fp, csoFileName, "rb");
-    if (ret == 0) {
-        // ファイルサイズを取得
-        fseek(fp, 0, SEEK_END);
-        int size = ftell(fp);
-        fseek(fp, 0, SEEK_SET);
-
-        // バイナリデータを読み込み用にメモリ確保
-        unsigned char* byteArray = new unsigned char[size];
-        fread(byteArray, size, 1, fp);
-        fclose(fp);
-
-        // 呼び出し元にポインタとサイズを渡す
-        *ppShaderObject = byteArray;
-        *pShaderObjectSize = size;
-    }
-    //csoファイルがなければhlslファイルをコンパイルする
-    else {
-        HRESULT hr = S_OK;
-        WCHAR filename[512];
-        size_t wLen = 0;
-        int err = 0;
-
-        // 文字コードを Shift-JIS → UTF-16 に変換
-        setlocale(LC_ALL, "japanese"); // ロケールを設定（Windows特有）
-        err = mbstowcs_s(&wLen, filename, 512, szFileName, _TRUNCATE);
-
-        // シェーダーコンパイルオプションを設定
-        DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+        DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if defined(DEBUG) || defined(_DEBUG)
-        dwShaderFlags |= D3DCOMPILE_DEBUG; // デバッグビルドの場合はデバッグ情報も含める
+        flags |= D3DCOMPILE_DEBUG;
 #endif
-
-        // コンパイル結果およびエラー情報格納用のBlob
-        ID3DBlob* pErrorBlob = nullptr;
-        ID3DBlob* pBlob = nullptr;
-
-        // HLSLファイルをコンパイル
-        hr = D3DCompileFromFile(filename, // ファイル名
-                                nullptr, // マクロ定義なし
-                                D3D_COMPILE_STANDARD_FILE_INCLUDE, // #include 対応
-                                szEntryPoint, // エントリーポイント名
-                                szShaderModel, // シェーダーモデル
-                                dwShaderFlags, // コンパイルフラグ
-                                0, // エフェクトフラグ
-                                &pBlob, // 成功時のコンパイル結果
-                                &pErrorBlob); // コンパイルエラー出力
-
-        // コンパイル失敗時のエラーメッセージを表示
-        if (FAILED(hr)) {
-            if (pErrorBlob != nullptr) {
-                MessageBoxA(NULL, (char*)pErrorBlob->GetBufferPointer(), "Error", MB_OK);
-            }
-
-            SAFE_RELEASE(pErrorBlob);
-            SAFE_RELEASE(pBlob);
-            return E_FAIL;
+        Microsoft::WRL::ComPtr<ID3DBlob> errors;
+        const HRESULT hr = D3DCompileFromFile(sourcePath, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                                              entryPoint, profile, flags, 0, bytecode, errors.GetAddressOf());
+        if (FAILED(hr) && errors) {
+            MessageBoxA(nullptr, static_cast<const char*>(errors->GetBufferPointer()), "Error", MB_OK);
         }
-
-        // エラーブロブがあれば解放
-        if (pErrorBlob) {
-            pErrorBlob->Release();
-        }
-
-        // コンパイル成功時のバイナリデータを呼び出し元に渡す
-
-        *pShaderObjectSize = (pBlob)->GetBufferSize();
-        unsigned char* byteArray = new unsigned char[*pShaderObjectSize];
-        memcpy(byteArray, pBlob->GetBufferPointer(), *pShaderObjectSize);
-        *ppShaderObject = byteArray;
-        SAFE_RELEASE(pBlob);
+        return hr;
     }
-
-    return S_OK;
-}
+} // namespace
 
 //--------------------------------------------------------------------------------------
 // 頂点シェーダーオブジェクトを生成する
@@ -705,29 +618,26 @@ HRESULT Renderer::CompileShader(const char* szFileName, LPCSTR szEntryPoint, LPC
 HRESULT Renderer::CreateVertexShader(ID3D11VertexShader** ppVertexShader, ID3D11InputLayout** ppVertexLayout,
                                      D3D11_INPUT_ELEMENT_DESC* pLayout, unsigned int numElements,
                                      const char* szFileName) {
-    void* ShaderObject;
-    int ShaderObjectSize;
-
-    // ファイルの拡張子に合わせてコンパイル
-    HRESULT hr = CompileShader(szFileName, "main", "vs_5_0", &ShaderObject, &ShaderObjectSize);
+    Microsoft::WRL::ComPtr<ID3DBlob> bytecode;
+    HRESULT hr = LoadShaderBytecode(szFileName, "main", "vs_5_0", bytecode.GetAddressOf());
     if (FAILED(hr)) {
-        return E_FAIL;
+        return hr;
     }
 
-    // デバイスを使って頂点シェーダーを作成
-    hr = m_pDevice->CreateVertexShader(ShaderObject, ShaderObjectSize, NULL, ppVertexShader);
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> shader;
+    hr = m_pDevice->CreateVertexShader(bytecode->GetBufferPointer(), bytecode->GetBufferSize(), nullptr,
+                                       ppVertexShader ? shader.GetAddressOf() : nullptr);
     if (FAILED(hr)) {
-        return E_FAIL;
+        return hr;
     }
-    // デバイスを使って頂点レイアウトを作成
-    hr = m_pDevice->CreateInputLayout(pLayout, numElements, ShaderObject, ShaderObjectSize, ppVertexLayout);
-
+    hr = m_pDevice->CreateInputLayout(pLayout, numElements, bytecode->GetBufferPointer(),
+                                      bytecode->GetBufferSize(), ppVertexLayout);
     if (FAILED(hr)) {
-        return E_FAIL;
+        return hr;
     }
-
-    delete[] static_cast<unsigned char*>(ShaderObject);
-
+    if (ppVertexShader) {
+        *ppVertexShader = shader.Detach();
+    }
     return S_OK;
 }
 
@@ -735,22 +645,13 @@ HRESULT Renderer::CreateVertexShader(ID3D11VertexShader** ppVertexShader, ID3D11
 // ピクセルシェーダーオブジェクトを生成する
 //--------------------------------------------------------------------------------------
 HRESULT Renderer::CreatePixelShader(ID3D11PixelShader** ppPixelShader, const char* szFileName) {
-    void* ShaderObject;
-    int ShaderObjectSize;
-
-    // ファイルの拡張子に合わせてコンパイル
-    HRESULT hr = CompileShader(szFileName, "main", "ps_5_0", &ShaderObject, &ShaderObjectSize);
+    Microsoft::WRL::ComPtr<ID3DBlob> bytecode;
+    const HRESULT hr = LoadShaderBytecode(szFileName, "main", "ps_5_0", bytecode.GetAddressOf());
     if (FAILED(hr)) {
         return hr;
     }
-
-    // ピクセルシェーダーを生成
-    hr = m_pDevice->CreatePixelShader(ShaderObject, ShaderObjectSize, nullptr, ppPixelShader);
-    if (FAILED(hr)) {
-        return hr;
-    }
-
-    return S_OK;
+    return m_pDevice->CreatePixelShader(bytecode->GetBufferPointer(), bytecode->GetBufferSize(), nullptr,
+                                        ppPixelShader);
 }
 
 //--------------------------------------------------------------------------------------
