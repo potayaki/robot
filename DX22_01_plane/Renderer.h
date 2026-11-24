@@ -123,6 +123,8 @@ private:
 
     /// 光源の方向・色・環境光をGPUへ渡す定数バッファ。
     static ID3D11Buffer* m_pLightBuffer;
+    /// シーン照明と影の投影に共用する、光が進むワールド方向。
+    static DirectX::SimpleMath::Vector3 m_lightDirection;
     /// 色や材質の情報をGPUへ渡す定数バッファ。
     static ID3D11Buffer* m_materialBuffer;
     /// テクスチャのUV範囲をGPUへ渡す定数バッファ。
@@ -185,6 +187,11 @@ public:
     static bool CreateConstantBuffer(unsigned int bytesize, ID3D11Buffer** pConstantBuffer);
     static bool CreateConstantBufferWrite(unsigned int bytesize, ID3D11Buffer** pConstantBuffer);
     static void SetLight(LIGHT light);
+
+    static const DirectX::SimpleMath::Vector3& GetLightDirection() {
+        return m_lightDirection;
+    }
+
     static void SetMaterial(MATERIAL material);
     static void SetUV(float u, float v, float uw, float vh);
 

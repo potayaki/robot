@@ -613,7 +613,13 @@
     <ClCompile Include="SkyEnvironment.cpp">
       <Filter>ソース ファイル\Object\Environment</Filter>
     </ClCompile>
+    <ClCompile Include="StageSunShadows.cpp">
+      <Filter>ソース ファイル\Object\Environment</Filter>
+    </ClCompile>
     <ClInclude Include="SkyEnvironment.h">
+      <Filter>ヘッダー ファイル\Object\Environment</Filter>
+    </ClInclude>
+    <ClInclude Include="StageSunShadows.h">
       <Filter>ヘッダー ファイル\Object\Environment</Filter>
     </ClInclude>
     <ClInclude Include="SkyCycle.h">
@@ -772,6 +778,9 @@
       <Filter>リソース ファイル\VS</Filter>
     </None>
     <None Include="shader\skyFog.hlsli">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
+    <None Include="shader\sunShadow.hlsli">
       <Filter>リソース ファイル\PS</Filter>
     </None>
     <None Include="shader\mushroomWarningPS.hlsl">

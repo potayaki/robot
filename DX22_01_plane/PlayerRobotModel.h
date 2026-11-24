@@ -50,6 +50,8 @@ class PlayerRobotModel : public Object {
 
     static SkinnedVertex MakeVertex(const RobotAnimationRig::Vertex& source);
     DirectX::SimpleMath::Matrix GetWorldMatrix() const;
+    /// 通常描画と影に共通の骨姿勢・ワールド変換で、本体または破片を描く。
+    void DrawGeometry();
 
 public:
     /// 使用前の状態と必要な資源を初期化する。
@@ -69,6 +71,8 @@ public:
 #endif
     /// 現在の状態を画面へ描画する。
     void Draw(Camera* cam) override;
+    /// 呼び出し側で設定した太陽のビュー・射影行列を使って深度を描く。
+    void DrawSunShadow();
     /// 使用した資源を解放して終了する。
     void Uninit() override;
 };

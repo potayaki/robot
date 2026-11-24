@@ -252,17 +252,31 @@ void PlayerRobotModel::Draw(Camera* cam) {
     }
 
     cam->SetCamera();
-
-    // 破片は既にワールド座標。本体と二重に描かず、同じ材質・シェーダーで切り替える。
-    const bool broken = m_debris.IsActive();
-    Matrix world = broken ? Matrix::Identity : GetWorldMatrix();
-    Renderer::SetWorldMatrix(&world);
     Renderer::SetUV(0, 0, 1, 1); // テクスチャ全体を使用する。
 
     MATERIAL material{};
     material.Diffuse = Color(1, 1, 1, 1);
     material.TextureEnable = TRUE;
     Renderer::SetMaterial(material);
+    Renderer::GetDeviceContext()->PSSetShader(m_pixelShader.Get(), nullptr, 0);
+    m_albedo.SetGPU();
+    DrawGeometry();
+}
+
+void PlayerRobotModel::DrawSunShadow() {
+    if (!m_ready) {
+        return;
+    }
+
+    Renderer::GetDeviceContext()->PSSetShader(nullptr, nullptr, 0);
+    DrawGeometry();
+}
+
+void PlayerRobotModel::DrawGeometry() {
+    // 破片の骨行列はワールド座標を含むので、本体だけにワールド変換を適用する。
+    const bool broken = m_debris.IsActive();
+    Matrix world = broken ? Matrix::Identity : GetWorldMatrix();
+    Renderer::SetWorldMatrix(&world);
 
     // 使用しない骨は単位行列にしてから、現在の本体または破片の姿勢をGPUへ送る。
     std::array<Matrix, MaxBones> matrices;
@@ -277,10 +291,8 @@ void PlayerRobotModel::Draw(Camera* cam) {
     ID3D11Buffer* bones = m_boneBuffer.Get();
     context->VSSetConstantBuffers(BoneBufferSlot, 1, &bones);
     context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
-    context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
     context->IASetInputLayout(m_layout.Get());
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    m_albedo.SetGPU();
 
     if (broken) {
         m_debrisVertices.SetGPU();

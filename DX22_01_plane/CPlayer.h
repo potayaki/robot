@@ -148,6 +148,8 @@ public:
     void Update() override;
     /// 現在の状態を画面へ描画する。
     void Draw(Camera* cam) override;
+    /// 現在の機体を太陽から見た深度マップへ描く。
+    void DrawSunShadow();
     /// 使用した資源を解放して終了する。
     void Uninit() override;
 

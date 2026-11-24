@@ -128,6 +128,12 @@ void CPlayer::Draw(Camera* cam) {
     }
 }
 
+void CPlayer::DrawSunShadow() {
+    if (m_body) {
+        m_body->DrawSunShadow();
+    }
+}
+
 void CPlayer::Onland() {
     m_isGrounded = true;
     m_velocity.y = 0;

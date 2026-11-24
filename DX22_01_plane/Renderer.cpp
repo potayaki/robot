@@ -26,6 +26,7 @@ ID3D11Buffer* Renderer::m_pViewBuffer{}; // ビュー行列
 ID3D11Buffer* Renderer::m_pProjectionBuffer{}; // プロジェクション行列
 
 ID3D11Buffer* Renderer::m_pLightBuffer{};
+Vector3 Renderer::m_lightDirection{};
 ID3D11Buffer* Renderer::m_materialBuffer{};
 ID3D11Buffer* Renderer::m_pTextureBuffer{};
 
@@ -892,6 +893,7 @@ bool Renderer::CreateConstantBufferWrite(unsigned int bytesize, // コンスタ�
 }
 
 void Renderer::SetLight(LIGHT light) {
+    m_lightDirection = Vector3(light.Direction.x, light.Direction.y, light.Direction.z);
     m_pDeviceContext->UpdateSubresource(m_pLightBuffer, 0, NULL, &light, 0, 0);
 }
 

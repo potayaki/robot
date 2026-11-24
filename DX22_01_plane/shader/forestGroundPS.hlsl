@@ -1,14 +1,16 @@
 #include "common.hlsl"
 #include "meadowWind.hlsli"
 #include "skyFog.hlsli"
+#include "sunShadow.hlsli"
 
 Texture2D GroundTexture : register(t0);
 SamplerState GroundSampler : register(s0);
 
 float4 main(float4 position : SV_POSITION, float4 color : COLOR0,
-            float2 uv : TEXCOORD0, float3 viewPosition : TEXCOORD1) : SV_Target
+            float2 uv : TEXCOORD0, float3 viewPosition : TEXCOORD1,
+            float3 worldPosition : TEXCOORD2, float3 directColor : COLOR1) : SV_Target
 {
-    float3 ground = color.rgb * material.Diffuse.rgb;
+    float3 ground = (color.rgb - directColor * (1 - SunVisibility(worldPosition))) * material.Diffuse.rgb;
     float cover = saturate(color.a);
     if (material.TextureEnable) {
         float3 gravel = GroundTexture.Sample(GroundSampler, uv).rgb;

@@ -198,6 +198,7 @@
     <ClCompile Include="RobotDebris.cpp" />
     <ClCompile Include="CollisionDebugDraw.cpp" />
     <ClCompile Include="SkyEnvironment.cpp" />
+    <ClCompile Include="StageSunShadows.cpp" />
     <ClCompile Include="BoarAnimationRig.cpp" />
     <ClCompile Include="BoarModel.cpp" />
     <ClCompile Include="CBoarEnemy.cpp" />
@@ -261,6 +262,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="SkyCycle.h" />
     <ClInclude Include="SkyEnvironment.h" />
+    <ClInclude Include="StageSunShadows.h" />
     <ClInclude Include="BoarAnimationRig.h" />
     <ClInclude Include="BoarModel.h" />
     <ClInclude Include="BoarCharge.h" />
@@ -420,6 +422,7 @@
     <None Include="shader\forestGrassPS.hlsl" />
     <None Include="shader\meadowWind.hlsli" />
     <None Include="shader\skyFog.hlsli" />
+    <None Include="shader\sunShadow.hlsli" />
     <None Include="shader\boarVS.hlsl" />
     <None Include="shader\chargeTelegraphVS.hlsl" />
     <None Include="shader\chargeTelegraphPS.hlsl" />

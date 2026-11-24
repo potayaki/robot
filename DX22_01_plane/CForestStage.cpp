@@ -3,6 +3,8 @@
 #include "ForestMeadow.h"
 #include "AimCursor.h"
 #include "Application.h"
+#include "Game.h"
+#include "CPlayer.h"
 #include <array>
 #include <cmath>
 #include <random>
@@ -326,6 +328,9 @@ void CForestStage::Init() {
         }
     }
     BuildGround();
+    if (!m_sunShadows.Init()) {
+        std::cerr << "Forest sun shadow map unavailable\n";
+    }
     m_grass.Init();
     Renderer::CreateConstantBuffer(sizeof(Vector4), m_windBuffer.ReleaseAndGetAddressOf());
 }
@@ -442,6 +447,13 @@ void CForestStage::BuildGround() {
 }
 
 void CForestStage::Draw(Camera* camera) {
+    const auto players = Game::GetInstance()->GetObjects<CPlayer>();
+    if (!players.empty() && !players.front()->IsDead()) {
+        CPlayer* player = players.front();
+        m_sunShadows.Capture(player->GetPosition(), Renderer::GetLightDirection(),
+                             [player] { player->DrawSunShadow(); });
+        m_sunShadows.BindGround();
+    }
     camera->SetCamera();
     Matrix world = Matrix::Identity;
     Renderer::SetWorldMatrix(&world);
@@ -463,6 +475,7 @@ void CForestStage::Draw(Camera* camera) {
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->DrawIndexed(m_groundIndexCount, 0, 0);
     m_grass.Draw(camera);
+    m_sunShadows.UnbindGround();
     const Matrix view = camera->GetViewMatrix();
     const float tanHalfY = std::tan(AimCursor::FieldOfView * 0.5f);
     const float tanHalfX = tanHalfY * Application::GetWidth() / (std::max)(1u, Application::GetHeight());
@@ -511,6 +524,7 @@ void CForestStage::Uninit() {
     m_groundIndices = IndexBuffer{};
     m_groundDetail = Texture{};
     m_grass = ForestGrass{};
+    m_sunShadows = StageSunShadows{};
     m_windBuffer.Reset();
     m_windSeconds = 0;
     m_groundIndexCount = 0;

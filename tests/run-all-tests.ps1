@@ -32,6 +32,7 @@ $cases = @(
     @{ Name = 'GhostAuraRenderTests'; Sources = @('GhostModel.cpp', 'EnemyTint.cpp', 'Shader.cpp', 'Texture.cpp', 'stb_image.cpp') },
     @{ Name = 'GameTimeTests'; Sources = @() },
     @{ Name = 'SkyCycleTests'; Sources = @() },
+    @{ Name = 'StageSunShadowTests'; Sources = @('StageSunShadows.cpp') },
     @{ Name = 'BossBattleTests'; Sources = @() },
     @{ Name = 'BossAttackTests'; Sources = @() },
     @{ Name = 'ForestStageTests'; Sources = @() },
@@ -80,7 +81,7 @@ exit /b %errorlevel%
             if ($LASTEXITCODE -ne 0) { throw "$($case.Name) compilation failed." }
         } finally { Pop-Location }
         # この描画テストはゲームと同じ相対パスでHLSLを読み込む。
-        $runDirectory = if ($case.Name -in @('LowHealthGlitchTests', 'ExplosionRenderTests', 'EnemyTintTests', 'GhostAuraRenderTests')) {
+        $runDirectory = if ($case.Name -in @('LowHealthGlitchTests', 'ExplosionRenderTests', 'EnemyTintTests', 'GhostAuraRenderTests', 'StageSunShadowTests')) {
             Join-Path $repoRoot 'DX22_01_plane'
         } else { $repoRoot }
         Push-Location $runDirectory

@@ -10,7 +10,9 @@ struct BladeInstance
 struct BladeVertex
 {
     float4 position : SV_POSITION;
-    float3 color : COLOR0;
+    float3 ambientColor : COLOR0;
+    float3 directColor : COLOR1;
+    float3 worldPosition : TEXCOORD0;
 };
 
 BladeVertex main(BladeInstance blade, uint vertexID : SV_VertexID)
@@ -43,9 +45,12 @@ BladeVertex main(BladeInstance blade, uint vertexID : SV_VertexID)
     float3 base = lerp(float3(0.27, 0.42, 0.18), float3(0.38, 0.51, 0.22), seed);
     float3 tip = lerp(float3(0.54, 0.72, 0.32), float3(0.73, 0.80, 0.41), seed);
     float3 normal = normalize(float3(-restDirection.x * 0.22, 1, -restDirection.y * 0.22));
-    float3 lightColor = light.Ambient.rgb + light.Diffuse.rgb * saturate(-dot(light.Direction.xyz, normal));
+    float diffuse = saturate(-dot(light.Direction.xyz, normal));
+    float3 bladeColor = lerp(base, tip, t) * (1 + gust * t * 0.08);
     BladeVertex output;
     output.position = mul(mul(float4(bladePoint, 1), View), Projection);
-    output.color = lerp(base, tip, t) * lightColor * (1 + gust * t * 0.08);
+    output.ambientColor = bladeColor * light.Ambient.rgb;
+    output.directColor = bladeColor * diffuse * light.Diffuse.rgb;
+    output.worldPosition = bladePoint;
     return output;
 }

@@ -5,6 +5,7 @@
 #include "ForestLayout.h"
 #include "ForestProgress.h"
 #include "ForestGrass.h"
+#include "StageSunShadows.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 #include "Material.h"
@@ -36,6 +37,8 @@ class CForestStage : public Object {
     Texture m_groundDetail{};
     /// 草原を覆う細い葉のインスタンス。
     ForestGrass m_grass;
+    /// ロボットが地表と草に落とす影の深度マップ。
+    StageSunShadows m_sunShadows;
     /// 草、花、地表の明暗に同じ風の時刻を渡す定数バッファ。
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_windBuffer;
     /// ゲーム時間で進む風の周期内の経過秒数。
