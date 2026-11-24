@@ -15,7 +15,7 @@ namespace AimCursor {
 class Camera {
 private:
     /// 画面端・デバッグキーで旋回する速さ（ラジアン/秒）。
-    float m_rotationSpeed = 1.2f;
+    float m_rotationSpeed = 1.7f;
 
     /// マウス位置でカメラを回転させる画面端の幅（ピクセル）。
     int m_edgeWidth = 100;
