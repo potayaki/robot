@@ -111,19 +111,22 @@ void TestModel::Draw(Camera* camera, const Color& tint) {
 }
 
 void TestModel::Draw(Camera* camera, const Vector3& worldPosition, const Vector3& rotationRadians,
-                     const Vector3& modelScale, const Color& tint) {
+                     const Vector3& modelScale, const Color& tint, float hitFlash) {
+    // 姿勢は描画のたびに組み立てるため、同じメッシュを使う弾もそれぞれの位置・向きで描ける。
+    const Matrix rotation =
+        Matrix::CreateFromYawPitchRoll(rotationRadians.y, rotationRadians.x, rotationRadians.z);
+    DrawWorld(camera, Matrix::CreateScale(modelScale) * rotation * Matrix::CreateTranslation(worldPosition),
+              tint, hitFlash);
+}
+
+void TestModel::DrawWorld(Camera* camera, Matrix world, const Color& tint, float hitFlash) {
     if (!m_resources || !camera) {
         return;
     }
     camera->SetCamera();
-
-    // 姿勢は描画のたびに組み立てるため、同じメッシュを使う弾もそれぞれの位置・向きで描ける。
-    const Matrix rotation =
-        Matrix::CreateFromYawPitchRoll(rotationRadians.y, rotationRadians.x, rotationRadians.z);
-    Matrix world = Matrix::CreateScale(modelScale) * rotation * Matrix::CreateTranslation(worldPosition);
     Renderer::SetWorldMatrix(&world);
     m_shader.SetGPU();
-    EnemyTintScope tintScope(m_resources->m_tint, tint);
+    EnemyTintScope tintScope(m_resources->m_tint, tint, false, hitFlash);
     m_resources->m_mesh.BeforeDraw();
 
     for (const auto& subset : m_resources->m_subsets) {

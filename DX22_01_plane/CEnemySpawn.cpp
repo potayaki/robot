@@ -18,6 +18,7 @@
 #include "Ground.h"
 #include <algorithm>
 #include <filesystem>
+#include <utility>
 
 CEnemySpawn::CEnemySpawn() {}
 
@@ -29,7 +30,7 @@ EnemySpawning::Pressure CEnemySpawn::GetPressure(double elapsedSeconds) const {
 }
 
 void CEnemySpawn::Init() {
-    m_spawnElapsed = 0.0f; // 初期配置の3体から始め、追加の敵は出現間隔を待つ。
+    m_spawnElapsed = 0.0f;
     m_slimeResources = std::make_unique<TestModel>();
     m_slimeResources->Init();
     m_slimeResources->Load("assets/model/slime/Slime.fbx", "assets/model/slime",
@@ -95,6 +96,9 @@ void CEnemySpawn::Update() {
         }
     }
     const int packSize = EnemySpawning::PackSize(pressure.packSize, livingEnemies, pressure.maxAlive);
+    if (packSize == 0) {
+        return;
+    }
     const auto playerPos = players[0]->GetPosition();
     const Ground* ground = Ground::Current();
     const auto area = forest ? forest->GetArea(playerPos) : ForestLayout::Area::Entrance;
@@ -103,25 +107,26 @@ void CEnemySpawn::Update() {
     const int rarePercent = std::clamp(m_rarePercent + areaDepth * 2, 0, 100);
     const float radiusMin = (std::max)(EnemySpawning::SafePlayerDistance, m_radiusMin);
     const float radiusMax = (std::max)(radiusMin, m_radiusMax);
-    for (int member = 0; member < packSize; ++member) {
-        // 各個体の場所を個別に抽選し、同じ群れと既存の敵の両方から間隔を取る。
-        DirectX::SimpleMath::Vector3 spawnPosition;
-        bool foundPosition = false;
-        for (int attempt = 0; attempt < EnemySpawning::PositionAttempts; ++attempt) {
-            const float angle = static_cast<float>(rand()) / RAND_MAX * DirectX::XM_2PI;
-            const float radius = radiusMin + static_cast<float>(rand()) / RAND_MAX * (radiusMax - radiusMin);
-            spawnPosition =
-                playerPos + DirectX::SimpleMath::Vector3(radius * cos(angle), 0, radius * sin(angle));
-            if (!EnemySpawning::IsClearPosition(spawnPosition, playerPos, occupied, forest != nullptr,
-                                                area)) {
-                continue;
+    const float cameraYaw = game->GetCamera()->GetCameraDirection();
+    std::vector<DirectX::SimpleMath::Vector3> pack;
+    for (int attempt = 0; attempt < EnemySpawning::PositionAttempts; ++attempt) {
+        // まず画面前方の約80度を探し、壁際で配置できないときは全周へ広げる。
+        constexpr int forwardAttempts = 4;
+        constexpr float forwardHalfAngle = DirectX::XM_PI * 0.22f;
+        const float arc = attempt < forwardAttempts ? forwardHalfAngle : DirectX::XM_PI;
+        const float angle = cameraYaw + (2.0f * rand() / RAND_MAX - 1.0f) * arc;
+        const DirectX::SimpleMath::Vector3 forward(-std::sin(angle), 0, -std::cos(angle));
+        const float radius = radiusMin + static_cast<float>(rand()) / RAND_MAX * (radiusMax - radiusMin);
+        auto positions = EnemySpawning::PlacePack(playerPos + forward * radius, forward, packSize, playerPos,
+                                                  occupied, forest != nullptr, area);
+        if (positions.size() > pack.size()) {
+            pack = std::move(positions);
+            if (pack.size() == static_cast<size_t>(packSize)) {
+                break;
             }
-            foundPosition = true;
-            break;
         }
-        if (!foundPosition) {
-            continue;
-        }
+    }
+    for (const auto& spawnPosition : pack) {
         const float x = spawnPosition.x;
         const float z = spawnPosition.z;
         const float groundY = ground ? ground->HeightAt(x, z) : ForestLayout::GroundY;
@@ -192,7 +197,6 @@ void CEnemySpawn::Update() {
             spawned->SetRarity(rarity);
             ++livingEnemies;
             ghostCount += dynamic_cast<CGhostEnemy*>(spawned) != nullptr;
-            occupied.push_back(spawned->GetPosition());
         }
     }
 }

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <simplemath.h>
+#include <cmath>
 
 namespace Collision {
     // ライン（無限の長さの線）
@@ -51,6 +52,31 @@ namespace Collision {
         /// 半径
         float radius;
     };
+
+    /// 移動球が相手の球に初めて触れる位置を、線分の始点0～終点1で返す。
+    inline bool SegmentSphereHitFraction(const Segment& segment, const Sphere& sphere, float movingRadius,
+                                         float& hitFraction) {
+        const auto fromCenter = segment.start - sphere.center;
+        const float radius = sphere.radius + movingRadius;
+        const float c = fromCenter.LengthSquared() - radius * radius;
+        if (c <= 0.0f) {
+            hitFraction = 0.0f; // 停止中でも始点が球内ならすでに接触している。
+            return true;
+        }
+
+        const auto step = segment.end - segment.start;
+        const float b = fromCenter.Dot(step);
+        if (b >= 0.0f) {
+            return false; // 球外から止まっているか、遠ざかる向きに動いた。
+        }
+        const float discriminant = b * b - step.LengthSquared() * c;
+        if (discriminant < 0.0f) {
+            return false;
+        }
+        // 手前の交点。始点のすぐ近くでも、小さい数同士の差で精度を失わない形を使う。
+        hitFraction = c / (-b + std::sqrt(discriminant));
+        return hitFraction <= 1.0f;
+    }
 
     // BOX定義
     struct AABB {

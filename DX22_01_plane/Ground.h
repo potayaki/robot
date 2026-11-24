@@ -52,6 +52,8 @@ public:
     static Ground* Current();
     /// 指定したワールドXZ座標での地表のワールドY座標。
     float HeightAt(float x, float z) const;
+    /// 指定したワールドXZ座標での地表の上向き単位法線。
+    DirectX::SimpleMath::Vector3 NormalAt(float x, float z) const;
     /// 地表に初めて触れる線分上の比率。clearanceは地表から確保する高さ。
     std::optional<float> FirstHit(const DirectX::SimpleMath::Vector3& from,
                                   const DirectX::SimpleMath::Vector3& to, float clearance = 0) const;

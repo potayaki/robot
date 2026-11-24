@@ -104,6 +104,23 @@ int main() {
     assert(std::abs(slow.elapsed - 2.0) < 0.0001);
     assert(std::abs(slow.distance - 3000.0f) < 0.05f);
 
+    // 同時撃破は1回分だけ。長いフレームの途中で演出が終了しても通常速度へ戻る。
+    for (const int fps : {15, 30, 60, 144}) {
+        GameTime::ClearImpact();
+        GameTime::PulseOnDefeat();
+        GameTime::PulseOnDefeat();
+        const auto impact = Simulate(std::vector<double>(fps, 1.0 / fps));
+        assert(std::abs(impact.elapsed - (1.0 - 0.044 * 0.90)) < 0.00001);
+    }
+    GameTime::PulseOnDefeat();
+    assert(std::abs(Simulate({0.10}).elapsed - 0.0604) < 0.00001);
+    GameTime::PulseOnDefeat(); // 直後の追撃はスローを延長しない。
+    assert(std::abs(Simulate({0.15}).elapsed - 0.15) < 0.00001);
+    GameTime::PulseOnDefeat();
+    assert(std::abs(Simulate({0.02}, 0.5f).elapsed - 0.001) < 0.00001);
+    GameTime::BeginFrame(0.4, 1.0f, true);
+    assert(std::abs(Simulate({0.02}).elapsed - 0.02) < 0.00001);
+
     for (double invalid : {0.0, -1.0, std::numeric_limits<double>::quiet_NaN()}) {
         GameTime::BeginFrame(invalid, 1.0f, false);
         assert(!GameTime::NextStep());

@@ -9,6 +9,7 @@
 #include "billboard.h"
 #include "ExplosionManager.h"
 #include "CParticle.h"
+#include "CBullet.h"
 #include "CMissile.h"
 
 #include "imgui.h"
@@ -28,7 +29,6 @@
 #include "CPlayerUI.h"
 #include "CEnemy.h"
 #include "EnemyTarget.h"
-#include "CBullet.h"
 #include "CPresentBox.h"
 #include "CSpanner.h"
 #include "CStagePrimitive.h"
@@ -485,6 +485,15 @@ void Game::Draw() {
         }
     }
 
+    // 発光帯の先頭も残光と同じ透明パスで描き、敵の生成順に左右されないようにする。
+    for (auto manager : m_instance->GetObjects<BulletManager>()) {
+        for (auto bullet : manager->GetPool()) {
+            if (bullet->GetActive()) {
+                bullet->DrawTrailTip(&m_instance->m_camera);
+            }
+        }
+    }
+
     // 突進の予測線は半透明なので、地面や敵を描き終えてから重ねる。
     for (auto boar : m_instance->GetObjects<CBoarEnemy>()) {
         boar->DrawTelegraph(&m_instance->m_camera);
@@ -630,6 +639,7 @@ void Game::CaptureGameOver(CPlayer* player) {
         return;
     }
     m_gameOver = true;
+    GameTime::ClearImpact();
     m_deathElapsed = 0.0f;
     m_result.survivalSeconds = m_gameTime;
     m_result.kills = player->GetKills();
@@ -640,6 +650,7 @@ void Game::CaptureGameOver(CPlayer* player) {
 }
 
 void Game::ApplySceneChange() {
+    GameTime::ClearImpact();
     m_sceneChangePending = false;
     delete m_scene;
     m_scene = nullptr;

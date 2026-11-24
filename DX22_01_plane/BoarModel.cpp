@@ -166,7 +166,8 @@ void BoarModel::Update(BoarMotion motion, float deltaSeconds, float progress) {
     m_rig.Update(motion, deltaSeconds, progress);
 }
 
-void BoarModel::Draw(Camera* camera, const Vector3& feet, float yaw, float scale, const Color& tint) {
+void BoarModel::Draw(Camera* camera, const Vector3& feet, float yaw, float scale, const Color& tint,
+                     float hitFlash) {
     if (!m_resources || !camera) {
         return;
     }
@@ -200,7 +201,7 @@ void BoarModel::Draw(Camera* camera, const Vector3& feet, float yaw, float scale
     context->PSSetConstantBuffers(4, 1, resources.material.GetAddressOf());
     context->VSSetShader(resources.vertexShader.Get(), nullptr, 0);
     context->PSSetShader(resources.pixelShader.Get(), nullptr, 0);
-    EnemyTintScope tintScope(resources.m_tint, tint);
+    EnemyTintScope tintScope(resources.m_tint, tint, false, hitFlash);
     context->IASetInputLayout(resources.layout.Get());
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_resources->albedo.SetGPU();

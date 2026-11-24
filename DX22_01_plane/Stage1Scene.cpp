@@ -14,7 +14,6 @@
 #include "CEnemy.h"
 #include "CFlyingEnemy.h"
 #include <cmath>
-#include <utility>
 #include "CBullet.h"
 #include "billboard.h"
 #include "CParticle.h"
@@ -78,12 +77,16 @@ void Stage1Scene::Init() {
 
     m_mySceneObjects.push_back(Game::GetInstance()->AddObject<CForestStage>());
 
-    // 最初の群れは道の曲がり角と、その先の草地に分けて配置する。
-    for (const auto& [z, offsetX] :
-         {std::pair{-430.0f, 75.0f}, std::pair{-270.0f, -130.0f}, std::pair{-80.0f, 48.0f}}) {
+    // 最初の3体は目の前の道で隊列を組み、中央へのミサイルでまとめて狙える。
+    const auto start = player->GetPosition();
+    const Vector3 forward(0, 0, 1);
+    const auto firstPack = EnemySpawning::PlacePack(start + forward * EnemySpawning::SpawnRadiusMin, forward,
+                                                    EnemySpawning::InitialPackSize, start, {}, true,
+                                                    ForestLayout::Area::Entrance);
+    for (const auto& position : firstPack) {
         auto slime = Game::GetInstance()->AddObject<CEnemy>();
-        const float x = ForestLayout::PathCenter(z) + offsetX;
-        slime->SetPosition(x, ForestLayout::GroundHeight(x, z) + slime->GetCollisionSphere().radius, z);
+        const float groundY = ForestLayout::GroundHeight(position.x, position.z);
+        slime->SetPosition(position.x, groundY + slime->GetCollisionSphere().radius, position.z);
     }
 
     //--------------------

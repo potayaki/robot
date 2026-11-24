@@ -118,6 +118,21 @@ void CheckUpperBodyAim(const RobotAnimationRig& original) {
         assert(Difference(straight.GetMatrices(), turning.GetMatrices()) < 0.01f);
     }
 
+    // 素材の歩行へ補間中に跳んでも、着地までは踏切時の姿勢に新しい照準だけを重ねる。
+    auto airborne = original;
+    airborne.Update(RobotMotion::Forward, 0.05f);
+    const double takeoffTime = airborne.GetTime();
+    const auto takeoffPose = airborne.GetMatrices();
+    for (const auto& [yaw, pitch] : aimAngles) {
+        auto expected = original;
+        expected.Update(RobotMotion::Forward, 0.05f, 1.0f, yaw, pitch);
+        airborne.Update(RobotMotion::Idle, 1.0f / 60, 1.0f, yaw, pitch, true);
+        assert(airborne.GetMotion() == RobotMotion::Forward && airborne.GetTime() == takeoffTime);
+        assert(Difference(expected.GetMatrices(), airborne.GetMatrices()) < 0.001f);
+    }
+    airborne.Update(RobotMotion::Forward, 1.0f / 60);
+    assert(airborne.GetTime() > takeoffTime && Difference(takeoffPose, airborne.GetMatrices()) > 0.01f);
+
     // カメラが横や後ろを向いていても、固定された脚に対する移動方向を選ぶ。
     assert(SelectRobotWalkMotion(0, 0, 0) == RobotMotion::Idle);
     assert(SelectRobotWalkMotion(0, 1, 0) == RobotMotion::Forward);

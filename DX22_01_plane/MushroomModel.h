@@ -15,7 +15,8 @@ public:
     bool Init();
     /// ワールド座標の足元を基準に、通常サイズへ倍率を掛けて描画する。yawはラジアン。
     void Draw(Camera* camera, DirectX::SimpleMath::Vector3 feet, float yaw, bool red, float scale = 1.0f,
-              const DirectX::SimpleMath::Color& tint = DirectX::SimpleMath::Color(1, 1, 1, 0));
+              const DirectX::SimpleMath::Color& tint = DirectX::SimpleMath::Color(1, 1, 1, 0),
+              float hitFlash = 0.0f);
 
 private:
     struct Resources;

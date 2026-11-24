@@ -6,7 +6,7 @@ SamplerState g_SamplerState : register(s0);
 cbuffer EnemyTintBuffer : register(b7)
 {
     float4 EnemyTintColor; // RGB: target color, A: recolor strength, not transparency.
-    float4 EnemyTintOptions; // X: texture-only model without a material.
+    float4 EnemyTintOptions; // X: texture-only model. Y: hit flash.
 };
 
 float4 main(in PS_IN input) : SV_Target
@@ -18,5 +18,8 @@ float4 main(in PS_IN input) : SV_Target
     // Luminance retains eyes, patterns and lighting; the square root keeps dark skins readable.
     float brightness = sqrt(saturate(dot(color.rgb, float3(0.299, 0.587, 0.114))));
     color.rgb = lerp(color.rgb, EnemyTintColor.rgb * brightness, saturate(EnemyTintColor.a));
+    // Keep the eye and surface shading readable through the brief pink hit flash.
+    float3 hitColor = lerp(float3(0.66, 0.025, 0.26), float3(1.0, 0.55, 0.75), brightness);
+    color.rgb = lerp(color.rgb, hitColor, saturate(EnemyTintOptions.y));
     return color;
 }

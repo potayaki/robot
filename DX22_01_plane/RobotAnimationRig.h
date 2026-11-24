@@ -26,6 +26,17 @@ class RobotAnimationRig {
     friend class RobotSpiderIK;
 
 public:
+    struct GunMount {
+        /// 片側の上下の銃身に固定された骨番号。
+        int top = -1;
+        int bottom = -1;
+        /// 銃口が向く骨ローカルZ軸の符号。左は+Z、右は-Z。
+        float forwardSign = 1.0f;
+        /// 上側の骨姿勢からモデル座標の銃口と前向き単位ベクトルを求める。
+        aiVector3D Muzzle(const aiMatrix4x4& topPose) const;
+        aiVector3D Axis(const aiMatrix4x4& topPose) const;
+    };
+
     struct Vertex {
         /// モデルまたはオブジェクトの位置。
         aiVector3D position;
@@ -100,6 +111,8 @@ private:
     std::vector<Pose> m_blendFrom;
     /// 親子関係を合成した、モデル座標での各骨の変換行列。
     std::vector<aiMatrix4x4> m_globals;
+    /// インデックス0は左の銃身、1は右の銃身。
+    std::array<GunMount, 2> m_guns;
     /// 素材のルート変換を打ち消すための逆行列。
     aiMatrix4x4 m_inverseRoot;
     /// 現在再生している動作の種類。
@@ -124,6 +137,13 @@ public:
     /// 名前に対応する骨の番号。見つからない場合は -1。
     int FindNode(const std::string& name) const;
 
+    const auto& GetGuns() const {
+        return m_guns;
+    }
+
+    /// 照準・IKで確定した今の姿勢から、片側の上下の銃身をモデル単位で後退させる。
+    void ApplyBarrelRecoil(size_t side, float distance);
+
     // 武器などに表示物を取り付ける際、現在の姿勢行列を名前で参照する。
     const aiMatrix4x4* FindNodeTransform(const std::string& name) const {
         const int node = FindNode(name);
@@ -133,9 +153,9 @@ public:
     bool Load(const std::string& directory, std::string& error);
     // IKのInitより前に指定する。脚と腰だけ拡大し、上半身・武器の大きさは保つ。
     void SetLowerBodyScale(float scale);
-    /// 経過時間と入力に合わせて状態を更新する。
+    /// 経過秒数と照準から姿勢を更新する。holdPose中はクリップと補間を止め、上半身の照準を更新する。
     void Update(RobotMotion motion, float deltaSeconds, float playbackRate = 1.0f, float upperBodyYaw = 0.0f,
-                float upperBodyPitch = 0.0f);
+                float upperBodyPitch = 0.0f, bool holdPose = false);
 
     const std::vector<Part>& GetParts() const {
         return m_parts;

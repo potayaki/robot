@@ -2,6 +2,7 @@
 /// @brief 実際の個体色シェーダーをWARPで描き、模様・透明度・描画状態の復元を検証する。
 
 #include "../DX22_01_plane/EnemyTint.h"
+#include "../DX22_01_plane/EnemyHitReaction.h"
 #include "../DX22_01_plane/Renderer.h"
 #include <array>
 #include <cassert>
@@ -39,6 +40,21 @@ HRESULT Renderer::CreatePixelShader(ID3D11PixelShader** shader, const char* path
 }
 
 int main() {
+    // 複数回描画しても経過秒数が同じなら姿勢は同じ。再着弾では最後の方向に切り替える。
+    EnemyHitReaction reaction;
+    assert(reaction.Pose(1, 10).flash == 0);
+    reaction.Start(1, {3, 4, 0});
+    const auto impact = reaction.Pose(1, 10);
+    assert(impact.flash == 1 && impact.recoil == 1 && impact.offset.y == 0);
+    assert(std::abs(impact.offset.x - 2.4f) < 0.001f);
+    assert(reaction.Pose(1.05, 10).flash > 0 && reaction.Pose(1.05, 10).flash < 1);
+    assert(reaction.Pose(1.09, 10).flash == 0 && reaction.Pose(1.09, 10).recoil > 0);
+    reaction.Start(1.1, {0, 0, -1});
+    assert(reaction.Pose(1.1, 100).offset.z == -4.5f && reaction.Pose(1.1, 100).offset.x == 0);
+    assert(reaction.Pose(1.27, 10).offset == DirectX::SimpleMath::Vector3::Zero);
+    reaction.Start(2, {});
+    assert(reaction.Pose(2, 10).flash == 1 &&
+           reaction.Pose(2, 10).offset == DirectX::SimpleMath::Vector3::Zero);
     assert(SUCCEEDED(Renderer::Init()));
     {
         auto device = Renderer::GetDevice();
@@ -120,11 +136,12 @@ Pixel main(uint id : SV_VertexID) {
         context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         context->VSSetShader(vertexShader.Get(), nullptr, 0);
         context->OMSetRenderTargets(1, rtv.GetAddressOf(), nullptr);
-        const auto draw = [&](ID3D11PixelShader* shader, const Color& tint, bool textureOnly = false) {
+        const auto draw = [&](ID3D11PixelShader* shader, const Color& tint, bool textureOnly = false,
+                              float hitFlash = 0.0f) {
             context->PSSetShader(shader, nullptr, 0);
             context->PSSetConstantBuffers(7, 1, previousTintBuffer.GetAddressOf());
             {
-                EnemyTintScope scope(tintResources, tint, textureOnly);
+                EnemyTintScope scope(tintResources, tint, textureOnly, hitFlash);
                 context->Draw(3, 0);
             }
             ComPtr<ID3D11PixelShader> restoredShader;
@@ -144,10 +161,13 @@ Pixel main(uint id : SV_VertexID) {
         const auto original = draw(normalShader.Get(), normal);
         const auto variant = draw(normalShader.Get(), blue);
         const auto rare = draw(normalShader.Get(), gold);
+        const auto flash = draw(normalShader.Get(), normal, false, 1.0f);
         for (size_t i = 0; i < texels.size(); ++i) {
             assert(original[i] == texels[i]);
             assert(variant[i].w == texels[i].w && rare[i].w == texels[i].w);
+            assert(flash[i].w == texels[i].w && flash[i].x > flash[i].z && flash[i].z > flash[i].y + 0.15f);
         }
+        assert(flash[0].x > flash[1].x && flash[1].x > flash[2].x);
         assert(variant[0].z > variant[0].x && variant[1].z > variant[1].x);
         assert(variant[0].z > variant[1].z && rare[0].x > rare[1].x);
         assert(rare[0].x > rare[0].z && variant[0] != rare[0]);

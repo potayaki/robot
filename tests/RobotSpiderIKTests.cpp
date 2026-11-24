@@ -3,6 +3,7 @@
 
 #include "../DX22_01_plane/RobotSpiderIK.h"
 #include "../DX22_01_plane/RobotDebris.h"
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <iostream>
@@ -11,6 +12,9 @@
 #ifdef _MSC_VER
 #include <crtdbg.h>
 #endif
+
+constexpr int LegJoints[][4] = {{3, 4, 5, 6},     {9, 10, 11, 12},  {15, 16, 17, 18},
+                                {27, 28, 29, 30}, {33, 34, 35, 36}, {39, 40, 41, 42}};
 
 aiMatrix4x4 World(aiVector3D position, float yaw = 0) {
     return aiMatrix4x4(aiVector3D(0.025f), aiQuaternion(aiVector3D(0, 1, 0), yaw), position);
@@ -107,6 +111,94 @@ void CheckSlopedContacts(const RobotAnimationRig& original) {
                 }
             }
         }
+    }
+}
+
+void CheckSlopedJump(const RobotAnimationRig& original, bool walking) {
+    auto rig = original;
+    RobotSpiderIK ik;
+    assert(ik.Init(rig));
+    constexpr float dt = 1.0f / 60;
+    const auto takeoffHeight = [](float x, float z) { return 0.25f * x + 0.35f * z; };
+    const auto landingHeight = [](float x, float z) { return -0.2f * x - 0.15f * z; };
+    const auto restUp = aiMatrix3x3(*original.FindNodeTransform("Root_M")).Inverse() * aiVector3D(0, 1, 0);
+    const auto checkBodyUp = [&](const aiMatrix4x4& world, aiVector3D expected) {
+        auto actual = aiMatrix3x3(world * *rig.FindNodeTransform("Root_M")) * restUp;
+        assert((actual.Normalize() - expected.Normalize()).Length() < 0.001f);
+    };
+
+    ik.Update(rig, dt, World(aiVector3D()), 0, false);
+    aiVector3D position;
+    auto takeoff = World(position, 0.4f);
+    ik.Update(rig, dt, takeoff, 0, true, takeoffHeight);
+    const aiVector3D takeoffNormal(-0.25f, 1, -0.35f);
+    checkBodyUp(takeoff, takeoffNormal);
+
+    if (walking) {
+        // 一歩の途中で実際に足が浮いた姿勢から踏み切る。
+        const auto raisedFoot = [&](const RobotSpiderIK::Foot& foot) {
+            return foot.swinging && foot.position.y > takeoffHeight(foot.position.x, foot.position.z) + 0.4f;
+        };
+        for (int frame = 0; frame < 60; ++frame) {
+            position.z += 60.0f * dt;
+            position.y = takeoffHeight(position.x, position.z);
+            takeoff = World(position, 0.4f);
+            rig.Update(RobotMotion::Idle, dt);
+            ik.Update(rig, dt, takeoff, position.y, true, takeoffHeight);
+            if (std::any_of(ik.GetFeet().begin(), ik.GetFeet().end(), raisedFoot)) {
+                break;
+            }
+        }
+        assert(std::any_of(ik.GetFeet().begin(), ik.GetFeet().end(), raisedFoot));
+    }
+    const int root = rig.FindNode("Root_M");
+    const int top = rig.FindNode("Top_M");
+    const auto takeoffPose = rig.GetMatrices();
+    const auto inverseRoot = aiMatrix4x4(takeoffPose[root]).Inverse();
+    const auto takeoffContacts = ik.GetSolvedContacts();
+    const auto inverseTakeoffBody = (takeoff * takeoffPose[root]).Inverse();
+
+    int airborneQueries = 0;
+    const auto terrainBelow = [&](float x, float z) {
+        ++airborneQueries;
+        return landingHeight(x, z);
+    };
+    for (int frame = 1; frame <= 60; ++frame) {
+        const float t = frame * dt;
+        position.x += walking ? 15.0f * dt : 0;
+        const auto world = World(position + aiVector3D(0, 24 * t * (1 - t), 0), 0.4f + 0.8f * t);
+        rig.Update(RobotMotion::Idle, dt, 1, t, 0.4f * t);
+        ik.Update(rig, dt, world, landingHeight(position.x, position.z), false, terrainBelow);
+        if (!walking) {
+            checkBodyUp(world, takeoffNormal);
+        }
+        // 胴体の揺れ・旋回後も全24関節の位置と向きが踏切時の腰に対して一致する。
+        const auto& pose = rig.GetMatrices();
+        const auto inverseAirborneRoot = aiMatrix4x4(pose[root]).Inverse();
+        for (const auto& leg : LegJoints) {
+            for (int joint : leg) {
+                assert((inverseAirborneRoot * pose[joint]).Equal(inverseRoot * takeoffPose[joint], 0.001f));
+            }
+        }
+        const auto footTransform = world * pose[root] * inverseTakeoffBody;
+        for (size_t i = 0; i < takeoffContacts.size(); ++i) {
+            assert((ik.GetSolvedContacts()[i] - footTransform * takeoffContacts[i]).Length() < 0.001f);
+            assert((ik.GetFeet()[i].position - ik.GetSolvedContacts()[i]).Length() < 0.15f);
+        }
+        if (frame == 60) {
+            assert(!(inverseAirborneRoot * pose[top]).Equal(inverseRoot * takeoffPose[top], 0.01f));
+        }
+    }
+    assert(airborneQueries == 0);
+
+    position.y = landingHeight(position.x, position.z);
+    const auto landing = World(position, 1.2f);
+    ik.Update(rig, dt, landing, position.y, true, landingHeight);
+    if (!walking) {
+        checkBodyUp(landing, aiVector3D(0.2f, 1, 0.15f));
+    }
+    for (const auto& foot : ik.GetFeet()) {
+        assert(std::abs(foot.position.y - landingHeight(foot.position.x, foot.position.z)) < 0.001f);
     }
 }
 
@@ -286,9 +378,9 @@ int main() {
     CheckStrideAndStopping(original);
     CheckLiveSettings(original);
     CheckSlopedContacts(original);
+    CheckSlopedJump(original, false);
+    CheckSlopedJump(original, true);
     CheckExpandedStride(original);
-    const int joints[][4] = {{3, 4, 5, 6},     {9, 10, 11, 12},  {15, 16, 17, 18},
-                             {27, 28, 29, 30}, {33, 34, 35, 36}, {39, 40, 41, 42}};
     const auto rest = original.GetMatrices();
     for (int fps : {30, 60, 144}) {
         auto rig = original;
@@ -331,7 +423,7 @@ int main() {
                         (std::max)(maxSlide, (ik.GetSolvedContacts()[i] - previousContacts[i]).Length());
                 }
                 for (int j = 0; j < 3; ++j) {
-                    const int a = joints[i][j], b = joints[i][j + 1];
+                    const int a = LegJoints[i][j], b = LegJoints[i][j + 1];
                     const float before = (rest[a] * aiVector3D() - rest[b] * aiVector3D()).Length();
                     const auto& pose = rig.GetMatrices();
                     const float after = (pose[a] * aiVector3D() - pose[b] * aiVector3D()).Length();
@@ -381,7 +473,7 @@ int main() {
         aimedRig.Update(RobotMotion::Idle, dt, 1, 1.0f, 0.4f);
         ik.Update(rig, dt, lastWorld, -5, true);
         aimedIK.Update(aimedRig, dt, lastWorld, -5, true);
-        for (const auto& leg : joints) {
+        for (const auto& leg : LegJoints) {
             for (int joint : leg) {
                 for (int r = 0; r < 4; ++r) {
                     for (int c = 0; c < 4; ++c) {

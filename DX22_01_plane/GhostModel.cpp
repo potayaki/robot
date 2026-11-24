@@ -101,7 +101,8 @@ bool GhostModel::Init() {
         Renderer::GetDevice()->CreateRasterizerState(&rasterizer, m_rasterizer.ReleaseAndGetAddressOf()));
 }
 
-void GhostModel::Draw(Camera* camera, Vector3 center, float yaw, float scale, const Color& tint) {
+void GhostModel::Draw(Camera* camera, Vector3 center, float yaw, float scale, const Color& tint,
+                      float hitFlash) {
     camera->SetCamera();
     // 元モデルは-Z方向が顔。プレイヤーへ向く角度は+Z基準。
     Matrix world = Matrix::CreateScale(scale) * Matrix::CreateRotationY(yaw + DirectX::XM_PI) *
@@ -109,7 +110,7 @@ void GhostModel::Draw(Camera* camera, Vector3 center, float yaw, float scale, co
     Renderer::SetWorldMatrix(&world);
     Renderer::SetUV(0, 0, 1, 1);
     m_shader.SetGPU();
-    EnemyTintScope tintScope(m_tint, tint, true);
+    EnemyTintScope tintScope(m_tint, tint, true, hitFlash);
     m_white.SetGPU();
     m_mesh.BeforeDraw();
     m_mesh.DrawSubset(m_indexCount, 0, 0);

@@ -11,6 +11,8 @@
 #include <memory>
 #include "Material.h"
 
+class EnemyTint;
+
 //-----------------------------------------------------------------------------
 //TestCubeクラス
 //-----------------------------------------------------------------------------
@@ -43,6 +45,8 @@ public:
     void Update() override;
     /// 現在の状態を画面へ描画する。
     void Draw(Camera* cam) override;
+    /// 簡易ドローンの部品を、一時的な被弾色で描画する。
+    void Draw(Camera* cam, const std::shared_ptr<EnemyTint>& tintResources, float hitFlash);
     /// 使用した資源を解放して終了する。
     void Uninit() override;
     void SetMaterial(DirectX::SimpleMath::Color col);

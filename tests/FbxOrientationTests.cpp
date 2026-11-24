@@ -52,15 +52,28 @@ namespace {
         rig.Update(RobotMotion::Forward, 0.20f, 1.0f, yaw, pitch);
         const aiVector3D expected(-std::sin(yaw) * std::cos(pitch), std::sin(pitch),
                                   -std::cos(yaw) * std::cos(pitch));
-        for (bool left : {true, false}) {
-            const int node = rig.FindNode(left ? "ShotgunTop_L" : "ShotgunTop_R");
-            Require(node >= 0, "Missing shotgun joint");
-            const auto& matrix = rig.GetMatrices()[node];
-            auto direction = aiMatrix3x3(matrix) * aiVector3D(0, 0, left ? 1.0f : -1.0f);
-            direction.Normalize();
+        for (size_t side = 0; side < rig.GetGuns().size(); ++side) {
+            const auto& gun = rig.GetGuns()[side];
+            Require(gun.top >= 0 && gun.bottom >= 0, "Missing shotgun joint");
+            const auto& matrix = rig.GetMatrices()[gun.top];
+            const auto direction = gun.Axis(matrix);
             Require((direction - expected).Length() < 0.001f, "Title robot gun points the wrong way");
             const auto position = matrix * aiVector3D();
             Require(position.y > 400.0f && position.y < 450.0f, "Title robot gun is not above its feet");
+            const auto muzzle = gun.Muzzle(matrix);
+            Require((muzzle - position) * direction > 290.0f, "Socket is not at the front of the barrel");
+
+            auto recoiling = rig;
+            recoiling.ApplyBarrelRecoil(side, 80.0f);
+            const auto offset = -direction * 80.0f;
+            Require((gun.Muzzle(recoiling.GetMatrices()[gun.top]) - muzzle - offset).Length() < 0.002f,
+                    "Firing socket did not follow its barrel");
+            for (int node = 0; node < static_cast<int>(rig.GetMatrices().size()); ++node) {
+                const auto before = rig.GetMatrices()[node] * aiVector3D();
+                const auto after = recoiling.GetMatrices()[node] * aiVector3D();
+                const auto expectedOffset = node == gun.top || node == gun.bottom ? offset : aiVector3D();
+                Require((after - before - expectedOffset).Length() < 0.002f, "Recoil moved the wrong joint");
+            }
         }
     }
 } // namespace

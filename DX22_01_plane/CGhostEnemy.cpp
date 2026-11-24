@@ -141,8 +141,9 @@ void CGhostEnemy::OnHit(int& damage) {
 
 void CGhostEnemy::Draw(Camera* camera) {
     if (m_model && !IsDead()) {
-        m_model->Draw(camera, m_position, m_rotation.y, 1.0f,
-                      EnemyVariants::Tint(EnemySpecies::Ghost, GetRarity()));
+        const auto hit = HitPose();
+        m_model->Draw(camera, m_position + hit.offset, m_rotation.y, 1.0f,
+                      EnemyVariants::Tint(EnemySpecies::Ghost, GetRarity()), hit.flash);
     }
 }
 

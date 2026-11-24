@@ -154,7 +154,6 @@ void CForestStage::Init() {
         }
     }
 
-
     place(TallOak, -850, 155, 475, 10);
     place(Rock, 1090, 420, 245, 65);
     place(Pine, 1165, 515, 480, 16);
@@ -266,8 +265,7 @@ void CForestStage::Init() {
         float span = 0;
         for (float height : {75.0f, 125.0f, 200.0f, 250.0f, 300.0f}) {
             const float width = height * 0.99f;
-            placeStoneWall(side * (span + width * 0.5f), ForestLayout::KeepMaxZ + height * 0.11f + 6, height,
-                           0);
+            placeStoneWall(side * (span + width * 0.5f), ForestLayout::KeepMaxZ + height * 0.11f + 6, height, 0);
             span += width;
         }
         placeFacing(WallBanner, side * 300, ForestLayout::KeepMaxZ, 145, 0, 40);

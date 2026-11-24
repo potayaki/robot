@@ -75,8 +75,10 @@ void CMushroomEnemy::Update() {
 
 void CMushroomEnemy::Draw(Camera* camera) {
     if (m_model && !IsDead()) {
-        m_model->Draw(camera, m_position - Vector3(0, m_collisionRadius, 0), m_rotation.y, m_fuse.FlashRed(),
-                      1.0f, EnemyVariants::Tint(EnemySpecies::Mushroom, GetRarity()));
+        const auto hit = HitPose();
+        m_model->Draw(camera, m_position + hit.offset - Vector3(0, m_collisionRadius, 0), m_rotation.y,
+                      m_fuse.FlashRed(), 1.0f, EnemyVariants::Tint(EnemySpecies::Mushroom, GetRarity()),
+                      hit.flash);
     }
 }
 

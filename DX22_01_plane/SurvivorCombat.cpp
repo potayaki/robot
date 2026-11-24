@@ -228,7 +228,7 @@ void CPlayer::UpdateAutoWeapons() {
             const auto sphere = enemy->GetCollisionSphere();
             const float reach = radius + sphere.radius;
             if ((sphere.center - m_position).LengthSquared() <= reach * reach) {
-                enemy->OnHit(damage);
+                enemy->OnDirectionalHit(damage, sphere.center - m_position);
             }
         }
 
@@ -282,7 +282,7 @@ void CPlayer::UpdateAutoWeapons() {
                         Color(0.7f, 0.9f, 1.0f, 1.0f));
             }
             int damage = UpgradeBalance::BaseAutoWeaponDamage + lightningRank;
-            nearest->OnHit(damage);
+            nearest->OnDirectionalHit(damage, to - from);
 
             // 次の検索の起点を、今命中した敵の位置へ移す。
             from = to;

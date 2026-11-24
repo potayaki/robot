@@ -1,5 +1,6 @@
 ﻿/// @brief 森と野営地の地表。描画・接地・照準が同じ三角形を参照する。
 #pragma once
+#include <SimpleMath.h>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -37,10 +38,16 @@ namespace ForestLayout {
         return std::lerp(GroundY, y, edge * edge * (3.0f - 2.0f * edge));
     }
 
-    /// ワールドXZでの地面のY座標。格子の対角線を境に、実際に踏む面の頂点を補間する。
-    inline float GroundHeight(float x, float z) {
+    struct TerrainSample {
+        float height;
+        // この三角形の面をセル幅だけ +X、+Z に進んだときの高低差。
+        float riseX, riseZ;
+    };
+
+    /// 格子の対角線を境に、接地点が属する三角形の高さと勾配を求める。
+    inline TerrainSample SampleTerrain(float x, float z) {
         if (!(x >= TerrainMinX && x < TerrainMaxX && z >= TerrainMinZ && z < TerrainMaxZ)) {
-            return GroundY;
+            return {GroundY, 0, 0};
         }
         constexpr int columns = (TerrainMaxX - TerrainMinX) / TerrainCell + 1;
         constexpr int rows = (TerrainMaxZ - TerrainMinZ) / TerrainCell + 1;
@@ -64,9 +71,24 @@ namespace ForestLayout {
         const float back = heights[row + 1][col];
         if (u + v <= 1.0f) {
             const float front = heights[row][col];
-            return front + u * (right - front) + v * (back - front);
+            const float riseX = right - front;
+            const float riseZ = back - front;
+            return {front + u * riseX + v * riseZ, riseX, riseZ};
         }
         const float farCorner = heights[row + 1][col + 1];
-        return farCorner + (1.0f - u) * (back - farCorner) + (1.0f - v) * (right - farCorner);
+        const float riseX = farCorner - back;
+        const float riseZ = farCorner - right;
+        return {farCorner + (u - 1.0f) * riseX + (v - 1.0f) * riseZ, riseX, riseZ};
+    }
+
+    inline float GroundHeight(float x, float z) {
+        return SampleTerrain(x, z).height;
+    }
+
+    inline DirectX::SimpleMath::Vector3 GroundNormal(float x, float z) {
+        const auto surface = SampleTerrain(x, z);
+        DirectX::SimpleMath::Vector3 normal(-surface.riseX, TerrainCell, -surface.riseZ);
+        normal.Normalize();
+        return normal;
     }
 } // namespace ForestLayout

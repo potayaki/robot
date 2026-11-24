@@ -14,7 +14,8 @@ public:
     bool Init();
     /// ワールド座標の中心を基準に、通常サイズへ倍率を掛けて描画する。yawはラジアン。
     void Draw(Camera* camera, DirectX::SimpleMath::Vector3 center, float yaw, float scale = 1.0f,
-              const DirectX::SimpleMath::Color& tint = DirectX::SimpleMath::Color(1, 1, 1, 0));
+              const DirectX::SimpleMath::Color& tint = DirectX::SimpleMath::Color(1, 1, 1, 0),
+              float hitFlash = 0.0f);
     void DrawBeam(Camera* camera, DirectX::SimpleMath::Vector3 start, DirectX::SimpleMath::Vector3 end,
                   float width, DirectX::SimpleMath::Color color, bool spirit = false);
     /// 支援中の敵の判定球を囲む紫の光を描く。secondsは一時停止で進まないゲーム時刻。

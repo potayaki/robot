@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <bit>
 #include <cassert>
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
@@ -47,6 +48,43 @@ int TotalChroma(const std::vector<unsigned char>& pixels) {
                std::abs(pixels[i + 2] - pixels[i]);
     }
     return sum;
+}
+
+void CheckQuietNoise(const std::vector<unsigned char>& mild, const std::vector<unsigned char>& severe,
+                     UINT width, int background) {
+    const size_t height = severe.size() / (4 * width);
+    int mildNoise = 0, severeNoise = 0, grain = 0;
+    int previousLeft = 0, previousRight = 0;
+    size_t scanlines = 0;
+    for (size_t y = 0; y < height; ++y) {
+        int left = 0, right = 0;
+        for (UINT x = 0; x < width; ++x) {
+            const size_t i = (y * width + x) * 4;
+            const int intensity = severe[i];
+            mildNoise += std::abs(mild[i] - background);
+            severeNoise += std::abs(intensity - background);
+            assert(severe[i + 3] == 255);
+            if (x > 0) {
+                grain += std::abs(intensity - severe[i - 4]);
+            }
+            if (x < width / 2) {
+                left += intensity;
+            } else {
+                right += intensity;
+            }
+        }
+        // 行の左右で一緒に明滅する横線を、ランダムな粒の濃淡と区別する。
+        const int halfWidth = static_cast<int>(width / 2);
+        if (y > 0 && ((left - previousLeft > halfWidth && right - previousRight > halfWidth) ||
+                      (previousLeft - left > halfWidth && previousRight - right > halfWidth))) {
+            ++scanlines;
+        }
+        previousLeft = left;
+        previousRight = right;
+    }
+    assert(TotalChroma(mild) == 0 && mildNoise > 0 && severeNoise > mildNoise);
+    assert(severeNoise < static_cast<int>(width * height) * 32);
+    assert(grain > static_cast<int>(width * height / 2) && scanlines >= height / 16);
 }
 
 unsigned CheckBackgroundStreaks(const std::vector<unsigned char>& pixels, UINT width, bool& sawTaper) {
@@ -92,14 +130,25 @@ unsigned CheckBackgroundStreaks(const std::vector<unsigned char>& pixels, UINT w
 }
 
 int main() {
+    // 自動実行時も失敗した式と行番号をstderrに残し、ダイアログ待ちを避ける。
+    _set_error_mode(_OUT_TO_STDERR);
+    _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+
     assert(LowHealthGlitchStrength(100, 100) == 0);
     assert(LowHealthGlitchStrength(50, 100) == 0);
-    assert(LowHealthGlitchStrength(49, 100) > 0);
-    assert(LowHealthGlitchStrength(25, 100) == 0.5f);
-    assert(LowHealthGlitchStrength(0, 100) == 1);
-    assert(LowHealthGlitchStrength(-10, 100) == 1);
+    assert(std::abs(LowHealthGlitchStrength(49, 100) - 2.0f / 49) < 0.00001f);
+    assert(std::abs(LowHealthGlitchStrength(25, 100) - 50.0f / 49) < 0.00001f);
+    const float maximumStrength = LowHealthGlitchStrength(1, 100);
+    assert(maximumStrength == 2);
+    assert(LowHealthGlitchStrength(0, 100) == 2);
+    assert(LowHealthGlitchStrength(-10, 100) == 2);
     assert(LowHealthGlitchStrength(10, 0) == 0);
-    assert(LowHealthGlitchStrength(50, 200) == 0.5f);
+    assert(std::abs(LowHealthGlitchStrength(50, 200) - 100.0f / 99) < 0.00001f);
+    assert(std::abs(LowHealthGlitchStrength(50, 101) - 2.0f / 99) < 0.00001f);
+    assert(LowHealthGlitchStrength(1, 200) == 2);
+    assert(LowHealthGlitchStrength(1, 1) == 0);
+    assert(LowHealthGlitchStrength(1, 2) == 0);
+    assert(LowHealthGlitchStrength(0, 2) == 2);
     assert(SUCCEEDED(Renderer::Init()));
     {
         LowHealthGlitch glitch;
@@ -158,34 +207,48 @@ int main() {
                 };
                 const auto clean = render(0, 0);
                 // バーストの開始時刻や乱数に依存せず、無彩色の背景で強度と休止を比較する。
-                int mildPeak = 0, severePeak = 0;
+                int mildPeak = 0, severePeak = 0, maximumPeak = 0;
                 float severeTime = 0;
                 float firstBurstTail = 0;
-                bool sawQuiet = false, sawDifferentPattern = false;
+                bool sawChangingNoise = false, sawDifferentPattern = false;
                 bool sawTaper = false;
                 unsigned hueBins = 0;
-                std::vector<unsigned char> severe;
+                std::vector<unsigned char> quiet, severe;
                 for (int frame = 0; frame < 60; ++frame) {
                     const float time = frame / 30.0f;
-                    mildPeak = (std::max)(mildPeak, TotalChroma(render(0.25f, time)));
+                    const auto mild = render(0.25f, time);
+                    mildPeak = (std::max)(mildPeak, TotalChroma(mild));
                     auto burst = render(1, time);
-                    if (burst == clean) {
-                        sawQuiet = true;
+                    const auto maximum = render(maximumStrength, time);
+                    const int maximumChroma = TotalChroma(maximum);
+                    maximumPeak = (std::max)(maximumPeak, maximumChroma);
+                    const int chroma = TotalChroma(burst);
+                    if (chroma == 0) {
+                        assert(burst != clean);
+                        assert(maximumChroma == 0);
+                        if (quiet.empty()) {
+                            CheckQuietNoise(mild, burst, width, clean[0]);
+                            CheckQuietNoise(burst, maximum, width, clean[0]);
+                            assert(render(0, time) == clean);
+                            quiet = burst;
+                        } else {
+                            sawChangingNoise |= quiet != burst;
+                        }
                         continue;
                     }
-                    if (!sawQuiet) {
+                    if (quiet.empty()) {
                         firstBurstTail = time;
                     }
                     sawDifferentPattern |= !severe.empty() && severe != burst;
                     hueBins |= CheckBackgroundStreaks(burst, width, sawTaper);
-                    const int chroma = TotalChroma(burst);
                     if (chroma > severePeak) {
                         severePeak = chroma;
                         severeTime = time;
                         severe.swap(burst);
                     }
                 }
-                assert(sawQuiet && sawDifferentPattern && mildPeak > 0 && severePeak > mildPeak);
+                assert(sawChangingNoise && sawDifferentPattern);
+                assert(mildPeak > 0 && severePeak > mildPeak && maximumPeak > severePeak);
                 assert(sawTaper && std::popcount(hueBins) >= 8);
                 assert(render(0, severeTime) == clean); // Recovery clears even an active burst.
 
@@ -211,6 +274,19 @@ int main() {
                     const UINT initialRows = shiftedRows(0);
                     const UINT finalRows = shiftedRows(firstBurstTail);
                     assert(initialRows >= finalRows + height / 30);
+
+                    // 色ずれで各チャンネルの境界は分かれるため、画面全体で明暗が移った面積を比べる。
+                    const auto displacedArea = [&](float strength) {
+                        const auto pixels = render(strength, 0, edge.data());
+                        size_t area = 0;
+                        for (size_t i = 0; i < edge.size(); ++i) {
+                            const int brightness = pixels[4 * i] + pixels[4 * i + 1] + pixels[4 * i + 2];
+                            const bool bright = brightness > 3 * 128;
+                            area += bright != (edge[i] == 0xffffffff);
+                        }
+                        return area;
+                    };
+                    assert(displacedArea(maximumStrength) > displacedArea(1));
 
                     // 比較用の灰色背景に白い縦縞を足し、同じノイズのまま入力画像だけを変える。
                     std::vector<unsigned> stripes(width * height, 0xff404040);
@@ -247,6 +323,6 @@ int main() {
         }
     }
     Renderer::Uninit();
-    std::cout << "HP thresholds, burst timing, multicolor streaks, horizontal tears, recovery, resize "
-                 "and MSAA passed.\n";
+    std::cout << "HP thresholds, monochrome grain, scanlines, multicolor bursts, horizontal tears, recovery, "
+                 "resize and MSAA passed.\n";
 }

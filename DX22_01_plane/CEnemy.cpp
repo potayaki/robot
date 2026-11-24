@@ -141,14 +141,18 @@ void CEnemy::Draw(Camera* cam) {
     if (m_body) {
         // 生成直後はまだUpdateされていないため、モデルに保存した古い位置は使わない。
         // 当たり判定の中心からモデル底面を下げ、既存の接地位置を維持する。
-        const DirectX::SimpleMath::Vector3 modelPosition(
-            m_position.x, m_position.y - GetCollisionSphere().radius - SlimeModelBottomY * m_size,
-            m_position.z);
-        const DirectX::SimpleMath::Vector3 rotation(m_rotation.x, m_rotation.y + SlimeFacingOffset,
-                                                    m_rotation.z);
-        const float scale = m_modelScale * m_size;
-        m_body->Draw(cam, modelPosition, rotation, DirectX::SimpleMath::Vector3(scale, scale, scale),
-                     EnemyVariants::Tint(EnemySpecies::Slime, GetRarity()));
+        using namespace DirectX::SimpleMath;
+        const auto hit = HitPose();
+        const Vector3 feet = m_position - Vector3(0, GetCollisionSphere().radius, 0) + hit.offset;
+        const float width = 1.0f + 0.12f * hit.recoil;
+        const float height = 1.0f - 0.22f * hit.recoil;
+        // 素材の傾きを補正してから足元を原点に押しつぶす。体格・向きに関わらず接地を保つ。
+        const Matrix world =
+            Matrix::CreateScale(m_modelScale * m_size) *
+            Matrix::CreateFromYawPitchRoll(m_rotation.y + SlimeFacingOffset, m_rotation.x, m_rotation.z) *
+            Matrix::CreateTranslation(0, -SlimeModelBottomY * m_size, 0) *
+            Matrix::CreateScale(width, height, width) * Matrix::CreateTranslation(feet);
+        m_body->DrawWorld(cam, world, EnemyVariants::Tint(EnemySpecies::Slime, GetRarity()), hit.flash);
     }
 }
 

@@ -132,7 +132,8 @@ bool MushroomModel::Init() {
     return true;
 }
 
-void MushroomModel::Draw(Camera* camera, Vector3 feet, float yaw, bool red, float scale, const Color& tint) {
+void MushroomModel::Draw(Camera* camera, Vector3 feet, float yaw, bool red, float scale, const Color& tint,
+                         float hitFlash) {
     if (!m_resources || !camera) {
         return;
     }
@@ -143,7 +144,8 @@ void MushroomModel::Draw(Camera* camera, Vector3 feet, float yaw, bool red, floa
     Renderer::SetWorldMatrix(&world);
     (red ? m_resources->m_redShader : m_resources->m_normalShader).SetGPU();
     // 赤点滅は亜種・希少種でも優先し、自爆の予備動作を識別できるようにする。
-    EnemyTintScope tintScope(m_resources->m_tint, red ? Color(1, 1, 1, 0) : tint);
+    EnemyTintScope tintScope(m_resources->m_tint, red ? Color(1, 1, 1, 0) : tint, false,
+                             red ? 0.0f : hitFlash);
     m_resources->m_mesh.BeforeDraw();
     m_resources->m_texture.SetGPU();
     for (const auto& subset : m_resources->m_subsets) {

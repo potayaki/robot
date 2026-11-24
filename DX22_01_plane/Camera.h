@@ -68,6 +68,22 @@ private:
     float m_shakeTime = 0.0f;
     /// 画面揺れでカメラ位置をずらす強さ。
     float m_shakePower = 0.0f;
+    /// 爆風の揺れを着弾時の最大振幅から減衰させるための全長（秒）。
+    float m_shakeDuration = 0.0f;
+    /// 通常弾の縦反動と引きが元の視点へ戻るまでの秒数。
+    static constexpr float ShotRecoilSeconds = 0.105f;
+    /// 通常弾のカメラ反動の残り時間（秒）。連射時も加算しない。
+    float m_shotRecoilTime = 0.0f;
+    /// 発射済みの弾はその瞬間の照準に合わせ、次のカメラ更新で反動を反映する。
+    bool m_shotKickPending = false;
+
+    struct ViewPose {
+        DirectX::SimpleMath::Vector3 eye;
+        DirectX::SimpleMath::Vector3 target;
+    };
+
+    /// 描画・照準レイ・ロックオン判定に共通の、そのステップの視点。
+    ViewPose GetViewPose() const;
 
 #ifdef _DEBUG
     // 一時停止中だけ使う視点。通常の追従位置を保存し、再開時にそのまま戻す。
@@ -130,8 +146,13 @@ public:
         return m_cameraDirection;
     }
 
+    void KickForShot() {
+        m_shotKickPending = true;
+    }
+
     //カメラシェイク開始。timeは持続秒数。
     void SetShake(float time, float power) {
+        m_shakeDuration = time;
         m_shakeTime = time;
         m_shakePower = power;
     }

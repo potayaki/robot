@@ -3,12 +3,13 @@
 #pragma once
 #include "ForestLayout.h"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <vector>
 
 namespace EnemySpawning {
-    /// 開始時は少数にし、生存時間60秒ごとに群れと同時出現枠を増やす。
-    inline constexpr int InitialPackSize = 1;
+    /// 開始時から3体で接近し、生存時間60秒ごとに群れと同時出現枠を増やす。
+    inline constexpr int InitialPackSize = 3;
     inline constexpr int InitialMaxAlive = 12;
     inline constexpr float InitialInterval = 2.4f;
     inline constexpr float RampStageSeconds = 60.0f;
@@ -20,13 +21,13 @@ namespace EnemySpawning {
     /// 1段階ごとの出現間隔の短縮幅と、その下限（秒）。
     inline constexpr float IntervalReduction = 0.15f;
     inline constexpr float MinimumInterval = 1.5f;
-    /// プレイヤーから離れた出現範囲（ワールド座標の水平距離）。
-    inline constexpr float SpawnRadiusMin = 450.0f;
-    inline constexpr float SpawnRadiusMax = 750.0f;
+    /// プレイヤーから小隊の中心までの水平距離。
+    inline constexpr float SpawnRadiusMin = 280.0f;
+    inline constexpr float SpawnRadiusMax = 460.0f;
     /// 大型スライムも壁からはみ出さないための最大判定半径。
     inline constexpr float LargestRadius = 18.0f;
     /// プレイヤーの目の前で突然接触しないための水平距離。
-    inline constexpr float SafePlayerDistance = 400.0f;
+    inline constexpr float SafePlayerDistance = 220.0f;
     /// 同じ場所へ群れを重ねず、大型2体にも余白を残す水平間隔。
     inline constexpr float EnemySpacing = 40.0f;
     /// 壁際や密集地で別の出現地点を探す最大回数。
@@ -119,5 +120,31 @@ namespace EnemySpawning {
             }
         }
         return true;
+    }
+
+    /// 小隊の中心と向きから、地形と既存の敵に重ならない隊員の位置を選ぶ。
+    inline std::vector<DirectX::SimpleMath::Vector3>
+    PlacePack(const DirectX::SimpleMath::Vector3& center, const DirectX::SimpleMath::Vector3& forward,
+              int requested, const DirectX::SimpleMath::Vector3& player,
+              const std::vector<DirectX::SimpleMath::Vector3>& occupied, bool forest,
+              ForestLayout::Area area) {
+        using namespace DirectX::SimpleMath;
+        // 中央の1体を狙えば左右の敵も爆風に入る。各位置は水平に40以上離す。
+        constexpr std::array<Vector2, PackLimit> offsets = {
+            {{0, 0}, {-46, 18}, {46, 18}, {-43, -30}, {43, -30}, {0, 52}}};
+        std::vector<Vector3> positions;
+        requested = std::clamp(requested, 0, PackLimit);
+        positions.reserve(requested);
+        const Vector3 right(forward.z, 0, -forward.x);
+        for (const auto& offset : offsets) {
+            if (positions.size() == static_cast<size_t>(requested)) {
+                break;
+            }
+            const Vector3 candidate = center + right * offset.x + forward * offset.y;
+            if (IsClearPosition(candidate, player, occupied, forest, area)) {
+                positions.push_back(candidate);
+            }
+        }
+        return positions;
     }
 } // namespace EnemySpawning

@@ -11,7 +11,7 @@
 using DirectX::SimpleMath::Vector3;
 
 int main() {
-    const std::array<int, 7> expectedPacks = {1, 2, 3, 4, 5, 6, 6};
+    const std::array<int, 7> expectedPacks = {3, 4, 5, 6, 6, 6, 6};
     const std::array<int, 7> expectedCaps = {12, 20, 28, 36, 44, 52, 60};
     const std::array<float, 7> expectedIntervals = {2.4f, 2.25f, 2.1f, 1.95f, 1.8f, 1.65f, 1.5f};
     for (int stage = 0; stage <= 6; ++stage) {
@@ -39,7 +39,7 @@ int main() {
                           std::numeric_limits<float>::infinity(), std::numeric_limits<float>::quiet_NaN()}) {
         const auto pressure = EnemySpawning::GetPressure(seconds);
         assert(pressure.stage == 0);
-        assert(pressure.packSize == 1);
+        assert(pressure.packSize == 3);
         assert(pressure.maxAlive == 12);
         assert(std::abs(pressure.interval - 2.4f) < 0.0001f);
     }
@@ -122,8 +122,8 @@ int main() {
                 count += additions;
             }
             assert(count <= pressure.maxAlive);
-            if (frame == fps * 20) {
-                assert(count == 11); // 開始直後に上限まで一気に補充しない。
+            if (frame == fps * 5) {
+                assert(count == 9); // 開始直後は2小隊が段階的に加わる。
             }
             if (frame % (fps * 60) == fps * 30) {
                 assert(count == pressure.maxAlive); // 各段階の途中で現在の上限までゆっくり増える。
@@ -165,9 +165,6 @@ int main() {
     using Area = ForestLayout::Area;
     std::mt19937 random(20261120);
     std::uniform_real_distribution<float> angle(0, DirectX::XM_2PI);
-    assert(EnemySpawning::SpawnRadiusMin == 450);
-    assert(EnemySpawning::SpawnRadiusMax == 750);
-    assert(EnemySpawning::SafePlayerDistance == 400);
     std::uniform_real_distribution<float> radius(EnemySpawning::SpawnRadiusMin,
                                                  EnemySpawning::SpawnRadiusMax);
     for (Area area : {Area::Entrance, Area::Camp, Area::Courtyard, Area::Keep}) {
@@ -178,26 +175,28 @@ int main() {
               Vector3(ForestLayout::MaxX - 10, 5, minZ), Vector3(ForestLayout::MinX + 10, 5, maxZ),
               Vector3(ForestLayout::MaxX - 10, 100, maxZ)}) {
             std::vector<Vector3> pack;
-            // 四隅でも十分な候補があり、壁へ丸めなくても6体の群れを配置できる。
-            for (int attempt = 0; attempt < 2000 && pack.size() < 6; ++attempt) {
+            // 部屋の四隅でも同じ方向から6体を配置し、壁を越えたり重なったりしない。
+            for (int attempt = 0; attempt < 100 && pack.size() < 6; ++attempt) {
                 const float direction = angle(random);
-                const float distance = radius(random);
-                const Vector3 candidate =
-                    player + Vector3(std::cos(direction) * distance, 0, std::sin(direction) * distance);
-                if (EnemySpawning::IsClearPosition(candidate, player, pack, true, area)) {
-                    const float dx = candidate.x - player.x;
-                    const float dz = candidate.z - player.z;
-                    const float distanceSquared = dx * dx + dz * dz;
-                    assert(distanceSquared >= 450.0f * 450.0f - 1.0f);
-                    assert(distanceSquared <= 750.0f * 750.0f + 1.0f);
-                    assert(candidate.x >= ForestLayout::MinX + EnemySpawning::LargestRadius);
-                    assert(candidate.x <= ForestLayout::MaxX - EnemySpawning::LargestRadius);
-                    assert(candidate.z >= ForestLayout::RoomMinZ(area) + EnemySpawning::LargestRadius);
-                    assert(candidate.z <= ForestLayout::RoomMaxZ(area) - EnemySpawning::LargestRadius);
-                    pack.push_back(candidate);
-                }
+                const Vector3 forward(std::cos(direction), 0, std::sin(direction));
+                const Vector3 center = player + forward * radius(random);
+                pack = EnemySpawning::PlacePack(center, forward, 6, player, {}, true, area);
             }
             assert(pack.size() == 6);
+            std::vector<Vector3> occupied;
+            for (const auto& member : pack) {
+                assert(EnemySpawning::IsClearPosition(member, player, occupied, true, area));
+                assert((member - pack.front()).Length() <= 60);
+                occupied.push_back(member);
+            }
+            const auto limited =
+                EnemySpawning::PlacePack(pack.front(), Vector3::UnitZ, 2, player, {}, true, area);
+            assert(limited.size() <= 2);
+            const auto blocked =
+                EnemySpawning::PlacePack(pack.front(), Vector3::UnitZ, 6, player, limited, true, area);
+            for (const auto& member : blocked) {
+                assert(EnemySpawning::IsClearPosition(member, player, limited, true, area));
+            }
             assert(!EnemySpawning::IsClearPosition(pack[0], player, pack, true, area));
             assert(!EnemySpawning::IsClearPosition(player + Vector3(10, 500, 0), player, {}, true, area));
             const Vector3 outside(ForestLayout::MaxX + 1, 5, player.z);
@@ -210,8 +209,8 @@ int main() {
     // 高さが違っても真上に重ねない。飛行型を含む群れも水平に間隔を取る。
     assert(!EnemySpawning::IsClearPosition(Vector3(500, 100, 0), Vector3::Zero, {Vector3(500, -5, 0)}, false,
                                            Area::Entrance));
-    assert(!EnemySpawning::IsClearPosition(Vector3(399, 100, 0), Vector3::Zero, {}, false, Area::Entrance));
-    assert(EnemySpawning::IsClearPosition(Vector3(400, 100, 0), Vector3::Zero, {}, false, Area::Entrance));
+    assert(!EnemySpawning::IsClearPosition(Vector3(219, 100, 0), Vector3::Zero, {}, false, Area::Entrance));
+    assert(EnemySpawning::IsClearPosition(Vector3(220, 100, 0), Vector3::Zero, {}, false, Area::Entrance));
     assert(!EnemySpawning::IsClearPosition(Vector3(std::numeric_limits<float>::quiet_NaN(), 0, 200),
                                            Vector3::Zero, {}, false, Area::Entrance));
     std::cout << "Gradual spawn pressure, pack limits, timing and four-area distant placement passed.\n";

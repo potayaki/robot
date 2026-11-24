@@ -95,7 +95,7 @@ void COrbitalOrb::Update() {
 
             // 距離が当たり判定の範囲内ならヒット
             if (distanceSq <= (hitRange * hitRange)) {
-                enemy->OnHit(m_damage);
+                enemy->OnDirectionalHit(m_damage, -diff);
                 hitEnemy = true;
 
                 // 貫通して複数に当たる仕様なら break は書かない

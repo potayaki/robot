@@ -166,10 +166,16 @@ private:
     std::array<aiVector3D, LegCount> m_solvedContacts;
     /// 下半身の拡大を反映済みの基準骨行列（モデル座標）。
     std::vector<aiMatrix4x4> m_rest;
+    /// 最後に接地したときのIK計算後・照準適用前の骨行列（モデル座標）。
+    std::vector<aiMatrix4x4> m_groundPose;
+    /// 保存した姿勢から踏切時の胴体の傾きと揺れを取り除く逆変換。
+    aiMatrix4x4 m_inverseGroundBody;
     /// 胴体の揺れと移動への遅れ（ワールド座標の変位）。
     Spring m_body;
     /// 胴体の前後・左右への傾き（モデル座標の角度）。
     Spring m_tilt;
+    /// 支持面のX・Z方向の高さ勾配（ワールド座標）。空中では踏切時の値を保つ。
+    aiVector3D m_supportGradient;
     /// 前回の細分更新時の本体位置。移動速度の計算に使う。
     aiVector3D m_previousPosition;
     /// 揺れ用にならした本体の移動速度（ワールド座標）。
@@ -193,8 +199,8 @@ private:
 
     aiVector3D GetHome(const Leg& leg) const;
     void ResetContacts(const aiMatrix4x4& world, const HeightAt& heightAt, bool grounded);
-    bool UpdateSwingingFeet(float dt, const aiMatrix4x4& world, const HeightAt& heightAt, bool grounded,
-                            bool moving, const aiVector3D& velocity, float stepSeconds);
+    bool UpdateSwingingFeet(float dt, const aiMatrix4x4& world, const HeightAt& heightAt, bool moving,
+                            const aiVector3D& velocity, float stepSeconds);
     void BeginTripodStep(int group, const aiMatrix4x4& world, const HeightAt& heightAt,
                          const aiVector3D& velocity, float duration, float stepSeconds);
     void UpdateBodyMotion(float dt, const aiMatrix4x4& world, bool grounded, float speed,
@@ -202,5 +208,6 @@ private:
     void Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& world, const HeightAt& heightAt,
               bool grounded);
     void Solve(RobotAnimationRig& rig, const aiMatrix4x4& world, const HeightAt& heightAt);
+    void SolveLegs(RobotAnimationRig& rig, const aiMatrix4x4& inverseWorld);
     void TransformBranch(RobotAnimationRig& rig, int root, const aiMatrix4x4& transform);
 };

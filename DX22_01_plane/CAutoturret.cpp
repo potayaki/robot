@@ -83,7 +83,7 @@ void CAutoturret::Update() {
         m_laserStart = EyeTurretShape::BeamStart(eyeCenter, m_laserEnd, lookDirection);
         m_laserTime = LaserDurationSeconds;
 
-        minEnemy->OnHit(m_damage);
+        minEnemy->OnDirectionalHit(m_damage, m_laserEnd - m_laserStart);
         m_attackCooldown += m_attackInterval;
     }
 }

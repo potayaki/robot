@@ -3,7 +3,9 @@
 
 #include "EnemyTarget.h"
 #include "Game.h"
+#include "GameSettings.h"
 #include "CPlayer.h"
+#include "CEmitter.h"
 #include "Ground.h"
 #include "CPresentBox.h"
 #include "CSpanner.h"
@@ -22,6 +24,17 @@ namespace {
         return false;
     }
 } // namespace
+
+void EnemyTarget::OnDirectionalHit(int& damage, const DirectX::SimpleMath::Vector3& incoming) {
+    if (!IsDead() && damage > 0) {
+        m_hitReaction.Start(Game::GetInstance()->m_gameTime, incoming);
+        OnHit(damage);
+    }
+}
+
+EnemyHitPose EnemyTarget::HitPose() {
+    return m_hitReaction.Pose(Game::GetInstance()->m_gameTime, GetCollisionSphere().radius);
+}
 
 int EnemyTarget::SupportedIncomingDamage(int damage) const {
     return HasGhostSupport(this)
@@ -43,6 +56,12 @@ void EnemyTarget::Defeat(int experience, int presentChance) {
         return;
     }
     Destroy();
+    GameSettings::PlayDefeatSound();
+    GameTime::PulseOnDefeat();
+    const auto particles = Game::GetInstance()->GetObjects<ParticleManager>();
+    if (!particles.empty()) {
+        CEmitter::EmitDefeat(*particles.front(), GetCollisionSphere());
+    }
 
     // 報酬を渡せるプレイヤーがいなければ、敵の消滅だけで処理を終える。
     auto players = Game::GetInstance()->GetObjects<CPlayer>();

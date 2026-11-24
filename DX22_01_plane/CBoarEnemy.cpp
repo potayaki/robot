@@ -153,8 +153,9 @@ void CBoarEnemy::Update() {
 
 void CBoarEnemy::Draw(Camera* camera) {
     if (m_model && !IsDead()) {
-        m_model->Draw(camera, m_position - Vector3(0, m_collisionRadius, 0), m_rotation.y, m_modelScale,
-                      EnemyVariants::Tint(EnemySpecies::Boar, GetRarity()));
+        const auto hit = HitPose();
+        m_model->Draw(camera, m_position + hit.offset - Vector3(0, m_collisionRadius, 0), m_rotation.y,
+                      m_modelScale, EnemyVariants::Tint(EnemySpecies::Boar, GetRarity()), hit.flash);
     }
 }
 

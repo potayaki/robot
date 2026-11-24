@@ -30,6 +30,9 @@ using namespace DirectX::SimpleMath;
 
 namespace {
 
+    constexpr float AirControlRatio = 0.30f; // 歩行速度のうち、離陸後に操作できる割合。
+    constexpr float AirControlRampSeconds = 0.30f; // 空中の操作速度がゼロから上限に達する秒数。
+
     // カメラからの照準線が敵の球に入る最初の距離を求める。
     bool RaySphereHitDistance(const Vector3& origin, const Vector3& direction,
                               const Collision::Sphere& sphere, float& hitDistance) {
@@ -81,26 +84,30 @@ void CPlayer::Update() {
         m_body->BeginBreakApart(groundY);
         m_body->AdvanceBreakApart(deltaSeconds);
         m_velocity = Vector3::Zero;
+        m_airControlVelocity = Vector3::Zero;
         return;
     }
 
     // DebugのHPスライダーなどで復活した場合、残骸を片付けて通常表示へ戻す。
     m_body->RestoreBody();
-    // 重力は加速度、速度は1秒あたりの移動量として積分する。
-    m_position += m_velocity * deltaSeconds;
-    m_position.y -= 0.5f * m_gravity * deltaSeconds * deltaSeconds;
-    m_velocity.y -= m_gravity * deltaSeconds;
     GameTime::AdvanceCooldown(m_currentBulletTime, deltaSeconds);
     GameTime::AdvanceCooldown(m_currentMissileTime, deltaSeconds);
 
     const Vector3 previousPosition = m_position;
     Move();
-    UpdateAutoWeapons();
+    Vector3 aimTarget;
+    const bool hasAim = TryGetAimTarget(aimTarget);
+    if (hasAim) {
+        UpdateAim(aimTarget);
+    }
 
-    // 壁で止まったときは足踏みしない。ジャンプ中は待機姿勢とし、地上の歩行と区別する。
+    const Ground* ground = Ground::Current();
+    const float groundY = ground ? ground->HeightAt(m_position.x, m_position.z) : ForestLayout::GroundY;
+    // 初速が位置に反映されるまでは足が地面にあり、踏み切る瞬間も歩行の途中の姿勢を使う。
+    const bool feetOnGround = ground && m_position.y <= groundY + GetCollisionSphere().radius;
     Vector3 movement = m_position - previousPosition;
     movement.y = 0;
-    const bool walking = m_isGrounded && movement.LengthSquared() > 0.000001f;
+    const bool walking = feetOnGround && movement.LengthSquared() > 0.000001f;
     const float animationRate =
         walking ? 1.0f + UpgradeBalance::MoveBonusPerRank * m_progression.Rank(UpgradeId::MoveSpeed) : 1.0f;
     RobotMotion displayMotion =
@@ -116,10 +123,18 @@ void CPlayer::Update() {
     const float upperBodyYaw = m_rotation.y - m_lowerBodyYaw;
     m_body->SetPosition(m_position.x, m_position.y, m_position.z);
     m_body->SetRotation(Vector3(0.0f, m_lowerBodyYaw, 0.0f));
-    const Ground* ground = Ground::Current();
-    const float groundY = ground ? ground->HeightAt(m_position.x, m_position.z) : ForestLayout::GroundY;
     m_body->Advance(displayMotion, deltaSeconds, animationRate, upperBodyYaw, m_upperBodyPitch, groundY,
-                    m_isGrounded && m_velocity.y <= 0.0f, procedural);
+                    feetOnGround, procedural);
+
+    // 今回の移動・旋回・足のIKが反映された銃口から発射する。
+    const bool usingMouseUI = ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse;
+    if (!usingMouseUI && hasAim && Input::GetKeyPress(VK_LBUTTON)) {
+        StartBullet(aimTarget);
+    }
+    if (!usingMouseUI && Input::GetKeyPress(VK_RBUTTON)) {
+        StartMissile();
+    }
+    UpdateAutoWeapons();
 }
 
 void CPlayer::Draw(Camera* cam) {
@@ -136,7 +151,8 @@ void CPlayer::DrawSunShadow() {
 
 void CPlayer::Onland() {
     m_isGrounded = true;
-    m_velocity.y = 0;
+    m_velocity = Vector3::Zero;
+    m_airControlVelocity = Vector3::Zero;
 }
 
 void CPlayer::CreateOrbs(int count) {
@@ -174,6 +190,12 @@ void CPlayer::Uninit() {
 
 void CPlayer::Move() {
     const Vector3 previousPosition = m_position;
+    const float deltaSeconds = GameTime::DeltaSeconds();
+    // ジャンプの慣性による移動も壁との衝突判定に通す。
+    m_position += m_velocity * deltaSeconds;
+    m_position.y -= 0.5f * m_gravity * deltaSeconds * deltaSeconds;
+    m_velocity.y -= m_gravity * deltaSeconds;
+
     Camera* cam = Game::GetInstance()->GetCamera();
     float angle = cam->GetCameraDirection();
 
@@ -202,15 +224,27 @@ void CPlayer::Move() {
         moveZ -= rightZ;
     }
 
-    DirectX::SimpleMath::Vector3 movedir(moveX, 0.0f, moveZ);
-
-    if (movedir.LengthSquared() > 0.0f) {
-        movedir.Normalize();
-
+    Vector3 walkVelocity(moveX, 0.0f, moveZ);
+    if (walkVelocity.LengthSquared() > 0.0f) {
+        walkVelocity.Normalize();
         const float moveSpeed = m_moveSpeed * (1.0f + UpgradeBalance::MoveBonusPerRank *
                                                           m_progression.Rank(UpgradeId::MoveSpeed));
-        m_position.x += movedir.x * moveSpeed * GameTime::DeltaSeconds();
-        m_position.z += movedir.z * moveSpeed * GameTime::DeltaSeconds();
+        walkVelocity *= moveSpeed;
+        if (m_isGrounded) {
+            m_position += walkVelocity * deltaSeconds;
+        } else {
+            const Vector3 target = walkVelocity * AirControlRatio;
+            Vector3 change = target - m_airControlVelocity;
+            const float distance = change.Length();
+            const float maxChange = moveSpeed * AirControlRatio * deltaSeconds / AirControlRampSeconds;
+            if (distance > maxChange) {
+                change *= maxChange / distance;
+            }
+            // フレーム内の平均速度で移動し、横入力を離した後も得た速度で進む。
+            m_position += change * (0.5f * deltaSeconds);
+            m_velocity += change;
+            m_airControlVelocity += change;
+        }
     }
 
     for (auto forest : Game::GetInstance()->GetObjects<CForestStage>()) {
@@ -223,24 +257,15 @@ void CPlayer::Move() {
     }
     isGrounded();
     if (Input::GetKeyTrigger(VK_SPACE) && m_isGrounded) {
-        m_velocity.y = m_jumpSpeed;
+        const Ground* ground = Ground::Current();
+        const Vector3 normal = ground ? ground->NormalAt(m_position.x, m_position.z) : Vector3::Up;
+        // 空中で操作できる分も歩行の初速に含まれる。同じキーを押し続けたときの二重加速を防ぐ。
+        m_airControlVelocity = walkVelocity * AirControlRatio;
+        // 歩行の水平速度と坂の勾配から踏切時の上下速度を求め、法線方向に蹴り出す。
+        walkVelocity.y = -walkVelocity.Dot(normal) / normal.y;
+        m_velocity = walkVelocity + normal * m_jumpSpeed;
         m_isGrounded = false;
     }
-
-    // 移動・バリア補正後の位置から毎フレーム照準を更新する。クリックしていなくても追従する。
-    UpdateAim();
-
-    // 詳細画面やデバッグUIの操作クリックを射撃として扱わない。
-    const bool usingMouseUI = ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureMouse;
-    if (!usingMouseUI && Input::GetKeyPress(VK_LBUTTON)) {
-        StartBullet();
-    }
-
-    if (!usingMouseUI && Input::GetKeyPress(VK_RBUTTON)) {
-        StartMissile();
-    }
-
-    // オーブと砲台は獲得した時に自動で動く。F/Vキーでの無制限生成は行わない。
 }
 
 void CPlayer::isGrounded() {
@@ -297,18 +322,13 @@ bool CPlayer::TryGetAimTarget(Vector3& targetPosition) const {
     return true;
 }
 
-Vector3 CPlayer::GetBulletOrigin() const {
-    return m_position + Vector3(0.0f, m_muzzleHeight, 0.0f);
+Vector3 CPlayer::GetAimPivot() const {
+    return m_position + Vector3(0.0f, m_aimHeight, 0.0f);
 }
 
-void CPlayer::UpdateAim() {
-    Vector3 targetPosition;
-    if (!TryGetAimTarget(targetPosition)) {
-        return;
-    }
-
-    // 弾と同じ発射位置から目標を見る。カメラの正面ではなく、画面内のカーソルを追う。
-    const Vector3 direction = targetPosition - GetBulletOrigin();
+void CPlayer::UpdateAim(const Vector3& targetPosition) {
+    // 銃口を交互に使っても胴体が左右に振れないよう、機体の中心から目標を見る。
+    const Vector3 direction = targetPosition - GetAimPivot();
     if (direction.LengthSquared() < 0.0001f) {
         return;
     }
@@ -321,17 +341,13 @@ void CPlayer::UpdateAim() {
     m_upperBodyPitch = std::atan2(direction.y, horizontalLength);
 }
 
-void CPlayer::StartBullet() {
+void CPlayer::StartBullet(const Vector3& targetPosition) {
     if (m_currentBulletTime > 0) {
         return;
     }
 
-    // 上半身の向きと同じ目標計算を使い、近い敵を狙ったときの視差補正も共有する。
-    Vector3 targetPosition;
-    if (!TryGetAimTarget(targetPosition)) {
-        return;
-    }
-    const Vector3 bulletStart = GetBulletOrigin();
+    Vector3 bulletStart = GetAimPivot();
+    m_body->TryGetNextMuzzle(bulletStart);
 
     // 弾の飛ぶ方向ベクトルを計算
     Vector3 bulletDirection = targetPosition - bulletStart;
@@ -339,10 +355,6 @@ void CPlayer::StartBullet() {
         return;
     }
     bulletDirection.Normalize();
-
-    // 弾を生成して発射
-    //CBullet* bullet = Game::GetInstance()->AddObject<CBullet>();
-    //bullet->Shoot(bulletStart, bulletDirection);
 
     std::vector<BulletManager*> bulletManagers = Game::GetInstance()->GetObjects<BulletManager>();
     bool fired = false;
@@ -366,6 +378,8 @@ void CPlayer::StartBullet() {
 
     // 多重弾でも、同じ発射位置のエフェクトは1回の射撃につき1組だけ生成する。
     if (fired) {
+        m_body->OnGunFired();
+        Game::GetInstance()->GetCamera()->KickForShot();
         GameSettings::PlayShotSound();
         const auto particleManagers = Game::GetInstance()->GetObjects<ParticleManager>();
         if (!particleManagers.empty()) {

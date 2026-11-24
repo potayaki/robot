@@ -2,6 +2,7 @@
 /// @brief ホバードローンの浮遊、接近、急降下攻撃。
 
 #include "CFlyingEnemy.h"
+#include "EnemyTint.h"
 #include "Game.h"
 #include "Ground.h"
 #include "CPlayer.h"
@@ -60,6 +61,7 @@ void CFlyingEnemy::Init() {
     }
 
     // 既存の白いテクスチャを着色して、機体・アーム・回転翼・前面センサーを組み立てる。
+    m_partTint = EnemyTint::Acquire();
     const std::array<Vector3, PartCount> scales = {
         Vector3(0.70f, 0.28f, 0.50f),  Vector3(1.45f, 0.07f, 0.11f),  Vector3(0.27f, 0.13f, 0.27f),
         Vector3(0.27f, 0.13f, 0.27f),  Vector3(0.55f, 0.025f, 0.08f), Vector3(0.08f, 0.025f, 0.55f),
@@ -153,51 +155,45 @@ void CFlyingEnemy::Update() {
             m_diveTimer = 0;
         }
     }
+}
 
-    // FBXの姿勢はDraw時に現在位置から計算する。ここでは簡易モデルの部品だけ更新する。
+void CFlyingEnemy::Draw(Camera* cam) {
+    const auto hit = HitPose();
+    const Vector3 center = m_position + hit.offset;
     if (m_model) {
+        const Vector3 rotation(DroneModelPitchOffset, m_rotation.y + DroneModelYawOffset,
+                               DroneModelRollOffset);
+        const Matrix rotationMatrix = Matrix::CreateFromYawPitchRoll(rotation.y, rotation.x, rotation.z);
+        const Vector3 centerOffset =
+            Vector3::TransformNormal(DroneModelLocalCenter * DroneModelScale, rotationMatrix);
+        m_model->Draw(cam, center + Vector3(0, DroneModelOffsetY, 0) - centerOffset, rotation,
+                      Vector3(DroneModelScale, DroneModelScale, DroneModelScale),
+                      EnemyVariants::Tint(EnemySpecies::Fly, GetRarity()), hit.flash);
         return;
     }
 
     // 簡易ドローンを使う場合だけ、機体の向きに合わせて回転翼を配置する。
     const Vector3 right(std::cos(m_rotation.y), 0.0f, -std::sin(m_rotation.y));
     const Vector3 forward(std::sin(m_rotation.y), 0.0f, std::cos(m_rotation.y));
-    const Vector3 leftRotor = m_position - right * 14.0f;
-    const Vector3 rightRotor = m_position + right * 14.0f;
-    const std::array<Vector3, PartCount> positions = {m_position,
-                                                      m_position,
+    const Vector3 leftRotor = center - right * 14.0f;
+    const Vector3 rightRotor = center + right * 14.0f;
+    const std::array<Vector3, PartCount> positions = {center,
+                                                      center,
                                                       leftRotor,
                                                       rightRotor,
                                                       leftRotor + Vector3(0.0f, 3.0f, 0.0f),
                                                       leftRotor + Vector3(0.0f, 3.0f, 0.0f),
                                                       rightRotor + Vector3(0.0f, 3.0f, 0.0f),
                                                       rightRotor + Vector3(0.0f, 3.0f, 0.0f),
-                                                      m_position + forward * 5.6f};
+                                                      center + forward * 5.6f};
     for (size_t i = 0; i < PartCount; ++i) {
+        if (!m_parts[i]) {
+            continue;
+        }
         m_parts[i]->SetPosition(positions[i]);
         const float spin = (i >= 4 && i <= 7) ? m_rotorAngle : 0.0f;
         m_parts[i]->SetRotation(Vector3(0.0f, m_rotation.y + spin, 0.0f));
-    }
-}
-
-void CFlyingEnemy::Draw(Camera* cam) {
-    if (m_model) {
-        // 生成フレームや一時停止中の位置変更も、そのフレームの描画へ反映する。
-        const Vector3 rotation(DroneModelPitchOffset, m_rotation.y + DroneModelYawOffset,
-                               DroneModelRollOffset);
-        const Matrix rotationMatrix = Matrix::CreateFromYawPitchRoll(rotation.y, rotation.x, rotation.z);
-        // 中心のずれにも同じ拡大率・回転を適用し、向きが変わっても体と判定が離れないようにする。
-        const Vector3 centerOffset =
-            Vector3::TransformNormal(DroneModelLocalCenter * DroneModelScale, rotationMatrix);
-        m_model->Draw(cam, m_position + Vector3(0, DroneModelOffsetY, 0) - centerOffset, rotation,
-                      Vector3(DroneModelScale, DroneModelScale, DroneModelScale),
-                      EnemyVariants::Tint(EnemySpecies::Fly, GetRarity()));
-        return;
-    }
-    for (const auto& part : m_parts) {
-        if (part) {
-            part->Draw(cam);
-        }
+        m_parts[i]->Draw(cam, m_partTint, hit.flash);
     }
 }
 

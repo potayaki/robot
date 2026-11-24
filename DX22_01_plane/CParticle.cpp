@@ -5,8 +5,11 @@
 #include "Game.h"
 #include "Renderer.h"
 #include "TestCube.h"
+#include "ShotParticleMesh.h"
 #include <cmath>
 #include <optional>
+
+using namespace DirectX::SimpleMath;
 
 namespace {
     struct ParticleResources {
@@ -18,8 +21,12 @@ namespace {
         /// 火花を描画する板の頂点とインデックス。
         VertexBuffer<VERTEX_3D> m_sparkVB;
         IndexBuffer m_sparkIB;
-        /// 板に設定する材質。
-        Material m_sparkMaterial;
+        /// 四種類の射撃演出をまとめた三角形リスト。テクスチャを使用しない。
+        VertexBuffer<VERTEX_3D> m_shotVertices;
+        /// 描画する種類ごとの頂点範囲。
+        ShotParticleMesh::Range m_plume, m_plumeGlow, m_ribbon, m_chip, m_ring;
+        /// 粒子の縁色・芯色・透明度を転送するピクセル用定数バッファ。
+        Microsoft::WRL::ComPtr<ID3D11Buffer> m_material;
         /// 地形で火花を遮蔽し、粒子同士は遮らない深度設定。
         Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_sparkDepthState;
 
@@ -27,6 +34,17 @@ namespace {
     };
 
     std::optional<ParticleResources> resources;
+
+    Matrix AlongAxis(Vector3 axis) {
+        if (axis.LengthSquared() < 0.000001f) {
+            return Matrix::Identity;
+        }
+        axis.Normalize();
+        const auto reference = std::abs(axis.y) < 0.95f ? Vector3::UnitY : Vector3::UnitZ;
+        auto side = axis.Cross(reference);
+        side.Normalize();
+        return Matrix(axis, side.Cross(axis), side);
+    }
 } // namespace
 
 CParticle::CParticle() {
@@ -48,23 +66,19 @@ void CParticle::Init() {
 void CParticle::Update() {
     const float deltaSeconds = (std::min)(GameTime::DeltaSeconds(), m_life);
 
-    if (m_type == Test) {
-        // 速度の分だけ移動
-
+    if (m_type == Test || m_type == ImpactChip || m_type == MuzzleSpark) {
+        constexpr float chipGravity = 260.0f;
+        const float gravity = m_type == ImpactChip ? chipGravity : m_gravity;
         m_position += m_velocity * deltaSeconds;
-        m_position.y -= 0.5f * m_gravity * deltaSeconds * deltaSeconds;
-        m_velocity.y -= m_gravity * deltaSeconds; // 重力（距離/秒²）。
-
+        m_position.y -= 0.5f * gravity * deltaSeconds * deltaSeconds;
+        m_velocity.y -= gravity * deltaSeconds;
+    }
+    if (m_type == Test) {
         // クルクル回転させる
         m_rotation.x += m_spinSpeed * deltaSeconds;
         m_rotation.y += m_spinSpeed * deltaSeconds;
 
     } else if (m_type == Spark || m_type == MuzzleSpark || m_type == MuzzleFlash) {
-        if (m_type == MuzzleSpark) {
-            m_position += m_velocity * deltaSeconds;
-            m_position.y -= 0.5f * m_gravity * deltaSeconds * deltaSeconds;
-            m_velocity.y -= m_gravity * deltaSeconds;
-        }
         // 旧「毎フレーム0.95倍」を秒に応じた指数減衰へ変換する。
         const float shrink = std::pow(m_shrinkPerReferenceFrame, deltaSeconds * m_referenceFramesPerSecond);
         m_scale *= shrink;
@@ -78,7 +92,7 @@ void CParticle::Update() {
 }
 
 void CParticle::Draw(Camera* cam) {
-    if (!resources) {
+    if (!resources || !cam) {
         return;
     }
     if (m_type == Test) {
@@ -86,51 +100,104 @@ void CParticle::Draw(Camera* cam) {
         resources->m_body.SetRotation(m_rotation);
         resources->m_body.SetScale(m_scale.x, m_scale.y, m_scale.z);
         resources->m_body.Draw(cam);
+        return;
     }
-    //  Sparkの場合は、板（ビルボード）として画像を描く
-    else if (m_type == Spark || m_type == MuzzleSpark || m_type == MuzzleFlash) {
-        ID3D11DeviceContext* dc = Renderer::GetDeviceContext();
-        Microsoft::WRL::ComPtr<ID3D11DepthStencilState> previousDepth;
-        UINT previousStencilRef = 0;
-        dc->OMGetDepthStencilState(previousDepth.GetAddressOf(), &previousStencilRef);
-        dc->OMSetDepthStencilState(resources->m_sparkDepthState.Get(), 0);
-        Renderer::SetBlendState(BS_ADDITIVE); // 加算合成（光るモード）
+    const bool textured = m_type == Spark || m_type == MuzzleSpark || m_type == MuzzleFlash;
+    const float life = m_initialLife > 0 ? std::clamp(m_life / m_initialLife, 0.0f, 1.0f) : 0;
+    cam->SetCamera(0);
+    Matrix rotation;
+    if (textured || m_type == ImpactRing) {
+        rotation = cam->GetViewMatrix().Invert();
+        rotation.Translation(Vector3::Zero);
+    } else {
+        rotation = AlongAxis(m_velocity);
+    }
+    Vector3 scale = m_scale;
+    MATERIAL material{};
+    material.Diffuse = m_color;
+    material.TextureEnable = textured;
+    ShotParticleMesh::Range range;
+    switch (m_type) {
+        case MuzzlePlume:
+            // 起点は銃口に固定し、先端から引き戻す。芯は白黄、外縁は発生器の橙。
+            scale.x *= 0.45f + 0.55f * life;
+            scale.y *= 0.55f + 0.45f * life;
+            scale.z = scale.y;
+            material.Emmision = Color(1, 1, 0.86f, 1);
+            material.Diffuse.w *= (std::min)(1.0f, 1.8f * life);
+            range = resources->m_plume;
+            break;
+        case BulletRibbon:
+            // 端点の位置は寿命中一定。幅と不透明度だけを落として実際の軌跡を残す。
+            scale.y *= 0.65f + 0.35f * life;
+            scale.z = scale.y;
+            material.Emmision = Color(0.9f, 0.98f, 1.0f, 1);
+            material.Diffuse.w *= life;
+            range = resources->m_ribbon;
+            break;
+        case ImpactChip:
+            scale.z = scale.y;
+            material.Emmision = Color(1, 0.62f, 0.71f, 1);
+            material.Diffuse.w *= (std::min)(1.0f, 1.5f * life);
+            range = resources->m_chip;
+            break;
+        case ImpactRing:
+            scale *= 1.0f - 0.68f * life * life;
+            material.Emmision = Color(1, 0.30f, 0.50f, 1);
+            // 開く途中の細い縁をはっきり残し、寿命の最後の4割で消す。
+            material.Diffuse.w *= (std::min)(1.0f, 2.5f * life);
+            range = resources->m_ring;
+            break;
+        case MuzzleFlash:
+        case MuzzleSpark:
+            material.Diffuse.w *= life;
+            break;
+    }
+    Matrix world = Matrix::CreateScale(scale) * rotation * Matrix::CreateTranslation(m_position);
+    resources->m_sparkShader.SetGPU();
 
-        cam->SetCamera(0); // 3Dカメラを使用
-        DirectX::SimpleMath::Matrix viewMtx = cam->GetViewMatrix();
-
-        // カメラの逆行列を使って、板を常にカメラの真正面に
-        DirectX::SimpleMath::Matrix billboardMtx = viewMtx.Invert();
-        billboardMtx.Translation(DirectX::SimpleMath::Vector3::Zero);
-
-        DirectX::SimpleMath::Matrix s = DirectX::SimpleMath::Matrix::CreateScale(m_scale);
-        DirectX::SimpleMath::Matrix t = DirectX::SimpleMath::Matrix::CreateTranslation(m_position);
-        DirectX::SimpleMath::Matrix worldMtx = s * billboardMtx * t;
-
-        Renderer::SetWorldMatrix(&worldMtx);
+    auto dc = Renderer::GetDeviceContext();
+    Microsoft::WRL::ComPtr<ID3D11Buffer> previousMaterial;
+    dc->PSGetConstantBuffers(4, 1, previousMaterial.GetAddressOf());
+    dc->UpdateSubresource(resources->m_material.Get(), 0, nullptr, &material, 0, 0);
+    dc->PSSetConstantBuffers(4, 1, resources->m_material.GetAddressOf());
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilState> previousDepth;
+    Microsoft::WRL::ComPtr<ID3D11BlendState> previousBlend;
+    UINT previousStencilRef = 0, previousSampleMask = 0;
+    FLOAT previousFactors[4]{};
+    dc->OMGetDepthStencilState(previousDepth.GetAddressOf(), &previousStencilRef);
+    dc->OMGetBlendState(previousBlend.GetAddressOf(), previousFactors, &previousSampleMask);
+    dc->OMSetDepthStencilState(resources->m_sparkDepthState.Get(), 0);
+    Renderer::SetBlendState(textured ? BS_ADDITIVE : BS_ALPHABLEND);
+    if (textured) {
+        Renderer::SetWorldMatrix(&world);
         Renderer::SetUV(0, 0, 1, 1);
-
-        resources->m_sparkShader.SetGPU();
         resources->m_sparkVB.SetGPU();
         resources->m_sparkIB.SetGPU();
         resources->m_sparkTexture.SetGPU();
-        resources->m_sparkMaterial.SetGPU();
-
-        MATERIAL mtrl{};
-        mtrl.Diffuse = m_color; // パーティクルの色をマテリアルに反映
-        if (m_type == MuzzleSpark || m_type == MuzzleFlash) {
-            mtrl.Diffuse.w *= m_initialLife > 0.0f ? m_life / m_initialLife : 0.0f;
-        }
-        mtrl.Ambient = DirectX::SimpleMath::Color(1.0f, 1.0f, 1.0f, 1.0f);
-        mtrl.TextureEnable = true;
-        Renderer::SetMaterial(mtrl);
-
         dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
         dc->DrawIndexed(4, 0, 0);
-
-        Renderer::SetBlendState(BS_ALPHABLEND); // 通常の半透明に戻す
-        dc->OMSetDepthStencilState(previousDepth.Get(), previousStencilRef);
+    } else {
+        resources->m_shotVertices.SetGPU();
+        dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        if (m_type == MuzzlePlume) {
+            // 芯は銃口サイズのまま。軸の真後ろからも見える周辺光を先に一度だけ重ねる。
+            constexpr float glowWidths = 3.6f;
+            const float diameter = scale.y * glowWidths;
+            Matrix billboard = cam->GetViewMatrix().Invert();
+            billboard.Translation(m_position + rotation.Right() * (scale.x * 0.26f));
+            Matrix glowWorld = Matrix::CreateScale(diameter, diameter, 1.0f) * billboard;
+            Renderer::SetWorldMatrix(&glowWorld);
+            Renderer::SetBlendState(BS_ADDITIVE);
+            dc->Draw(resources->m_plumeGlow.count, resources->m_plumeGlow.first);
+            Renderer::SetBlendState(BS_ALPHABLEND);
+        }
+        Renderer::SetWorldMatrix(&world);
+        dc->Draw(range.count, range.first);
     }
+    dc->OMSetBlendState(previousBlend.Get(), previousFactors, previousSampleMask);
+    dc->OMSetDepthStencilState(previousDepth.Get(), previousStencilRef);
+    dc->PSSetConstantBuffers(4, 1, previousMaterial.GetAddressOf());
 }
 
 void CParticle::Uninit() {}
@@ -150,6 +217,7 @@ ParticleResources::ParticleResources() {
     m_body.SetScale(0.5f, 0.5f, 0.5f);
     m_sparkTexture.Load("assets/texture/spark.png");
     m_sparkShader.Create("shader/unlitTextureVS.hlsl", "shader/particlePS.hlsl");
+    Renderer::CreateConstantBuffer(sizeof(MATERIAL), m_material.GetAddressOf());
 
     D3D11_DEPTH_STENCIL_DESC depth{};
     depth.DepthEnable = TRUE;
@@ -176,8 +244,11 @@ ParticleResources::ParticleResources() {
     std::vector<unsigned int> indices = {0, 1, 2, 3};
     m_sparkIB.Create(indices);
 
-    MATERIAL mtrl{};
-    mtrl.Diffuse = DirectX::SimpleMath::Color(1, 1, 1, 1);
-    mtrl.TextureEnable = true;
-    m_sparkMaterial.Create(mtrl);
+    vertices.clear();
+    m_plume = ShotParticleMesh::Plume(vertices);
+    m_plumeGlow = ShotParticleMesh::PlumeGlow(vertices);
+    m_ribbon = ShotParticleMesh::Ribbon(vertices);
+    m_chip = ShotParticleMesh::Chip(vertices);
+    m_ring = ShotParticleMesh::Ring(vertices);
+    m_shotVertices.Create(vertices);
 }

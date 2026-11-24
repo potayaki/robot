@@ -2,6 +2,7 @@
 /// @brief 単純な立方体モデルの頂点作成と描画。
 
 #include "TestCube.h"
+#include "EnemyTint.h"
 #include "Object.h"
 using namespace DirectX::SimpleMath;
 
@@ -173,6 +174,10 @@ void TestCube::Update() {
 //描画処理
 //=======================================
 void TestCube::Draw(Camera* cam) {
+    Draw(cam, {}, 0);
+}
+
+void TestCube::Draw(Camera* cam, const std::shared_ptr<EnemyTint>& tintResources, float hitFlash) {
     //カメラを選択する
     cam->SetCamera();
 
@@ -193,6 +198,7 @@ void TestCube::Draw(Camera* cam) {
     devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); //頂点の結び方の規則
 
     m_shader.SetGPU();
+    EnemyTintScope tintScope(tintResources, Color(1, 1, 1, 0), true, hitFlash);
     m_vertexBuffer.SetGPU();
     m_indexBuffer.SetGPU();
     m_texture.SetGPU();

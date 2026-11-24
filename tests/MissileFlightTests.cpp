@@ -2,6 +2,8 @@
 /// @brief 動作と境界条件を検証する MissileFlightTests の自動テスト。
 
 #include "../DX22_01_plane/Bezier.h"
+#include "../DX22_01_plane/CMissile.h"
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <iostream>
@@ -25,6 +27,42 @@ float Simulate(const Vector3& target, float frameSeconds, float spread = 0.0f) {
 }
 
 int main() {
+    // 中心が奥にある大型の球でも、表面が先に軌道へ入ればその場で炸裂する。
+    const Collision::Segment movement{{0, 0, 0}, {100, 0, 0}};
+    const Collision::Sphere scout{{55, 0, 0}, 3};
+    const Collision::Sphere boss{{70, 0, 0}, 30};
+    for (const auto& spheres : {std::array{scout, boss}, std::array{boss, scout}}) {
+        float first = 2.0f;
+        for (const auto& sphere : spheres) {
+            float fraction = 0.0f;
+            assert(Collision::SegmentSphereHitFraction(movement, sphere, 2, fraction));
+            first = (std::min)(first, fraction);
+        }
+        assert(std::abs(first - 0.38f) < 0.00001f);
+    }
+    float fraction = 2.0f;
+    const Collision::Segment stationary{movement.start, movement.start};
+    assert(!Collision::SegmentSphereHitFraction(stationary, boss, 2, fraction));
+    assert(Collision::SegmentSphereHitFraction(stationary, {movement.start, 10}, 2, fraction));
+    assert(fraction == 0.0f);
+    assert(Collision::SegmentSphereHitFraction(movement, {{5, 0, 0}, 10}, 2, fraction));
+    assert(fraction == 0.0f);
+    assert(Collision::SegmentSphereHitFraction(movement, {{112, 0, 0}, 10}, 2, fraction));
+    assert(fraction == 1.0f);
+    assert(Collision::SegmentSphereHitFraction(movement, {{50, 12, 0}, 10}, 2, fraction));
+    assert(std::abs(fraction - 0.5f) < 0.00001f);
+    assert(!Collision::SegmentSphereHitFraction(movement, {{50, 13, 0}, 10}, 2, fraction));
+
+    // 敵の外周までの3D距離で、中心・減衰帯・範囲外を区別する。強化後の威力も反映する。
+    const Vector3 impact(30, 20, 100);
+    assert(CMissile::BlastDamage(3, impact, {impact, 10}) == 3);
+    assert(CMissile::BlastDamage(3, impact, {impact + Vector3(46, 0, 18), 10}) == 3);
+    assert(CMissile::BlastDamage(5, impact, {impact + Vector3(0, 75, 0), 10}) == 5);
+    assert(CMissile::BlastDamage(5, impact, {impact + Vector3(0, 76, 0), 10}) == 3);
+    assert(CMissile::BlastDamage(4, impact, {impact + Vector3(105, 0, 0), 10}) == 2);
+    assert(CMissile::BlastDamage(4, impact, {impact + Vector3(0, 106, 0), 10}) == 0);
+    assert(CMissile::BlastDamage(0, impact, {impact, 10}) == 0);
+
     // 地上・空中とも距離が伸びるほど到達時間が長くなり、FPSによる差は1フレーム以内。
     for (float spread : {0.0f, 45.0f, -90.0f}) {
         for (int fps : {30, 60, 144}) {

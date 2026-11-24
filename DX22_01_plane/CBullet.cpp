@@ -3,9 +3,10 @@
 
 #include "CBullet.h"
 #include "Game.h"
+#include "GameSettings.h"
 #include "EnemyTarget.h"
 #include "Collision.h"
-#include "CParticle.h"
+#include "CEmitter.h"
 #include "Ground.h"
 #include "PoolManager.h"
 #include "BulletHoming.h"
@@ -14,33 +15,21 @@
 #include <cmath>
 
 namespace {
-    // 弾の1フレーム分の軌道と敵の球が最初に接する位置を、0～1の割合で求める。
-    bool SegmentSphereHitFraction(const Collision::Segment& segment, const Collision::Sphere& sphere,
-                                  float bulletRadius, float& hitFraction) {
-        const Vector3 step = segment.end - segment.start;
-        const float stepLengthSq = step.LengthSquared();
-        if (stepLengthSq <= 0.000001f) {
+    // 実際に通過した2点で発光帯を張る。速度欄は描画用の単位方向。
+    bool SetRibbon(CParticle& ribbon, const Vector3& from, const Vector3& to, float lifeSeconds) {
+        const Vector3 offset = to - from;
+        const float length = offset.Length();
+        if (length <= 0.0001f) {
             return false;
         }
-
-        const Vector3 fromCenter = segment.start - sphere.center;
-        const float combinedRadius = sphere.radius + bulletRadius;
-        const float c = fromCenter.LengthSquared() - combinedRadius * combinedRadius;
-        if (c <= 0.0f) {
-            hitFraction = 0.0f; // すでに球の内側から始まっている場合。
-            return true;
-        }
-
-        const float b = fromCenter.Dot(step);
-        // 線分と球の交点を求める二次方程式の判別式。負なら接触しない。
-        const float discriminant = b * b - stepLengthSq * c;
-        if (discriminant < 0.0f) {
-            return false;
-        }
-
-        // 2つの交点のうち手前を使う。0なら始点、1なら今フレームの終点。
-        hitFraction = (-b - std::sqrt(discriminant)) / stepLengthSq;
-        return hitFraction >= 0.0f && hitFraction <= 1.0f;
+        constexpr float width = 1.8f;
+        ribbon.SetType(BulletRibbon);
+        ribbon.SetPosition((from + to) * 0.5f);
+        ribbon.SetVelocity(offset / length);
+        ribbon.SetScale(Vector3(length, width, 1.0f));
+        ribbon.SetColor(Color(0.48f, 0.84f, 1.0f, 0.88f));
+        ribbon.SetLife(lifeSeconds);
+        return true;
     }
 } // namespace
 
@@ -103,29 +92,6 @@ void CBullet::Update() {
     m_position += m_velocity * deltaSeconds; // 距離/秒 × 経過秒数。
     GameTime::CountDown(m_remainingLifeSeconds, deltaSeconds);
 
-    //--------------------
-    //パーティクル(弾の軌道)を生成
-    //--------------------
-    const auto particleManagers = Game::GetInstance()->GetObjects<ParticleManager>();
-    m_trailElapsedSeconds += deltaSeconds;
-    while (m_trailElapsedSeconds >= TrailIntervalSeconds) {
-        m_trailElapsedSeconds -= TrailIntervalSeconds;
-        if (particleManagers.empty()) {
-            continue;
-        }
-        CParticle* trail = particleManagers[0]->Spawn();
-        if (trail != nullptr) { // 取得できた時だけ設定
-            trail->SetType(Spark);
-            // 低FPSで複数生成するときも、移動した区間に等間隔で並べる。
-            const float fraction = 1.0f - m_trailElapsedSeconds / deltaSeconds;
-            trail->SetPosition(Vector3::Lerp(previousPosition, m_position, fraction));
-            trail->SetVelocity(Vector3::Zero);
-            trail->SetLife(TrailLifetimeSeconds);
-            trail->SetScale(Vector3(TrailScale));
-            trail->SetColor(DirectX::SimpleMath::Color(1.0f, 0.0f, 0.0f, 1.0f));
-        }
-    }
-
     // ----- 4. 移動した区間全体で衝突を調べる -----
     // 高速な弾は敵を1フレームで通り越すため、移動先の点だけでは判定しない。
     const Collision::Segment movement{previousPosition, m_position};
@@ -141,21 +107,53 @@ void CBullet::Update() {
     float enemyHitFraction = 2.0f;
     // 共通型で取得し、飛行ドローンにもスライムと同じ線分判定を適用する。
     for (EnemyTarget* enemy : enemies) {
-        if (enemy == nullptr || enemy->IsDead()) {
+        if (enemy == nullptr || enemy->IsDead() || !enemy->GetActive()) {
             continue;
         }
         float fraction = 0.0f;
-        if (SegmentSphereHitFraction(movement, enemy->GetCollisionSphere(), m_colRadius, fraction) &&
+        if (Collision::SegmentSphereHitFraction(movement, enemy->GetCollisionSphere(), m_colRadius,
+                                                fraction) &&
             fraction < enemyHitFraction) {
             firstEnemy = enemy;
             enemyHitFraction = fraction;
         }
     }
 
+    // 軌跡も着弾点で止め、高速な弾の残光が敵や地面を貫通して見えるのを防ぐ。
+    const float travelFraction = (std::min)({1.0f, enemyHitFraction, groundHitFraction});
+    const float travelSeconds = deltaSeconds * travelFraction;
+    m_position = Vector3::Lerp(previousPosition, movement.end, travelFraction);
+    const auto particleManagers = Game::GetInstance()->GetObjects<ParticleManager>();
+    const auto leaveRibbon = [&](const Vector3& end, float timeIntoStep) {
+        if (!particleManagers.empty() && end != m_trailStart) {
+            CParticle* ribbon = particleManagers.front()->Spawn();
+            // 粒子プールはこの直後に同じステップの時間を引くので、生成までの時間を戻す。
+            if (!SetRibbon(*ribbon, m_trailStart, end, TrailLifetimeSeconds + timeIntoStep)) {
+                ribbon->SetActive(false);
+            }
+        }
+        m_trailStart = end;
+    };
+    m_trailElapsedSeconds += travelSeconds;
+    while (m_trailElapsedSeconds >= TrailIntervalSeconds) {
+        m_trailElapsedSeconds -= TrailIntervalSeconds;
+        const float sampleTime = travelSeconds - m_trailElapsedSeconds;
+        leaveRibbon(Vector3::Lerp(previousPosition, m_position, sampleTime / travelSeconds), sampleTime);
+    }
+    if (enemyHitFraction <= 1.0f || groundHitFraction <= 1.0f || m_remainingLifeSeconds <= 0.0f) {
+        leaveRibbon(m_position, travelSeconds);
+    }
+
     // ----- 5. 最初に接触した相手にだけ命中させる -----
     // 同じフレームで敵と地面の両方を通っても、手前にある方だけに命中させる。
     if (firstEnemy != nullptr && enemyHitFraction <= groundHitFraction) {
-        firstEnemy->OnHit(m_damage);
+        firstEnemy->OnDirectionalHit(m_damage, m_velocity);
+        if (!firstEnemy->IsDead()) {
+            GameSettings::PlayImpactSound();
+            if (!particleManagers.empty()) {
+                CEmitter::EmitImpact(*particleManagers.front(), m_position, m_velocity);
+            }
+        }
         SetActive(false);
         return;
     }
@@ -168,6 +166,16 @@ void CBullet::Update() {
 void CBullet::Draw(Camera* cam) {
     if (m_sharedModel) {
         m_sharedModel->Draw(cam, m_position, m_rotation, ModelScale);
+    }
+}
+
+void CBullet::DrawTrailTip(Camera* cam) const {
+    // 次のサンプルまでの隙間も弾までつなぐ。高FPSやヒットストップ中にプールを消費しない。
+    if (m_trailElapsedSeconds > 0.0f) {
+        CParticle head;
+        if (SetRibbon(head, m_trailStart, m_position, TrailLifetimeSeconds)) {
+            head.Draw(cam);
+        }
     }
 }
 
@@ -190,4 +198,5 @@ void CBullet::Shoot(Vector3 muzzlePosition, Vector3 direction, int homingRank) {
 
     m_remainingLifeSeconds = LifetimeSeconds;
     m_trailElapsedSeconds = 0.0f;
+    m_trailStart = muzzlePosition;
 }

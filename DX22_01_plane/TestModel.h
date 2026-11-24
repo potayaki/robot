@@ -41,7 +41,11 @@ public:
     void Draw(Camera* camera, const DirectX::SimpleMath::Vector3& worldPosition,
               const DirectX::SimpleMath::Vector3& rotationRadians,
               const DirectX::SimpleMath::Vector3& modelScale,
-              const DirectX::SimpleMath::Color& tint = DirectX::SimpleMath::Color(1, 1, 1, 0));
+              const DirectX::SimpleMath::Color& tint = DirectX::SimpleMath::Color(1, 1, 1, 0),
+              float hitFlash = 0.0f);
+    /// 素材の軸補正後に接地面に沿って変形した姿勢で描画する。
+    void DrawWorld(Camera* camera, DirectX::SimpleMath::Matrix world, const DirectX::SimpleMath::Color& tint,
+                   float hitFlash);
     /// 使用した資源を解放して終了する。
     void Uninit() override;
 

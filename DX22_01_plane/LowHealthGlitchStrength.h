@@ -2,11 +2,16 @@
 /// @brief HPの割合から画面ノイズの強さを求める計算。
 
 #pragma once
-#include <algorithm>
 
 inline float LowHealthGlitchStrength(int hp, int maxHp) {
-    if (maxHp <= 0) {
+    // 最大HPの半分で0%、残り1HPで200%になるよう、間を直線で補間する。
+    constexpr float PeakStrength = 2.0f;
+    const double startHp = maxHp * 0.5;
+    if (maxHp <= 0 || hp >= startHp) {
         return 0;
     }
-    return std::clamp(1.0f - 2.0f * static_cast<float>(hp) / maxHp, 0.0f, 1.0f);
+    if (hp <= 1) {
+        return PeakStrength;
+    }
+    return static_cast<float>(PeakStrength * (startHp - hp) / (startHp - 1.0));
 }

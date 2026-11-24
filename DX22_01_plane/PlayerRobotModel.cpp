@@ -26,6 +26,10 @@ namespace {
     constexpr float LowerBodyScale = 1.40f; // 腰と6本脚だけを拡大。上半身の大きさは保つ。
     constexpr float PlayerCollisionRadius = 10.0f; // 判定の中心から底面までモデルを下げる量。
     constexpr unsigned BoneBufferSlot = 6; // playerRobotVS.hlslのregister(b6)に対応する番号。
+    constexpr float BarrelRecoverySeconds = 0.16f; // 発射から復座するまでの秒数。
+    constexpr float BarrelKickSeconds = 0.025f; // 最大後退量に達するまでの秒数。
+    constexpr float BarrelStroke = 80.0f; // 最大後退量（モデル単位、ワールドでは2）。
+    constexpr float MuzzleLightSeconds = 0.075f; // 火炎に照らされた銃身の照り返しが消えるまでの秒数。
 
     Matrix ToDirectX(const aiMatrix4x4& matrix) {
         // Assimpは列ベクトル、SimpleMathは行ベクトルなので転置して渡す。
@@ -107,8 +111,7 @@ void PlayerRobotModel::Init() {
         return;
     }
 
-    const auto boneBufferBytes = static_cast<unsigned>(sizeof(Matrix) * MaxBones);
-    if (!Renderer::CreateConstantBuffer(boneBufferBytes, m_boneBuffer.GetAddressOf())) {
+    if (!Renderer::CreateConstantBuffer(sizeof(PoseBuffer), m_boneBuffer.GetAddressOf())) {
         return;
     }
 
@@ -117,13 +120,14 @@ void PlayerRobotModel::Init() {
 
 void PlayerRobotModel::Advance(RobotMotion motion, float deltaSeconds, float playbackRate, float upperBodyYaw,
                                float upperBodyPitch, float groundY, bool grounded, bool procedural) {
-    if (!m_ready) {
+    if (!m_ready || deltaSeconds <= 0.0f) {
         return;
     }
 
     const bool useIK = m_ikReady && procedural;
-    m_rig.Update(useIK ? RobotMotion::Idle : motion, deltaSeconds, playbackRate, upperBodyYaw,
-                 upperBodyPitch);
+    const bool holdPose = procedural && !m_ikReady && !grounded;
+    m_rig.Update(useIK ? RobotMotion::Idle : motion, deltaSeconds, playbackRate, upperBodyYaw, upperBodyPitch,
+                 holdPose);
 
     if (useIK) {
         m_spiderIK.Update(m_rig, deltaSeconds, ToAssimp(GetWorldMatrix()), groundY, grounded,
@@ -132,6 +136,32 @@ void PlayerRobotModel::Advance(RobotMotion motion, float deltaSeconds, float pla
         // 素材のアニメーションをプレビューした後は、古い接地点を使わずIKを再開する。
         m_spiderIK.Reset();
     }
+
+    // IKで確定した姿勢に毎回上書きし、歩行・ジャンプ中にも銃身の後退が蓄積しないようにする。
+    for (size_t side = 0; side < m_barrelRecovery.size(); ++side) {
+        GameTime::CountDown(m_barrelRecovery[side], deltaSeconds);
+        const float remaining = m_barrelRecovery[side];
+        const float elapsed = BarrelRecoverySeconds - remaining;
+        const float returnRatio = remaining / (BarrelRecoverySeconds - BarrelKickSeconds);
+        const float strokeRatio =
+            elapsed < BarrelKickSeconds ? elapsed / BarrelKickSeconds : returnRatio * returnRatio;
+        m_rig.ApplyBarrelRecoil(side, BarrelStroke * strokeRatio);
+    }
+}
+
+bool PlayerRobotModel::TryGetNextMuzzle(Vector3& position) const {
+    const auto& mount = m_rig.GetGuns()[m_nextGun];
+    if (!m_ready || mount.top < 0) {
+        return false;
+    }
+    const auto local = mount.Muzzle(m_rig.GetMatrices()[mount.top]);
+    position = Vector3::Transform(Vector3(local.x, local.y, local.z), GetWorldMatrix());
+    return true;
+}
+
+void PlayerRobotModel::OnGunFired() {
+    m_barrelRecovery[m_nextGun] = BarrelRecoverySeconds;
+    m_nextGun = 1 - m_nextGun;
 }
 
 #ifdef _DEBUG
@@ -235,6 +265,7 @@ void PlayerRobotModel::RestoreBody() {
     m_debris.Reset();
     m_debrisVertices = VertexBuffer<SkinnedVertex>{};
     m_spiderIK.Reset();
+    m_barrelRecovery = {};
 }
 
 Matrix PlayerRobotModel::GetWorldMatrix() const {
@@ -279,15 +310,30 @@ void PlayerRobotModel::DrawGeometry() {
     Renderer::SetWorldMatrix(&world);
 
     // 使用しない骨は単位行列にしてから、現在の本体または破片の姿勢をGPUへ送る。
-    std::array<Matrix, MaxBones> matrices;
-    matrices.fill(Matrix::Identity);
+    PoseBuffer buffer;
     const auto& pose = broken ? m_debris.GetMatrices() : m_rig.GetMatrices();
     for (size_t index = 0; index < pose.size(); ++index) {
-        matrices[index] = ToDirectX(pose[index]).Transpose();
+        buffer.bones[index] = ToDirectX(pose[index]).Transpose();
+    }
+    // 銃身の復座時計を共用し、左右の砲口と照り返しを同じフレームで切り替える。
+    if (!broken) {
+        for (size_t side = 0; side < buffer.muzzleLights.size(); ++side) {
+            const float age = BarrelRecoverySeconds - m_barrelRecovery[side];
+            const auto& mount = m_rig.GetGuns()[side];
+            if (age >= MuzzleLightSeconds || mount.top < 0) {
+                continue;
+            }
+            const auto& top = pose[mount.top];
+            // 発光源を砲口の少し前へ置き、開口部と隣の装甲に暖色を返す。
+            const auto source = mount.Muzzle(top) + mount.Axis(top) * (1.25f / RobotScale);
+            const Vector3 position = Vector3::Transform(Vector3(source.x, source.y, source.z), world);
+            const float strength = 1.0f - age / MuzzleLightSeconds;
+            buffer.muzzleLights[side] = Vector4(position.x, position.y, position.z, strength);
+        }
     }
 
     auto context = Renderer::GetDeviceContext();
-    context->UpdateSubresource(m_boneBuffer.Get(), 0, nullptr, matrices.data(), 0, 0);
+    context->UpdateSubresource(m_boneBuffer.Get(), 0, nullptr, &buffer, 0, 0);
     ID3D11Buffer* bones = m_boneBuffer.Get();
     context->VSSetConstantBuffers(BoneBufferSlot, 1, &bones);
     context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
@@ -310,6 +356,8 @@ void PlayerRobotModel::Uninit() {
     // CPU側の姿勢と、GPU側の描画資源をまとめて解放する。
     m_ready = false;
     m_ikReady = false;
+    m_nextGun = 0;
+    m_barrelRecovery = {};
     m_spiderIK = RobotSpiderIK{};
     m_vertexCount = 0;
     m_rig = RobotAnimationRig{};

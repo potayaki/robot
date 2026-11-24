@@ -29,7 +29,7 @@ public:
     /// tintのRGBは個体色、Aは着色率。0なら元の描画をそのまま使用する。
     /// textureOnlyは材質を使わないGhost用。表面の透明度には影響しない。
     EnemyTintScope(const std::shared_ptr<EnemyTint>& resources, const DirectX::SimpleMath::Color& tint,
-                   bool textureOnly = false);
+                   bool textureOnly = false, float hitFlash = 0.0f);
     ~EnemyTintScope();
     EnemyTintScope(const EnemyTintScope&) = delete;
     EnemyTintScope& operator=(const EnemyTintScope&) = delete;

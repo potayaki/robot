@@ -80,6 +80,10 @@ float Ground::HeightAt(float x, float z) const {
     return m_forestSurface ? ForestLayout::GroundHeight(x, z) : m_position.y;
 }
 
+Vector3 Ground::NormalAt(float x, float z) const {
+    return m_forestSurface ? ForestLayout::GroundNormal(x, z) : Vector3::Up;
+}
+
 std::optional<float> Ground::FirstHit(const Vector3& from, const Vector3& to, float clearance) const {
     float gap = from.y - HeightAt(from.x, from.z) - clearance;
     if (gap <= 0) {

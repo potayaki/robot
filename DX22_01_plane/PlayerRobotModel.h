@@ -14,6 +14,12 @@ class PlayerRobotModel : public Object {
     /// playerRobotVS.hlslのBones配列と同じ上限。
     static constexpr size_t MaxBones = 128;
 
+    /// playerRobotVS.hlsl の b6。左右の発光源は xyz がワールド座標、w が強さ。
+    struct PoseBuffer {
+        std::array<DirectX::SimpleMath::Matrix, MaxBones> bones;
+        std::array<DirectX::SimpleMath::Vector4, 2> muzzleLights{};
+    };
+
     struct SkinnedVertex {
         /// 位置・法線・色・UVをまとめた描画用頂点。
         VERTEX_3D vertex;
@@ -23,6 +29,10 @@ class PlayerRobotModel : public Object {
 
     /// 素材の骨格と現在の姿勢。上半身の照準回転も管理する。
     RobotAnimationRig m_rig;
+    /// 次の通常射撃で使う銃身。0が左、1が右。
+    size_t m_nextGun = 0;
+    /// 左右それぞれの銃身が元の位置に戻るまでの時間（秒）。
+    std::array<float, 2> m_barrelRecovery{};
     /// 6本脚の足運び・接地・胴体の揺れ。
     RobotSpiderIK m_spiderIK;
     /// IKに必要な関節を取得できたか。失敗時は素材のアニメーションを使う。
@@ -63,6 +73,10 @@ public:
     // deltaSecondsは前回からの経過秒。proceduralがtrueなら素材の歩行ではなくIKで足を動かす。
     void Advance(RobotMotion motion, float deltaSeconds, float playbackRate, float upperBodyYaw,
                  float upperBodyPitch, float groundY, bool grounded, bool procedural = true);
+    /// 照準・足のIK・反動を反映した次の銃口位置（ワールド座標）を取得する。
+    bool TryGetNextMuzzle(DirectX::SimpleMath::Vector3& position) const;
+    /// 実際に撃った側だけ反動を開始し、次の通常射撃を反対側へ切り替える。
+    void OnGunFired();
     void BeginBreakApart(float groundY);
     void AdvanceBreakApart(float deltaSeconds);
     void RestoreBody(); // DebugでHPを戻した場合も、素材を再読込せず元の機体へ戻す。

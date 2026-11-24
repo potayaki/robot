@@ -40,7 +40,6 @@ namespace {
     constexpr float StopLandingSeconds = 0.12f; // 入力を離してから真下へ足を下ろす時間。
     constexpr float ShortStepDurationRatio = 0.5f; // 歩き始め・切り返し時は通常の半分の時間。
     constexpr float LandingLeadRatio = 0.5f; // 次の支持期間の中央を見越して着地先を前へ出す。
-    constexpr float AirborneFootLift = 1.2f; // 本体が空中にいるときの足の引き上げ量。
     constexpr float TurningRotationDot = 0.9999999f; // 停止中の下半身の回転を検出する内積の境界。
 
     // 胴体の重さを表現する調整値。移動速度・加速度から遅れと傾きを作る。
@@ -229,7 +228,7 @@ void RobotSpiderIK::ApplySettings(RobotAnimationRig& rig, const Settings& reques
         auto& leg = m_legs[index];
         const auto previousHome = leg.home;
         leg.home = GetHome(leg);
-        if (!m_tracking) {
+        if (!m_tracking || !m_grounded) {
             continue;
         }
 
@@ -237,7 +236,7 @@ void RobotSpiderIK::ApplySettings(RobotAnimationRig& rig, const Settings& reques
         // 歩行中の前後位置と進行率は保つ。停止後にIdleの足位置へ戻さない。
         const auto shift = Horizontal(aiMatrix3x3(m_previousWorld) * (leg.home - previousHome));
         for (auto point : {&m_feet[index].position, &m_feet[index].start, &m_feet[index].target}) {
-            if (m_grounded && heightAt) {
+            if (heightAt) {
                 point->y += heightAt(point->x + shift.x, point->z + shift.z) - heightAt(point->x, point->z);
             }
             *point += shift;
@@ -324,10 +323,15 @@ void RobotSpiderIK::Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& wo
                          bool grounded) {
     const auto position = Position(world);
     const auto displacement = position - m_previousPosition;
-    const bool reset =
-        !m_tracking || displacement.Length() > TeleportResetDistance || dt > LongFrameResetSeconds;
+    const bool newLocation = !m_tracking || displacement.Length() > TeleportResetDistance;
+    const bool reset = newLocation || dt > LongFrameResetSeconds;
 
     if (reset) {
+        if (newLocation) {
+            m_supportGradient = {};
+            m_groundPose = m_rest;
+            m_inverseGroundBody = aiMatrix4x4();
+        }
         Reset();
         m_tracking = true;
         m_previousPosition = position;
@@ -398,15 +402,7 @@ void RobotSpiderIK::Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& wo
     }
 
     // 先に今の一歩を進める。全て着地できた場合だけ、次の3本を持ち上げられる。
-    const bool swinging = UpdateSwingingFeet(dt, world, heightAt, grounded, moving, velocity, stepSeconds);
-
-    if (!grounded) {
-        for (size_t index = 0; index < m_feet.size(); ++index) {
-            auto& foot = m_feet[index];
-            foot.swinging = false;
-            foot.position = world * m_legs[index].home + aiVector3D(0, AirborneFootLift, 0);
-        }
-    } else if (!swinging) {
+    if (grounded && !UpdateSwingingFeet(dt, world, heightAt, moving, velocity, stepSeconds)) {
         // 停止中は接地点を保持する。下半身そのものを回した場合は踏み替えを許可する。
         aiVector3D previousScale, currentScale;
         aiVector3D previousPosition, currentPosition;
@@ -456,8 +452,7 @@ void RobotSpiderIK::Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& wo
 }
 
 bool RobotSpiderIK::UpdateSwingingFeet(float dt, const aiMatrix4x4& world, const HeightAt& heightAt,
-                                       bool grounded, bool moving, const aiVector3D& velocity,
-                                       float stepSeconds) {
+                                       bool moving, const aiVector3D& velocity, float stepSeconds) {
     bool stillSwinging = false; // この更新を終えても空中に残っている足があるか。
     for (size_t index = 0; index < m_feet.size(); ++index) {
         auto& foot = m_feet[index];
@@ -501,16 +496,12 @@ bool RobotSpiderIK::UpdateSwingingFeet(float dt, const aiMatrix4x4& world, const
         foot.arcOffset =
             foot.liftHeight > 0.0f ? foot.outward * (m_settings.swingOutward * arcHeight) : aiVector3D();
         foot.position += foot.arcOffset;
-        if (grounded) {
-            foot.position.y = (std::max)(foot.position.y, heightAt(foot.position.x, foot.position.z));
-        }
+        foot.position.y = (std::max)(foot.position.y, heightAt(foot.position.x, foot.position.z));
 
         if (progress >= 1.0f) {
             foot.swinging = false;
             foot.arcOffset = {};
-            if (grounded) {
-                m_body.velocity.y -= FootfallBodyImpulse;
-            }
+            m_body.velocity.y -= FootfallBodyImpulse;
         } else {
             stillSwinging = true;
         }
@@ -584,20 +575,25 @@ void RobotSpiderIK::Solve(RobotAnimationRig& rig, const aiMatrix4x4& world, cons
     // まず胴体の揺れと高さを反映する。その後、固定された接地点へ各脚を届かせる。
     aiMatrix4x4 pitch;
     aiMatrix4x4 roll;
-    auto tilt = m_tilt.value;
+    const auto right = Horizontal(aiMatrix3x3(world) * aiVector3D(1, 0, 0)).Normalize();
+    const auto forward = Horizontal(aiMatrix3x3(world) * aiVector3D(0, 0, 1)).Normalize();
     if (m_grounded && heightAt) {
-        // 6本の支持面に腰を沿わせ、下り側の脚だけが伸び切るのを防ぐ。
+        // 6本の脚が立つ範囲から支持面を求める。
         constexpr float supportRadius = 9.0f;
         const auto center = Position(world);
-        const auto incline = [&](const aiVector3D& axis) {
-            const auto halfSpan = Horizontal(aiMatrix3x3(world) * axis).Normalize() * supportRadius;
+        const auto slope = [&](const aiVector3D& direction) {
+            const auto halfSpan = direction * supportRadius;
             const auto high = center + halfSpan;
             const auto low = center - halfSpan;
-            return std::atan2(heightAt(high.x, high.z) - heightAt(low.x, low.z), 2 * supportRadius);
+            return (heightAt(high.x, high.z) - heightAt(low.x, low.z)) / (2 * supportRadius);
         };
-        tilt.x -= incline(aiVector3D(0, 0, 1));
-        tilt.z += incline(aiVector3D(1, 0, 0));
+        m_supportGradient = right * slope(right) + forward * slope(forward);
     }
+    // roll * pitch の上方向を支持面の法線に合わせる。空中で機体が旋回しても坂の方位を保つ。
+    const float terrainRoll = std::atan(m_supportGradient * right);
+    auto tilt = m_tilt.value;
+    tilt.x -= std::atan((m_supportGradient * forward) * std::cos(terrainRoll));
+    tilt.z += terrainRoll;
     aiMatrix4x4::RotationX(tilt.x, pitch);
     aiMatrix4x4::RotationZ(tilt.z, roll);
     const int root = rig.FindNode("Root_M");
@@ -606,9 +602,30 @@ void RobotSpiderIK::Solve(RobotAnimationRig& rig, const aiMatrix4x4& world, cons
     body.a4 += offset.x;
     body.b4 += offset.y;
     body.c4 += offset.z;
-    rig.m_globals = m_rest;
-    TransformBranch(rig, root, body);
+    if (m_grounded) {
+        rig.m_globals = m_rest;
+        TransformBranch(rig, root, body);
+        SolveLegs(rig, inverseWorld);
+        m_groundPose = rig.m_globals;
+        m_inverseGroundBody = body;
+        m_inverseGroundBody.Inverse();
+    } else {
+        // 最後の接地姿勢を今の胴体に載せ替え、上げかけた足も膝の曲がりも保つ。
+        rig.m_globals = m_groundPose;
+        TransformBranch(rig, root, body * m_inverseGroundBody);
+    }
 
+    for (size_t index = 0; index < m_legs.size(); ++index) {
+        const auto& leg = m_legs[index];
+        m_solvedContacts[index] = world * (rig.m_globals[leg.joints[Ankle]] * leg.localContact);
+        if (!m_grounded) {
+            m_feet[index].position = m_solvedContacts[index];
+        }
+    }
+    rig.ApplyUpperBodyAim();
+}
+
+void RobotSpiderIK::SolveLegs(RobotAnimationRig& rig, const aiMatrix4x4& inverseWorld) {
     for (size_t index = 0; index < m_legs.size(); ++index) {
         const auto& leg = m_legs[index];
         const int coxa = leg.joints[Coxa];
@@ -675,9 +692,5 @@ void RobotSpiderIK::Solve(RobotAnimationRig& rig, const aiMatrix4x4& world, cons
         auto inverseAnkle = rig.m_globals[ankle];
         inverseAnkle.Inverse();
         TransformBranch(rig, ankle, levelAnkle * inverseAnkle);
-        m_solvedContacts[index] = world * (rig.m_globals[ankle] * leg.localContact);
     }
-
-    // 最後に上半身だけ照準へ向ける。脚の接地点には影響させない。
-    rig.ApplyUpperBodyAim();
 }

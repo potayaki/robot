@@ -7,6 +7,9 @@ namespace GameSettings {
     void DrawControls();
     void PlayMenuSound();
     void PlayShotSound();
+    void PlayImpactSound();
+    void PlayDefeatSound();
+    void PlayExplosionSound();
     void PlayStartSound();
     void PlayStartShotSound();
     bool VSync();

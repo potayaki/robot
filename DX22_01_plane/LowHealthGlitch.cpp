@@ -2,6 +2,7 @@
 /// @brief 低HP時の画面ノイズ演出と、描画結果の取り込み。
 
 #include "LowHealthGlitch.h"
+#include <algorithm>
 #include <cmath>
 
 namespace {
@@ -23,7 +24,7 @@ namespace {
     /// 横ずれの発生間隔とシェーダーの模様切り替えに共通の再生倍率。
     constexpr float GlitchPlaybackSpeed = 1.5f;
 
-    bool GetActiveBurst(GlitchConstants& data) {
+    void SetBurstTiming(GlitchConstants& data) {
         // ゲーム時間から開始位置を抽選し、ポーズ中は同じ瞬間に留める。単位は秒。
         constexpr float WindowSeconds = 0.75f;
         constexpr float MaxDelaySeconds = 0.28f;
@@ -34,8 +35,9 @@ namespace {
         const float start = MaxDelaySeconds * static_cast<float>(sample - std::floor(sample));
         const float elapsed = data.time - window * WindowSeconds - start;
         data.burstIndex = static_cast<UINT>(window);
-        data.burstPhase = elapsed / std::lerp(MinDurationSeconds, MaxDurationSeconds, data.strength);
-        return data.burstPhase >= 0.0f && data.burstPhase < 1.0f;
+        const float duration =
+            std::lerp(MinDurationSeconds, MaxDurationSeconds, (std::min)(data.strength, 1.0f));
+        data.burstPhase = elapsed / duration;
     }
 } // namespace
 
@@ -71,12 +73,13 @@ bool LowHealthGlitch::Init() {
 }
 
 void LowHealthGlitch::Draw(float strength, float time) {
+    if (strength <= 0) {
+        return;
+    }
     GlitchConstants data{};
     data.strength = strength;
     data.time = time * GlitchPlaybackSpeed;
-    if (strength <= 0 || !GetActiveBurst(data)) {
-        return;
-    }
+    SetBurstTiming(data);
     if (!m_raster && !Init()) {
         return;
     }

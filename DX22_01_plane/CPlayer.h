@@ -32,14 +32,14 @@ private:
     /// 移動速度強化を掛ける前の歩行速度（ワールド単位/秒）。
     float m_moveSpeed = 60.0f;
 
-    /// ジャンプ開始時の上向き速度（ワールド単位/秒）。
+    /// 踏み切った面の法線方向へのジャンプ初速（ワールド単位/秒）。
     float m_jumpSpeed = 30.0f;
 
     /// プレイヤー本体の当たり判定の半径。
     float m_collisionRadius = 10.0f;
 
-    /// 判定中心から弾の発射位置までの高さ。
-    float m_muzzleHeight = 5.0f;
+    /// 判定中心から上半身の照準基準点までの高さ。銃口を取得できないときの発射基準にも使う。
+    float m_aimHeight = 5.0f;
 
     /// 追加の通常弾を左右へ広げる角度（ラジアン）。
     float m_multiShotAngle = 0.065f;
@@ -77,6 +77,8 @@ private:
 
     /// 位置を変化させる速度ベクトル（ワールド単位/秒）。
     DirectX::SimpleMath::Vector3 m_velocity = {0, 0, 0};
+    /// 現在の速度のうち、空中のWASD入力で変えられる水平成分（ワールド単位/秒）。
+    DirectX::SimpleMath::Vector3 m_airControlVelocity = {0, 0, 0};
     /// 地面についているか
     bool m_isGrounded = false;
 
@@ -133,10 +135,11 @@ private:
     void UpdateAutoWeapons();
     void DeployTurret();
 
-    // 表示と通常弾が、同じカーソルの照準位置・発射基準位置を使う。
+    // 上半身と通常弾が同じカーソルの目標位置へ向く。
     bool TryGetAimTarget(DirectX::SimpleMath::Vector3& targetPosition) const;
-    DirectX::SimpleMath::Vector3 GetBulletOrigin() const;
-    void UpdateAim();
+    DirectX::SimpleMath::Vector3 GetAimPivot() const;
+    void UpdateAim(const DirectX::SimpleMath::Vector3& targetPosition);
+    void StartBullet(const DirectX::SimpleMath::Vector3& targetPosition);
 
 public:
     CPlayer();
@@ -157,9 +160,6 @@ public:
     void Move();
     //床との当たり判定
     void isGrounded();
-    //左クリック時にBulletを作り
-    void StartBullet();
-
     void StartMissile();
 
     DirectX::SimpleMath::Vector3 GetVelocity() {

@@ -15,15 +15,37 @@ private:
     static inline float m_deltaSeconds = 0.0f;
     /// 一時停止の影響を受けない実測の経過秒数。
     static inline float m_unscaledDeltaSeconds = 0.0f;
+    /// デバッグのスロー再生倍率。演出時間を実時間に換算する。
+    static inline float m_frameScale = 1.0f;
+    /// 撃破した瞬間だけ進行を遅くする残り実時間（秒）。
+    static inline double m_impactSeconds = 0.0;
+    /// 同時撃破や連続攻撃で演出がつながらないようにする残り実時間（秒）。
+    static inline double m_impactCooldown = 0.0;
 
 public:
+    static void PulseOnDefeat() {
+        if (m_impactCooldown <= 0.0) {
+            m_impactSeconds = 0.044;
+            m_impactCooldown = 0.24;
+        }
+    }
+
+    static void ClearImpact() {
+        m_impactSeconds = 0.0;
+        m_impactCooldown = 0.0;
+    }
+
     static void BeginFrame(double elapsedSeconds, float timeScale, bool paused) {
         if (!std::isfinite(elapsedSeconds) || elapsedSeconds < 0.0) {
             elapsedSeconds = 0.0;
         }
         m_unscaledDeltaSeconds = static_cast<float>(elapsedSeconds);
         m_deltaSeconds = 0.0f;
-        m_remainingSeconds = paused ? 0.0 : elapsedSeconds * (std::max)(0.0f, timeScale);
+        m_frameScale = (std::max)(0.0f, timeScale);
+        m_remainingSeconds = paused ? 0.0 : elapsedSeconds * m_frameScale;
+        if (paused) {
+            ClearImpact();
+        }
     }
 
     // 長いフレームは小分けにして衝突や移動を更新する。
@@ -32,8 +54,18 @@ public:
         constexpr double maxStepSeconds = 1.0 / 30.0;
         const double step = (std::min)(m_remainingSeconds, maxStepSeconds);
         m_remainingSeconds -= step;
-        m_deltaSeconds = static_cast<float>(step);
-        return step > 0.0;
+        if (step <= 0.0) {
+            m_deltaSeconds = 0.0f;
+            return false;
+        }
+        // 撃破の瞬間も少しだけ進め、短いジャンプ入力やカメラ操作をそのまま受け取る。
+        constexpr double impactTimeScale = 0.10;
+        const double realStep = step / m_frameScale;
+        const double slowed = (std::min)(m_impactSeconds, realStep);
+        m_impactSeconds -= slowed;
+        m_impactCooldown = (std::max)(0.0, m_impactCooldown - realStep);
+        m_deltaSeconds = static_cast<float>(step - slowed * (1.0 - impactTimeScale) * m_frameScale);
+        return true;
     }
 
     // 移動・寿命・攻撃など、ゲームを進める処理で使う秒数。

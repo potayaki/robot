@@ -14,6 +14,10 @@ enum ParticleType {
     Spark, // 火花
     MuzzleSpark, // 発射位置から飛び散る火花
     MuzzleFlash, // 発射位置に一瞬残る閃光
+    MuzzlePlume, // 位置は銃口、速度は発射軸。Xが長さ、Yが最大幅。
+    BulletRibbon, // 位置は実際の移動区間の中心、速度は軸。Xが全長、Yが幅。
+    ImpactChip, // 速度方向を向く金属片。Xが長さ、Yが幅。
+    ImpactRing, // 接点を囲むリング。XとYが消える直前の直径。
 };
 
 class CParticle : public Object {

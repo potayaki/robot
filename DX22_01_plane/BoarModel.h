@@ -23,7 +23,8 @@ public:
     void Update(BoarMotion motion, float deltaSeconds, float progress = 0.0f);
     /// 現在の状態を画面へ描画する。
     void Draw(Camera* camera, const DirectX::SimpleMath::Vector3& feet, float yaw, float scale,
-              const DirectX::SimpleMath::Color& tint = DirectX::SimpleMath::Color(1, 1, 1, 0));
+              const DirectX::SimpleMath::Color& tint = DirectX::SimpleMath::Color(1, 1, 1, 0),
+              float hitFlash = 0.0f);
     void DrawTelegraph(Camera* camera, DirectX::SimpleMath::Vector3 start, DirectX::SimpleMath::Vector3 end,
                        const GroundProjection& ground, float halfWidth, float progress);
 

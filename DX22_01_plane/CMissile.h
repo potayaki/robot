@@ -15,14 +15,16 @@ private:
     static constexpr DirectX::SimpleMath::Vector3 ModelScale{5.5f};
     /// 機首の向きを求めるために先読みする軌道の割合（全行程を1とする）。
     static constexpr float DirectionLookAheadFraction = 0.01f;
-    /// このフレームの移動区間から敵の中心までの衝突候補距離（ワールド単位）。
-    static constexpr float CollisionSearchRange = 100.0f;
+    /// 爆心からこの距離までは直撃と同じダメージを与える。
+    static constexpr float FullDamageRadius = 65.0f;
+    /// 爆風の外縁までの距離。外周では半分のダメージを切り上げる。
+    static constexpr float BlastRadius = 95.0f;
     /// 爆発による画面揺れが届く最大距離（ワールド単位）。
     static constexpr float MaxShakeDistance = 3000.0f;
     /// プレイヤーの位置で命中した場合の画面揺れの強さ。
-    static constexpr float MaxShakePower = 10.0f;
+    static constexpr float MaxShakePower = 3.0f;
     /// 命中時の画面揺れの持続時間（秒）。
-    static constexpr float ShakeSeconds = 1.0f / 3.0f;
+    static constexpr float ShakeSeconds = 0.15f;
     /// 爆発ビルボードの表示倍率。
     static constexpr float ExplosionScale = 200.0f;
     /// 爆発の連番画像を1コマ表示する時間（秒）。
@@ -40,6 +42,18 @@ private:
     Object* m_target = nullptr;
 
 public:
+    /// 爆心から敵の球までの距離に応じて、その敵へのダメージを決める。
+    static int BlastDamage(int damage, const DirectX::SimpleMath::Vector3& center,
+                           const Collision::Sphere& target) {
+        const float squaredDistance = (center - target.center).LengthSquared();
+        const float fullRadius = FullDamageRadius + target.radius;
+        const float outerRadius = BlastRadius + target.radius;
+        if (damage <= 0 || squaredDistance > outerRadius * outerRadius) {
+            return 0;
+        }
+        return squaredDistance <= fullRadius * fullRadius ? damage : damage / 2 + damage % 2;
+    }
+
     /// プールの初期化時にミサイル用の共有モデルを取得する。
     void Init() override;
     /// 飛行軌道と命中判定を進め、命中または軌道終了でプールに戻す。

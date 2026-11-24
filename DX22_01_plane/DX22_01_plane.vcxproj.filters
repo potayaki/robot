@@ -456,6 +456,9 @@
     <ClInclude Include="EnemyTarget.h">
       <Filter>ヘッダー ファイル\Enemy</Filter>
     </ClInclude>
+    <ClInclude Include="EnemyHitReaction.h">
+      <Filter>ヘッダー ファイル\Enemy</Filter>
+    </ClInclude>
     <ClInclude Include="SurvivorProgression.h">
       <Filter>ヘッダー ファイル\Level</Filter>
     </ClInclude>
@@ -466,6 +469,9 @@
       <Filter>ヘッダー ファイル\Object\Weapon</Filter>
     </ClInclude>
     <ClInclude Include="CParticle.h">
+      <Filter>ヘッダー ファイル\Object\Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="ShotParticleMesh.h">
       <Filter>ヘッダー ファイル\Object\Effect</Filter>
     </ClInclude>
     <ClInclude Include="CEmitter.h">

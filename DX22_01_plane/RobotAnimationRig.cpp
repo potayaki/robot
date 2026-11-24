@@ -62,6 +62,29 @@ RobotMotion SelectRobotWalkMotion(float moveX, float moveZ, float lowerBodyYaw) 
     return right > 0.0f ? RobotMotion::Right : RobotMotion::Left;
 }
 
+aiVector3D RobotAnimationRig::GunMount::Muzzle(const aiMatrix4x4& topPose) const {
+    // ShotgunTop の最前面から計測した銃孔中心。左右の骨の向きは反対。
+    return topPose * (forwardSign * aiVector3D(43.0614f, -30.5788f, 295.925f));
+}
+
+aiVector3D RobotAnimationRig::GunMount::Axis(const aiMatrix4x4& topPose) const {
+    auto direction = aiMatrix3x3(topPose) * aiVector3D(0, 0, forwardSign);
+    return direction.Normalize();
+}
+
+void RobotAnimationRig::ApplyBarrelRecoil(size_t side, float distance) {
+    const auto& gun = m_guns[side];
+    if (distance <= 0.0f || gun.top < 0 || gun.bottom < 0) {
+        return;
+    }
+    const auto offset = -gun.Axis(m_globals[gun.top]) * distance;
+    for (const int node : {gun.top, gun.bottom}) {
+        m_globals[node].a4 += offset.x;
+        m_globals[node].b4 += offset.y;
+        m_globals[node].c4 += offset.z;
+    }
+}
+
 int RobotAnimationRig::FindNode(const std::string& name) const {
     for (size_t i = 0; i < m_nodes.size(); ++i) {
         if (m_nodes[i].name == name) {
@@ -97,6 +120,8 @@ bool RobotAnimationRig::Load(const std::string& directory, std::string& error) {
             }
         };
         addNode(scene->mRootNode, -1);
+        m_guns[0] = {FindNode("ShotgunTop_L"), FindNode("ShotgunBot_L"), 1.0f};
+        m_guns[1] = {FindNode("ShotgunTop_R"), FindNode("ShotgunBot_R"), -1.0f};
         m_upperBodyNode = FindNode("Top_M");
         if (m_upperBodyNode < 0) {
             throw std::runtime_error("Robot upper-body joint Top_M is missing");
@@ -211,12 +236,16 @@ bool RobotAnimationRig::Load(const std::string& directory, std::string& error) {
 }
 
 void RobotAnimationRig::Update(RobotMotion motion, float deltaSeconds, float playbackRate, float upperBodyYaw,
-                               float upperBodyPitch) {
+                               float upperBodyPitch, bool holdPose) {
     if (m_parts.empty() || deltaSeconds <= 0) {
         return;
     }
     m_upperBodyYaw = upperBodyYaw;
     m_upperBodyPitch = upperBodyPitch;
+    if (holdPose) {
+        Evaluate();
+        return;
+    }
     if (motion != m_motion) {
         // 切り替え途中に別方向へ動いても、現在表示している姿勢から補間を始める。
         m_blendFrom = m_pose;

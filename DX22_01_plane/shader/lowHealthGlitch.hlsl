@@ -86,9 +86,14 @@ float burstTravel(float phase) {
     return kick - 0.24 * recoil;
 }
 
-float4 PSMain(Pixel p) : SV_Target {
-    float4 base = scene.SampleLevel(linearClamp, p.uv, 0);
+void applyBurst(Pixel p, inout float4 base) {
     applyFineTears(p, base);
+
+    // Fade in the wide tear, then extend its displacement and RGB split up to 200% intensity.
+    float critical = smoothstep(0.5, 1.0, strength);
+    if (critical <= 0.0) {
+        return;
+    }
 
     // One longer rupture holds its position for the burst while the fine interference keeps moving.
     uint seed = burstIndex * 167u;
@@ -101,16 +106,21 @@ float4 PSMain(Pixel p) : SV_Target {
     float seam = 1.0 - smoothstep(0.08, 0.22, abs(y - 1.24));
     float coverage = taper * max(body, seam);
     if (coverage <= 0.0) {
-        return base;
+        return;
     }
 
     // The narrow seam slips in the opposite direction, separating the two sides of the tear.
     float direction = noise(seed + 3u) < 0.5 ? -1.0 : 1.0;
     float shear = seam > 0.0 ? -0.42 : 1.0;
-    float distance = direction * shear * taper * strength * strength
+    float distance = direction * shear * taper * strength * saturate(strength)
                    * lerp(0.065, 0.115, noise(seed + 7u));
-    float2 shift = float2(distance * burstTravel(burstPhase), 0);
-    float4 displaced = scene.SampleLevel(linearClamp, p.uv + shift, 0);
+    float travel = burstTravel(burstPhase);
+    float2 shiftedUv = p.uv + float2(distance * travel, 0);
+    float split = critical * max(1.0, strength);
+    float2 rgbOffset = float2(direction * shear * split * taper * abs(travel) * 0.009, 0);
+    float4 displaced = scene.SampleLevel(linearClamp, shiftedUv, 0);
+    displaced.r = scene.SampleLevel(linearClamp, shiftedUv + rgbOffset, 0).r;
+    displaced.b = scene.SampleLevel(linearClamp, shiftedUv - rgbOffset, 0).b;
 
     // Sample the same contour at a delayed position so a colored copy lingers during recovery.
     float delayed = smoothstep(0.0, 0.19, burstPhase) * burstTravel(saturate(burstPhase - 0.19));
@@ -123,8 +133,24 @@ float4 PSMain(Pixel p) : SV_Target {
     float edge = smoothstep(0.025, 0.32, dot(abs(neighbor - echo), luma));
     float3 neon = randomNeonColor(seed);
     float3 echoColor = lerp(echo, seam > 0.0 ? neon.brg : neon, 0.78);
-    displaced.rgb = lerp(displaced.rgb, echoColor, strength * (0.30 * separation + 0.67 * edge));
+    displaced.rgb = lerp(displaced.rgb, echoColor, saturate(strength * (0.30 * separation + 0.67 * edge)));
 
     float release = 1.0 - smoothstep(0.70, 1.0, burstPhase);
-    return lerp(base, displaced, coverage * strength * release);
+    base = lerp(base, displaced, coverage * critical * release);
+}
+
+float4 PSMain(Pixel p) : SV_Target {
+    float4 color = scene.SampleLevel(linearClamp, p.uv, 0);
+    if (burstPhase >= 0.0 && burstPhase < 1.0) {
+        applyBurst(p, color);
+    }
+
+    // Screen-space interference persists between tears. The game clock freezes the grain on pause.
+    uint2 pixel = (uint2)p.position.xy;
+    uint frame = (uint)floor(time * 20.0);
+    float grain = noise(pixel.x + pixel.y * 65537u + frame * 2654435761u) - 0.5;
+    float lineSpacing = max(3.0, round(resolution.y / 270.0));
+    float scanline = 0.5 + 0.5 * cos(6.2831853 * p.position.y / lineSpacing);
+    color.rgb = saturate(color.rgb * (1.0 - 0.065 * strength * scanline) + 0.068 * strength * grain);
+    return color;
 }

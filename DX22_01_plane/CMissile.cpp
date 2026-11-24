@@ -3,12 +3,12 @@
 
 #include "CMissile.h"
 #include "Game.h"
+#include "GameSettings.h"
 #include <algorithm>
 #include <cmath>
 #include "EnemyTarget.h"
 #include "CPlayer.h"
 #include "Collision.h"
-#include "CParticle.h"
 #include "ExplosionManager.h"
 
 void CMissile::Init() {
@@ -30,7 +30,7 @@ void CMissile::Update() {
         bool targetIsAlive = false;
         // 消えた敵のポインタを参照しないよう、現在存在する共通の敵リストで確認する。
         for (EnemyTarget* enemy : enemies) {
-            if (enemy == m_target && !enemy->IsDead()) {
+            if (enemy == m_target && enemy->GetActive() && !enemy->IsDead()) {
                 targetIsAlive = true;
                 break;
             }
@@ -65,50 +65,57 @@ void CMissile::Update() {
     const float pitch = atan2f(-direction.y, horizontalLength);
     SetRotation(DirectX::SimpleMath::Vector3(pitch + DirectX::XM_PIDIV2, yaw, 0.0f));
 
+    // 追尾先が先に倒れても最後に狙った場所で炸裂する。
+    float firstFraction = 2.0f;
     for (EnemyTarget* enemy : enemies) {
-        if (enemy == nullptr || enemy->IsDead()) {
+        if (enemy == nullptr || !enemy->GetActive() || enemy->IsDead()) {
             continue;
         }
-
-        // ミサイルが1フレームで敵を通り抜けても、この移動区間に沿って判定する。
-        const float distanceToPath = Collision::DistancePointToSegment(enemy->GetPosition(), movement);
-        // 検索範囲内の敵だけ、双方の当たり判定の半径で接触を判定する。
-        const bool isHit = distanceToPath < CollisionSearchRange &&
-                           distanceToPath < m_colRadius + enemy->GetCollisionSphere().radius;
-        if (!isHit) {
-            continue;
+        float fraction = 0.0f;
+        if (Collision::SegmentSphereHitFraction(movement, enemy->GetCollisionSphere(), m_colRadius,
+                                                fraction)) {
+            firstFraction = (std::min)(firstFraction, fraction);
         }
-
-        enemy->OnHit(m_damage);
-        const auto explosionManagers = game->GetObjects<ExplosionManager>();
-        if (!explosionManagers.empty() && explosionManagers[0] != nullptr) {
-            explosionManagers[0]->CreateExplosion(enemy->GetPosition());
-        }
-
-        // プレイヤーから遠い爆発ほど画面揺れを弱める。
-        const auto players = game->GetObjects<CPlayer>();
-        if (!players.empty() && players[0] != nullptr) {
-            const float playerDistance = (players[0]->GetPosition() - enemy->GetPosition()).Length();
-            if (playerDistance < MaxShakeDistance) {
-                const float shakePower = MaxShakePower * (1.0f - playerDistance / MaxShakeDistance);
-                game->GetCamera()->SetShake(ShakeSeconds, shakePower);
-            }
-        }
-
-        if (!game->GetObjects<ParticleManager>().empty()) {
-            const auto billboardPools = game->GetObjects<ExplosinManager>();
-            if (!billboardPools.empty()) {
-                if (billboard* explosion = billboardPools[0]->Spawn()) {
-                    explosion->SetPosition(m_position.x, m_position.y, m_position.z);
-                    explosion->SetScale(ExplosionScale, ExplosionScale, ExplosionScale);
-                    explosion->SetAnim(ExplosionFrameSeconds, false);
-                }
-            }
-        }
-
-        // 演出用プールの有無にかかわらず、1発につき命中は1回だけ。
-        SetActive(false);
+    }
+    if (firstFraction <= 1.0f) {
+        m_position = DirectX::SimpleMath::Vector3::Lerp(movement.start, movement.end, firstFraction);
+    } else if (m_bezier.IsActive()) {
         return;
+    }
+
+    // 直撃も爆風に含め、重なった敵は1体につき一度だけ撃破処理へ渡す。
+    SetActive(false);
+    GameSettings::PlayExplosionSound();
+    for (EnemyTarget* enemy : enemies) {
+        if (enemy && enemy->GetActive() && !enemy->IsDead()) {
+            int damage = BlastDamage(m_damage, m_position, enemy->GetCollisionSphere());
+            if (damage > 0) {
+                enemy->OnDirectionalHit(damage, enemy->GetPosition() - m_position);
+            }
+        }
+    }
+    const auto explosionManagers = game->GetObjects<ExplosionManager>();
+    if (!explosionManagers.empty() && explosionManagers[0] != nullptr) {
+        explosionManagers[0]->CreateExplosion(m_position);
+    }
+
+    // プレイヤーから遠い爆発ほど画面揺れを弱める。
+    const auto players = game->GetObjects<CPlayer>();
+    if (!players.empty() && players[0] != nullptr) {
+        const float playerDistance = (players[0]->GetPosition() - m_position).Length();
+        if (playerDistance < MaxShakeDistance) {
+            const float shakePower = MaxShakePower * (1.0f - playerDistance / MaxShakeDistance);
+            game->GetCamera()->SetShake(ShakeSeconds, shakePower);
+        }
+    }
+
+    const auto billboardPools = game->GetObjects<ExplosinManager>();
+    if (!billboardPools.empty()) {
+        if (billboard* explosion = billboardPools[0]->Spawn()) {
+            explosion->SetPosition(m_position.x, m_position.y, m_position.z);
+            explosion->SetScale(ExplosionScale, ExplosionScale, ExplosionScale);
+            explosion->SetAnim(ExplosionFrameSeconds, false);
+        }
     }
 }
 

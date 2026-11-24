@@ -73,6 +73,8 @@ private:
     std::unique_ptr<TestModel> m_model;
     /// モデルを構成する各パーツ。
     std::array<std::unique_ptr<TestCube>, PartCount> m_parts;
+    /// FBXを利用できないときに簡易モデルの被弾色を描く資源。
+    std::shared_ptr<EnemyTint> m_partTint;
     /// 通常種の最大HP。亜種・希少種の初期HPもこの値から計算する。
     static constexpr int BaseHp = 4;
     /// 現在の体力。出現時に種別の倍率を適用する。

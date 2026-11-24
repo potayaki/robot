@@ -122,19 +122,18 @@ bool TitleRobotFigure::Init() {
     // 左右は骨の向きが反対。照準回転後の行列で銃口と銃身軸の両方を変換する。
     for (int i = 0; i < static_cast<int>(m_guns.size()); ++i) {
         const bool nearGun = i == 0;
-        const int top = rig.FindNode(nearGun ? "ShotgunTop_L" : "ShotgunTop_R");
-        const int bottom = rig.FindNode(nearGun ? "ShotgunBot_L" : "ShotgunBot_R");
+        const auto& mount = rig.GetGuns()[i];
+        const int top = mount.top;
+        const int bottom = mount.bottom;
         if (top < 0 || bottom < 0) {
             std::cerr << "Title robot: missing shotgun joint\n";
             return false;
         }
-        const float sign = nearGun ? 1.0f : -1.0f;
         gunForNode[top] = gunForNode[bottom] = i;
         const auto& bone = matrices[top];
-        const auto socket = Position(bone * (sign * aiVector3D(43.0614f, -30.5788f, 295.925f)));
-        const auto axis = aiMatrix3x3(bone) * aiVector3D(0, 0, sign);
-        Vector3 direction(axis.x, axis.y, axis.z);
-        direction.Normalize();
+        const auto socket = Position(mount.Muzzle(bone));
+        const auto axis = mount.Axis(bone);
+        const Vector3 direction(axis.x, axis.y, axis.z);
         auto& gun = m_guns[i];
         gun.socket = socket;
         gun.axis = direction;

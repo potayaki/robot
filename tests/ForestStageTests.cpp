@@ -34,6 +34,12 @@ namespace {
 
     void CheckRollingTerrain() {
         using namespace ForestLayout;
+        const auto checkNormal = [](float x, float z, float riseX, float riseZ) {
+            const Vector3 normal = GroundNormal(x, z);
+            assert(normal.y > 0 && std::abs(normal.LengthSquared() - 1.0f) < 0.00001f);
+            assert(std::abs(normal.Dot(Vector3(TerrainCell, riseX, 0))) < 0.0001f);
+            assert(std::abs(normal.Dot(Vector3(0, riseZ, TerrainCell))) < 0.0001f);
+        };
         // 各セルの対角線の両側で、足や弾が描画メッシュと同じ高さを参照する。
         for (int z = -1000; z < CampMaxZ; z += TerrainCell) {
             for (int x = -760; x < 760; x += TerrainCell) {
@@ -45,8 +51,12 @@ namespace {
                 assert(std::abs(GroundHeight(x + quarter, z + quarter) - (2 * a + b + c) * 0.25f) < 0.001f);
                 assert(std::abs(GroundHeight(x + 3 * quarter, z + 3 * quarter) - (b + c + 2 * d) * 0.25f) <
                        0.001f);
+                checkNormal(x + quarter, z + quarter, b - a, c - a);
+                checkNormal(x + 3 * quarter, z + 3 * quarter, d - c, d - b);
             }
         }
+        assert(GroundNormal(0, GateZ) == Vector3::Up);
+        assert(GroundNormal(0, TerrainMaxZ + TerrainCell) == Vector3::Up);
         for (const Area area : {Area::Entrance, Area::Camp}) {
             float ascent = 0;
             float descent = 0;

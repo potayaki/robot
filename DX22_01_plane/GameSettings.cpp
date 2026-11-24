@@ -112,6 +112,8 @@ namespace {
         enum Cue {
             Menu,
             Shot,
+            Impact,
+            Defeat,
             StartClick,
             StartShot,
             Count
@@ -121,6 +123,10 @@ namespace {
         Microsoft::WRL::ComPtr<IXAudio2> engine;
         IXAudio2MasteringVoice* master = nullptr;
         std::array<IXAudio2SourceVoice*, Count> voices{};
+        /// 高速装填でも前の発砲音の余韻を重ねられる予備ボイス。
+        IXAudio2SourceVoice* alternateShot = nullptr;
+        /// 効果音の音程専用。敵や報酬の抽選には使わない。
+        uint32_t pitchState = 1993;
         bool ownsCom = false;
 
         void ApplyVolume() {
@@ -149,7 +155,6 @@ namespace {
             format.nAvgBytesPerSec = SampleRate * format.nBlockAlign;
             constexpr double TwoPi = 6.283185307179586;
             samples[Menu].resize(2400);
-            samples[Shot].resize(2400);
             for (unsigned i = 0; i < samples[Menu].size(); ++i) {
                 const double t = static_cast<double>(i) / SampleRate;
                 const double fade = (1.0 - std::exp(-t * 950.0)) *
@@ -157,8 +162,31 @@ namespace {
                 samples[Menu][i] =
                     static_cast<float>(0.20 * fade * std::exp(-t * 22) *
                                        (std::sin(TwoPi * 660 * t) + 0.24 * std::sin(TwoPi * 990 * t)));
-                samples[Shot][i] = static_cast<float>(0.27 * fade * std::exp(-t * 42) *
-                                                      std::sin(TwoPi * (760 * t - 3100 * t * t)));
+            }
+            // 発射は低い機械音、命中は短い金属音、撃破には下降する低音と明るい余韻を重ねる。
+            samples[Shot].resize(SampleRate * 75 / 1000);
+            samples[Impact].resize(SampleRate * 55 / 1000);
+            samples[Defeat].resize(SampleRate * 18 / 100);
+            uint32_t grain = 719u;
+            for (size_t i = 0; i < samples[Defeat].size(); ++i) {
+                const double t = static_cast<double>(i) / SampleRate;
+                const double attack = 1.0 - std::exp(-t * 2200.0);
+                grain = grain * 1664525u + 1013904223u;
+                const double noiseSample = 2.0 * grain / UINT32_MAX - 1.0;
+                if (i < samples[Shot].size()) {
+                    const double body = std::sin(TwoPi * (90.0 * t + 1.2 * (1.0 - std::exp(-t * 75.0))));
+                    samples[Shot][i] =
+                        static_cast<float>(attack * (0.26 * std::exp(-t * 65.0) * body +
+                                                     0.22 * std::exp(-t * 104.0) * noiseSample));
+                }
+                if (i < samples[Impact].size()) {
+                    const double tick = std::sin(TwoPi * 1180.0 * t) + 0.5 * std::sin(TwoPi * 2130.0 * t);
+                    samples[Impact][i] = static_cast<float>(attack * std::exp(-t * 92.0) * 0.21 * tick);
+                }
+                const double drop = std::sin(TwoPi * (64.0 * t + 3.0 * (1.0 - std::exp(-t * 30.0))));
+                const double ring = std::sin(TwoPi * 590.0 * t) + 0.55 * std::sin(TwoPi * 885.0 * t);
+                samples[Defeat][i] = static_cast<float>(
+                    attack * (0.34 * std::exp(-t * 26.0) * drop + 0.17 * std::exp(-t * 35.0) * ring));
             }
             // 展示が起動する短い金属音と、低音が少し残る発砲音。
             samples[StartClick].resize(SampleRate * 6 / 100);
@@ -182,6 +210,7 @@ namespace {
             for (auto& voice : voices) {
                 engine->CreateSourceVoice(&voice, &format);
             }
+            engine->CreateSourceVoice(&alternateShot, &format);
             ApplyVolume();
         }
 
@@ -192,8 +221,16 @@ namespace {
             }
             XAUDIO2_VOICE_STATE state{};
             voice->GetState(&state, XAUDIO2_VOICE_NOSAMPLESPLAYED);
+            if (state.BuffersQueued && cue == Shot && alternateShot) {
+                voice = alternateShot;
+                voice->GetState(&state, XAUDIO2_VOICE_NOSAMPLESPLAYED);
+            }
             if (state.BuffersQueued) {
                 return;
+            }
+            if (cue == Shot || cue == Impact || cue == Defeat) {
+                pitchState = pitchState * 1664525u + 1013904223u;
+                voice->SetFrequencyRatio(0.94f + 0.12f * static_cast<float>(pitchState >> 16) / 65535.0f);
             }
             XAUDIO2_BUFFER buffer{};
             buffer.pAudioData = reinterpret_cast<const BYTE*>(samples[cue].data());
@@ -205,6 +242,10 @@ namespace {
         }
 
         void Shutdown() {
+            if (alternateShot) {
+                alternateShot->DestroyVoice();
+                alternateShot = nullptr;
+            }
             for (auto& voice : voices) {
                 if (voice) {
                     voice->DestroyVoice();
@@ -248,6 +289,18 @@ void GameSettings::PlayMenuSound() {
 
 void GameSettings::PlayShotSound() {
     audio.Play(GameAudio::Shot);
+}
+
+void GameSettings::PlayImpactSound() {
+    audio.Play(GameAudio::Impact);
+}
+
+void GameSettings::PlayDefeatSound() {
+    audio.Play(GameAudio::Defeat);
+}
+
+void GameSettings::PlayExplosionSound() {
+    audio.Play(GameAudio::StartShot);
 }
 
 void GameSettings::PlayStartSound() {

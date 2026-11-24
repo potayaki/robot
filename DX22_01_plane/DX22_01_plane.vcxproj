@@ -288,6 +288,7 @@
     <ClInclude Include="CEnemy.h" />
     <ClInclude Include="CFlyingEnemy.h" />
     <ClInclude Include="EnemyTarget.h" />
+    <ClInclude Include="EnemyHitReaction.h" />
     <ClInclude Include="SurvivorProgression.h" />
     <ClInclude Include="CEnemySpawn.h" />
     <ClInclude Include="CMiniMap.h" />
@@ -295,6 +296,7 @@
     <ClInclude Include="Collision.h" />
     <ClInclude Include="COrbitalOrb.h" />
     <ClInclude Include="CParticle.h" />
+    <ClInclude Include="ShotParticleMesh.h" />
     <ClInclude Include="CEmitter.h" />
     <ClInclude Include="CPlayer.h" />
     <ClInclude Include="RobotAnimationRig.h" />

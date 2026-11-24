@@ -10,9 +10,9 @@
 #include "AimCursor.h"
 #include "ForestTerrain.h"
 #include <algorithm>
+#include <cmath>
 #ifdef _DEBUG
 #include "imgui.h"
-#include <cmath>
 #endif
 using namespace DirectX::SimpleMath;
 
@@ -23,6 +23,8 @@ void Camera::Init() {
     m_position = Vector3(0.0f, 20.0f, -50.0f);
     m_target = Vector3(0.0f, 0.0f, 0.0f);
     m_cameraDirection = 3.14f;
+    m_shotKickPending = false;
+    m_shotRecoilTime = 0.0f;
 
     m_width = Application::GetWidth();
 }
@@ -31,6 +33,13 @@ void Camera::Init() {
 //更新処理
 //=======================================
 void Camera::Update() {
+    if (m_shotKickPending) {
+        // バーストや連射でも1発分を上限にし、新しい反動を照準計算の前に確定する。
+        m_shotRecoilTime = ShotRecoilSeconds;
+        m_shotKickPending = false;
+    } else {
+        GameTime::CountDown(m_shotRecoilTime, GameTime::DeltaSeconds());
+    }
     //Debug用のカメラ操作
 
 #ifdef _DEBUG
@@ -113,9 +122,10 @@ void Camera::Update() {
     //-------------------------------------
     if (m_shakeTime > 0.0f) {
         // -1.0 ～ 1.0 のランダムな乱数を作って、強さを掛け算する
-        float rx = ((rand() % 100) / 50.0f - 1.0f) * m_shakePower;
-        float ry = ((rand() % 100) / 50.0f - 1.0f) * m_shakePower;
-        float rz = ((rand() % 100) / 50.0f - 1.0f) * m_shakePower;
+        const float strength = m_shakePower * m_shakeTime / m_shakeDuration;
+        float rx = ((rand() % 100) / 50.0f - 1.0f) * strength;
+        float ry = ((rand() % 100) / 50.0f - 1.0f) * strength;
+        float rz = ((rand() % 100) / 50.0f - 1.0f) * strength;
 
         // カメラ位置と注視点を同時に揺らすと画面全体が揺れる
         m_position.x += rx;
@@ -271,7 +281,8 @@ void Camera::SetCamera(int mode) {
 
         // ビュー変換後列作成
         Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
-        m_viewMatrix = DirectX::XMMatrixLookAtLH(m_position, m_target, up); //左手系
+        const auto pose = GetViewPose();
+        m_viewMatrix = DirectX::XMMatrixLookAtLH(pose.eye, pose.target, up); //左手系
 
         Renderer::SetViewMatrix(&m_viewMatrix);
 
@@ -317,12 +328,45 @@ void Camera::SetTarget(DirectX::SimpleMath::Vector3 target) {
     m_target = target;
 }
 
+Camera::ViewPose Camera::GetViewPose() const {
+    ViewPose pose{m_position, m_target};
+    if (m_shotRecoilTime <= 0.0f) {
+        return pose;
+    }
+#ifdef _DEBUG
+    if (m_debugFreeCamera) {
+        return pose;
+    }
+#endif
+    Vector3 forward = m_target - m_position;
+    const float distance = forward.Length();
+    if (distance < 0.0001f) {
+        return pose;
+    }
+    forward /= distance;
+    Vector3 screenUp = Vector3::UnitY - forward * forward.y;
+    if (screenUp.LengthSquared() < 0.0001f) {
+        return pose;
+    }
+    screenUp.Normalize();
+
+    constexpr float pullDistance = 4.0f; // 発射直後の後退量（ワールド単位）。
+    constexpr float pitch = DirectX::XMConvertToRadians(0.7f);
+    const float remaining = m_shotRecoilTime / ShotRecoilSeconds;
+    const float strength = remaining * remaining;
+    const float pull = pullDistance * strength;
+    pose.eye -= forward * pull;
+    pose.target += screenUp * ((distance + pull) * std::tan(pitch) * strength);
+    return pose;
+}
+
 //-------------------------------------
 //マウスレイを取得
 //-------------------------------------
 AimCursor::Region Camera::GetAimCursor() const {
     const auto mouse = Input::GetMousePosition();
-    return AimCursor::Region(m_position, m_target, Vector2(mouse.x, mouse.y),
+    const auto pose = GetViewPose();
+    return AimCursor::Region(pose.eye, pose.target, Vector2(mouse.x, mouse.y),
                              static_cast<float>(Application::GetHeight()));
 }
 
@@ -345,7 +389,8 @@ bool Camera::GetMouseRay(DirectX::SimpleMath::Vector3& rayOrigin,
 
     const float tanHalfFov = tanf(fov * 0.5f);
 
-    Vector3 forward = m_target - m_position;
+    const auto pose = GetViewPose();
+    Vector3 forward = pose.target - pose.eye;
     if (forward.LengthSquared() < 0.0001f) {
         return false;
     }
@@ -362,7 +407,7 @@ bool Camera::GetMouseRay(DirectX::SimpleMath::Vector3& rayOrigin,
     rayDirection = forward + right * (ndcX * aspect * tanHalfFov) + up * (ndcY * tanHalfFov);
 
     rayDirection.Normalize();
-    rayOrigin = m_position;
+    rayOrigin = pose.eye;
 
     return true;
 }
