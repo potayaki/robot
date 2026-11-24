@@ -2,14 +2,41 @@
 /// @brief 低HP時の画面ノイズ演出と、描画結果の取り込み。
 
 #include "LowHealthGlitch.h"
+#include <cmath>
 
 namespace {
     /// 画面演出専用の定数・画像・サンプラーのスロット。対応HLSLのb7/t7/s7に合わせる。
     constexpr UINT GlitchShaderSlot = 7;
-    /// 強度・時刻・画面幅・画面高さの4成分をGPUへ渡す。
-    constexpr UINT GlitchConstantsBytes = sizeof(float) * 4;
+
+    // HLSLのb7と同じ配置。細い筋の時計と、横ずれ一回分の進行度を渡す。
+    struct alignas(16) GlitchConstants {
+        float strength;
+        float time;
+        float resolution[2];
+        UINT burstIndex;
+        float burstPhase;
+        float padding[2];
+    };
+
     /// 頂点IDから全画面を覆う大きな三角形を生成する。
     constexpr UINT FullScreenVertexCount = 3;
+    /// 横ずれの発生間隔とシェーダーの模様切り替えに共通の再生倍率。
+    constexpr float GlitchPlaybackSpeed = 1.5f;
+
+    bool GetActiveBurst(GlitchConstants& data) {
+        // ゲーム時間から開始位置を抽選し、ポーズ中は同じ瞬間に留める。単位は秒。
+        constexpr float WindowSeconds = 0.75f;
+        constexpr float MaxDelaySeconds = 0.28f;
+        constexpr float MinDurationSeconds = 0.10f;
+        constexpr float MaxDurationSeconds = 0.40f;
+        const float window = std::floor(data.time / WindowSeconds);
+        const double sample = std::sin(window * 12.9898) * 43758.5453;
+        const float start = MaxDelaySeconds * static_cast<float>(sample - std::floor(sample));
+        const float elapsed = data.time - window * WindowSeconds - start;
+        data.burstIndex = static_cast<UINT>(window);
+        data.burstPhase = elapsed / std::lerp(MinDurationSeconds, MaxDurationSeconds, data.strength);
+        return data.burstPhase >= 0.0f && data.burstPhase < 1.0f;
+    }
 } // namespace
 
 bool LowHealthGlitch::Init() {
@@ -26,7 +53,7 @@ bool LowHealthGlitch::Init() {
         FAILED(device->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), nullptr, &m_ps))) {
         return false;
     }
-    if (!Renderer::CreateConstantBuffer(GlitchConstantsBytes, m_constants.ReleaseAndGetAddressOf())) {
+    if (!Renderer::CreateConstantBuffer(sizeof(GlitchConstants), m_constants.ReleaseAndGetAddressOf())) {
         return false;
     }
     D3D11_SAMPLER_DESC sampler{};
@@ -44,7 +71,10 @@ bool LowHealthGlitch::Init() {
 }
 
 void LowHealthGlitch::Draw(float strength, float time) {
-    if (strength <= 0) {
+    GlitchConstants data{};
+    data.strength = strength;
+    data.time = time * GlitchPlaybackSpeed;
+    if (strength <= 0 || !GetActiveBurst(data)) {
         return;
     }
     if (!m_raster && !Init()) {
@@ -119,8 +149,9 @@ void LowHealthGlitch::Draw(float strength, float time) {
     Ptr<ID3D11SamplerState> sampler;
     context->PSGetSamplers(GlitchShaderSlot, 1, &sampler);
 
-    const float data[4] = {strength, time, static_cast<float>(desc.Width), static_cast<float>(desc.Height)};
-    context->UpdateSubresource(m_constants.Get(), 0, nullptr, data, 0, 0);
+    data.resolution[0] = static_cast<float>(desc.Width);
+    data.resolution[1] = static_cast<float>(desc.Height);
+    context->UpdateSubresource(m_constants.Get(), 0, nullptr, &data, 0, 0);
     Renderer::SetDepthEnable(false);
     Renderer::SetBlendState(BS_NONE);
     context->RSSetState(m_raster.Get());

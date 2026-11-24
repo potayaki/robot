@@ -568,8 +568,9 @@ void Game::Draw() {
     const auto glitchPlayers = m_instance->GetObjects<CPlayer>();
     if (!glitchPlayers.empty()) {
         auto player = glitchPlayers[0];
+        const float glitchTime = static_cast<float>(m_instance->m_gameTime) + m_instance->m_deathElapsed;
         m_instance->m_lowHealthGlitch.Draw(LowHealthGlitchStrength(player->GetHp(), player->GetMaxHp()),
-                                           static_cast<float>(m_instance->m_gameTime));
+                                           glitchTime);
     }
     // Collisionの線でHP・クロスヘア・ミニマップを隠さないよう、HUDは最後に重ねる。
     Renderer::SetDepthEnable(false);
