@@ -114,6 +114,7 @@ namespace {
             Shot,
             Impact,
             Defeat,
+            Experience,
             StartClick,
             StartShot,
             Count
@@ -187,6 +188,16 @@ namespace {
                 const double ring = std::sin(TwoPi * 590.0 * t) + 0.55 * std::sin(TwoPi * 885.0 * t);
                 samples[Defeat][i] = static_cast<float>(
                     attack * (0.34 * std::exp(-t * 26.0) * drop + 0.17 * std::exp(-t * 35.0) * ring));
+            }
+            // 回収は撃破音より軽い上昇チャイム。単音の周波数を760Hzから1220Hzへ滑らかに上げる。
+            constexpr double pickupDuration = 0.105;
+            samples[Experience].resize(static_cast<size_t>(SampleRate * pickupDuration));
+            for (size_t i = 0; i < samples[Experience].size(); ++i) {
+                const double t = static_cast<double>(i) / SampleRate;
+                const double progress = static_cast<double>(i) / (samples[Experience].size() - 1);
+                const double phase = TwoPi * t * (760.0 + 230.0 * progress);
+                const double envelope = (1.0 - std::exp(-t * 800.0)) * std::exp(-t * 18.0) * (1.0 - progress);
+                samples[Experience][i] = static_cast<float>(0.20 * envelope * std::sin(phase));
             }
             // 展示が起動する短い金属音と、低音が少し残る発砲音。
             samples[StartClick].resize(SampleRate * 6 / 100);
@@ -297,6 +308,10 @@ void GameSettings::PlayImpactSound() {
 
 void GameSettings::PlayDefeatSound() {
     audio.Play(GameAudio::Defeat);
+}
+
+void GameSettings::PlayExperienceSound() {
+    audio.Play(GameAudio::Experience);
 }
 
 void GameSettings::PlayExplosionSound() {

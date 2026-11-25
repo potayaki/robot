@@ -13,9 +13,9 @@ namespace UpgradeBalance {
     /// 画面上の経験値1に対応する内部値。百分率の端数を整数で保持する。
     inline constexpr int ExperienceUnit = 100;
     /// レベル1から2に上がるために必要な経験値。
-    inline constexpr int InitialRequiredExperience = 5;
+    inline constexpr int InitialRequiredExperience = 40;
     /// レベルごとに増える必要経験値。
-    inline constexpr int RequiredExperiencePerLevel = 3;
+    inline constexpr int RequiredExperiencePerLevel = 150;
     /// 一度に提示するレベルアップ報酬の最大数。
     inline constexpr size_t ChoiceCount = 3;
     /// 経験値スキル1段階あたりの加算率（百分率）。

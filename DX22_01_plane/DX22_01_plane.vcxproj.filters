@@ -734,6 +734,27 @@
     <ClInclude Include="CSpanner.h">
       <Filter>ヘッダー ファイル\Object</Filter>
     </ClInclude>
+    <ClCompile Include="CExperienceOrbManager.cpp">
+      <Filter>ソース ファイル\Object</Filter>
+    </ClCompile>
+    <ClInclude Include="CExperienceOrbManager.h">
+      <Filter>ヘッダー ファイル\Object</Filter>
+    </ClInclude>
+    <ClCompile Include="ExperienceOrbRenderer.cpp">
+      <Filter>ソース ファイル\Object</Filter>
+    </ClCompile>
+    <ClInclude Include="ExperienceOrbRenderer.h">
+      <Filter>ヘッダー ファイル\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="ExperienceOrb.h">
+      <Filter>ヘッダー ファイル\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="ExperienceOrbDrop.h">
+      <Filter>ヘッダー ファイル\Object</Filter>
+    </ClInclude>
+    <None Include="shader\experienceOrbPS.hlsl">
+      <Filter>リソース ファイル\PS</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RobotSpiderIK.cpp">

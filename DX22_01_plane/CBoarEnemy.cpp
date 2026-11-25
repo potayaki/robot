@@ -186,7 +186,7 @@ void CBoarEnemy::OnHit(int& damage) {
         corpse->Start(std::move(m_model), m_position - Vector3(0, m_collisionRadius, 0), m_rotation.y,
                       m_modelScale, EnemyVariants::Tint(EnemySpecies::Boar, GetRarity()));
     }
-    Defeat(m_experience, m_presentChance);
+    Defeat(m_orbDropWeight, m_presentChance);
 }
 
 void CBoarEnemy::Uninit() {

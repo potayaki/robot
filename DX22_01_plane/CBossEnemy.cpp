@@ -325,7 +325,8 @@ void CBossEnemy::OnHit(int& damage) {
         return;
     }
     m_shots.clear();
-    Defeat(15, 100);
+    constexpr int BossOrbDropWeight = 15;
+    Defeat(BossOrbDropWeight, 100);
     for (auto battle : Game::GetInstance()->GetObjects<CBossBattle>()) {
         battle->OnBossDefeated(m_kind);
     }

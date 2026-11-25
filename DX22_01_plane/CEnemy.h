@@ -60,8 +60,8 @@ private:
     SlimeVariant m_variant = SlimeVariant::Normal;
     /// 標準モデルに対する体格の倍率。見た目と判定半径に使用する。
     float m_size = 1.0f;
-    /// 撃破時にプレイヤーへ渡す経験値。
-    int m_experience = 1;
+    /// 経験値オーブ10粒を落とす抽選の基礎重み。
+    int m_orbDropWeight = 1;
     /// ダッシュ周期内の経過秒数。
     float m_moveTime = 0.0f;
 

@@ -232,8 +232,10 @@ public:
         return IsChoosingUpgrade() || m_showLoadout;
     }
 
-    // 撃破報酬、プレゼント、画面表示から呼ばれる成長システムの入口。
-    void OnEnemyDefeated(int experience);
+    /// 撃破を記録し、敵のワールド座標に経験値オーブを落とす。
+    void OnEnemyDefeated(const DirectX::SimpleMath::Vector3& position, int orbDropWeight);
+    /// オーブを回収したときに経験値を加算し、レベルアップ選択を開始する。
+    void GainExperience(int experience);
     void GivePresentReward();
     void DrawSurvivorUI();
     DirectX::SimpleMath::Vector3 GetTurretFollowPosition() const;

@@ -49,8 +49,8 @@ int EnemyTarget::SupportedOutgoingDamage(int damage) const {
                : damage;
 }
 
-void EnemyTarget::Defeat(int experience, int presentChance) {
-    // 敵の種類によらず共通の撃破処理。経験値とドロップ率は呼び出し側で指定する。
+void EnemyTarget::Defeat(int orbDropWeight, int presentChance) {
+    // 経験値オーブ10粒の抽選重みとプレゼントの抽選率は敵の種類で決まる。
     // 同じフレームの複数の弾・範囲攻撃でも、報酬を一度だけ確定する。
     if (IsDead()) {
         return;
@@ -69,7 +69,7 @@ void EnemyTarget::Defeat(int experience, int presentChance) {
         return;
     }
     CPlayer* player = players[0];
-    player->OnEnemyDefeated(EnemyVariants::Experience(experience, GetRarity()));
+    player->OnEnemyDefeated(m_position, EnemyVariants::OrbDropWeight(orbDropWeight, GetRarity()));
 
     const Ground* ground = Ground::Current();
     const bool dropSpanner = rand() % 100 < std::clamp(CSpanner::m_spawnChancePercent, 0, 100);
@@ -79,9 +79,7 @@ void EnemyTarget::Defeat(int experience, int presentChance) {
         spanner->SetPosition(m_position.x, groundY, m_position.z);
     }
 
-    // 通常抽選に加え10体ごとに確定ドロップし、序盤でもプレゼントを試せるようにする。
-    if (rand() % 100 >= EnemyVariants::PresentChance(presentChance, GetRarity()) &&
-        player->GetKills() % 10 != 0) {
+    if (rand() % 100 >= EnemyVariants::PresentChance(presentChance, GetRarity())) {
         return;
     }
 

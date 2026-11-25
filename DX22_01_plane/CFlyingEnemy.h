@@ -63,8 +63,8 @@ private:
     /// 急降下でプレイヤーへ与えるダメージ量。
     int m_contactDamage = 3;
 
-    /// 撃破時に渡す経験値。
-    int m_experience = 2;
+    /// 経験値オーブ10粒を落とす抽選の基礎重み。
+    int m_orbDropWeight = 2;
 
     /// 簡易ドローンを構成する部品数。
     static constexpr size_t PartCount = 9;

@@ -23,15 +23,15 @@ namespace {
         float speed;
         /// 接触時のダメージ量。
         int damage;
-        /// 撃破時の経験値。
-        int experience;
+        /// 経験値オーブ10粒を落とす抽選の基礎重み。
+        int orbDropWeight;
         /// プレゼントを落とす確率（%）。
         int presentChance;
     };
 
-    constexpr SlimeStats NormalStats{1.0f, 3, 30.0f, 2, 1, 10};
-    constexpr SlimeStats RunnerStats{0.7f, 2, 57.0f, 2, 2, 10};
-    constexpr SlimeStats BruteStats{1.8f, 12, 18.0f, 6, 5, 25};
+    constexpr SlimeStats NormalStats{1.0f, 3, 30.0f, 2, 1, 1};
+    constexpr SlimeStats RunnerStats{0.7f, 2, 57.0f, 2, 2, 1};
+    constexpr SlimeStats BruteStats{1.8f, 12, 18.0f, 6, 5, 4};
 
     constexpr float SlimeFacingOffset = DirectX::XM_PI; // モデルの正面はゲームの+Zと逆向き
     // FBXを0.2倍・X軸-30ラジアンにしたとき、モデルの最下点は原点より約0.5下にある。
@@ -127,7 +127,7 @@ void CEnemy::SetVariant(SlimeVariant variant) {
     m_hp = EnemyVariants::Health(stats.hp, GetRarity());
     m_speed = stats.speed;
     m_damage = stats.damage;
-    m_experience = stats.experience;
+    m_orbDropWeight = stats.orbDropWeight;
     m_dropPercent = stats.presentChance;
 }
 
@@ -171,6 +171,6 @@ void CEnemy::OnHit(int& damage) {
     // 共通の被弾処理ではダメージだけを扱い、爆発と画面揺れはミサイルの命中処理に任せる。
     m_hp -= SupportedIncomingDamage(damage); // 攻撃元のダメージ値は変更しない。
     if (m_hp <= 0) {
-        Defeat(m_experience, m_dropPercent);
+        Defeat(m_orbDropWeight, m_dropPercent);
     }
 }

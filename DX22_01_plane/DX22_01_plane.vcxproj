@@ -449,6 +449,13 @@
   <ItemGroup>
     <ClCompile Include="CSpanner.cpp" />
     <ClInclude Include="CSpanner.h" />
+    <ClCompile Include="CExperienceOrbManager.cpp" />
+    <ClInclude Include="CExperienceOrbManager.h" />
+    <ClCompile Include="ExperienceOrbRenderer.cpp" />
+    <ClInclude Include="ExperienceOrbRenderer.h" />
+    <ClInclude Include="ExperienceOrb.h" />
+    <ClInclude Include="ExperienceOrbDrop.h" />
+    <None Include="shader\experienceOrbPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RobotSpiderIK.cpp" />

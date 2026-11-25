@@ -9,6 +9,7 @@
 #include "billboard.h"
 #include "ExplosionManager.h"
 #include "CParticle.h"
+#include "CExperienceOrbManager.h"
 #include "CBullet.h"
 #include "CMissile.h"
 
@@ -100,12 +101,8 @@ void Game::Init() {
 
 #ifdef _DEBUG
     m_instance->m_collisionDebug.Init();
-    m_instance->m_scene = new Stage1Scene;
 #endif
-#ifndef _DEBUG
-    //最初のシーンを読み込む
     m_instance->m_scene = new TitleScene;
-#endif // !_DEBUG
 }
 
 // 更新
@@ -123,6 +120,8 @@ void Game::Update(double elapsedSeconds) {
     if (discardElapsed) {
         elapsedSeconds = 0.0;
     }
+
+
 
     auto players = m_instance->GetObjects<CPlayer>();
     CPlayer* player = players.empty() ? nullptr : players[0];
@@ -260,8 +259,8 @@ void Game::Update(double elapsedSeconds) {
 
             ImGui::Text("GameTime:%.2f", GetInstance()->m_gameTime);
             // 成長UIと実際の箱の取得を、待ち時間なしで確認するためのデバッグ操作。
-            if (ImGui::Button("Test kill (+20 EXP)")) {
-                GUIPlayer[0]->OnEnemyDefeated(20);
+            if (ImGui::Button("Test kill (drop EXP orbs)")) {
+                GUIPlayer[0]->OnEnemyDefeated(GUIPlayer[0]->GetPosition(), 1);
             }
             if (ImGui::Button("Drop present here")) {
                 auto box = GetInstance()->AddObject<CPresentBox>();
@@ -466,6 +465,7 @@ void Game::Draw() {
     // 透明な爆発と粒子は、生成された順番に関係なく本体の後で描く。
     const auto isEffect = [](Object* object) {
         return dynamic_cast<ParticleManager*>(object) != nullptr ||
+               dynamic_cast<CExperienceOrbManager*>(object) != nullptr ||
                dynamic_cast<ExplosionManager*>(object) != nullptr ||
                dynamic_cast<billboard*>(object) != nullptr ||
                dynamic_cast<ExplosinManager*>(object) != nullptr;

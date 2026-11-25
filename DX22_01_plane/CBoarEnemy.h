@@ -49,10 +49,10 @@ private:
     int m_hp = BaseHp;
     /// 突進がプレイヤーへ命中したときに与えるダメージ量。
     int m_chargeDamage = 6;
-    /// 撃破時にプレイヤーへ渡す経験値。
-    int m_experience = 4;
+    /// 経験値オーブ10粒を落とす抽選の基礎重み。
+    int m_orbDropWeight = 4;
     /// 撃破時にプレゼントを落とす確率（パーセント）。
-    int m_presentChance = 12;
+    int m_presentChance = 3;
     /// 当たり判定の球の半径（ワールド単位）。
     float m_collisionRadius = 14.0f;
     /// 元の高さ約3.5を、ゲーム内の高さ約28へ合わせる。

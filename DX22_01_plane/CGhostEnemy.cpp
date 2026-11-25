@@ -135,7 +135,8 @@ void CGhostEnemy::OnHit(int& damage) {
     m_hp -= damage;
     if (m_hp <= 0) {
         m_shots.clear();
-        Defeat(3, 10);
+        constexpr int GhostOrbDropWeight = 3;
+        Defeat(GhostOrbDropWeight, 2);
     }
 }
 

@@ -30,7 +30,7 @@ namespace {
          {UpgradeId::Vitality, u8"強化装甲", u8"最大HP +20、現在HPも20回復。", 5},
          {UpgradeId::Armor, u8"ダメージ軽減", u8"受けるダメージ -1。最低1ダメージは受ける。", 3},
          {UpgradeId::Regeneration, u8"自動修復", u8"3秒ごとにHPを2回復。強化するたび回復量 +2。", 5},
-         {UpgradeId::Experience, u8"学習回路", u8"撃破時に得る経験値 +20%。", 5},
+         {UpgradeId::Experience, u8"学習回路", u8"オーブの回収で得る経験値 +20%。", 5},
          {UpgradeId::BulletHoming, u8"誘導弾",
           u8"弾用カーソルの枠内で、照準の中心に最も近い敵へ通常弾が少し曲がる。レベルが上がると枠が広がり、旋"
           u8"回も強くなる。外れた先の枠内の敵にも再誘導。",

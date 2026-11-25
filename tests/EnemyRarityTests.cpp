@@ -14,16 +14,16 @@ int main() {
         assert(Health(base, EnemyRarity::Variant) > base);
         assert(Health(base, EnemyRarity::Rare) > Health(base, EnemyRarity::Variant));
         assert(Damage(base, EnemyRarity::Rare) >= Damage(base, EnemyRarity::Variant));
-        assert(Experience(base, EnemyRarity::Rare) > Experience(base, EnemyRarity::Variant));
+        assert(OrbDropWeight(base, EnemyRarity::Rare) > OrbDropWeight(base, EnemyRarity::Variant));
     }
     assert(Health(3, EnemyRarity::Variant) == 6 && Health(3, EnemyRarity::Rare) == 12);
     assert(Damage(3, EnemyRarity::Variant) == 5); // 1.5倍の端数を失わない。
     assert(Damage(0, EnemyRarity::Rare) == 0 && Damage(-3, EnemyRarity::Rare) == 0);
-    assert(Experience(-1, EnemyRarity::Rare) == 0);
+    assert(OrbDropWeight(-1, EnemyRarity::Rare) == 0);
     // 敵本来の抽選率によらず亜種・希少種は固定し、通常種は本来の抽選率を使う。
     for (const int base : {-40, 0, 10, 12, 25, 95, 100, 120}) {
-        assert(PresentChance(base, EnemyRarity::Variant) == 20);
-        assert(PresentChance(base, EnemyRarity::Rare) == 100);
+        assert(PresentChance(base, EnemyRarity::Variant) == 5);
+        assert(PresentChance(base, EnemyRarity::Rare) == 20);
         assert(PresentChance(base, EnemyRarity::Normal) == std::clamp(base, 0, 100));
     }
     assert(Normalize(static_cast<EnemyRarity>(-1)) == EnemyRarity::Normal);
