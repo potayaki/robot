@@ -9,6 +9,7 @@ namespace GameSettings {
     void PlayShotSound();
     void PlayImpactSound();
     void PlayDefeatSound();
+    void PlayExperienceSound();
     void PlayExplosionSound();
     void PlayStartSound();
     void PlayStartShotSound();

@@ -28,8 +28,8 @@ namespace EnemyVariants {
         float damageMultiplier;
         /// 接近・突進などの移動速度倍率。攻撃の予告時間は短縮しない。
         float speedMultiplier;
-        /// 撃破時の経験値倍率。
-        int experienceMultiplier;
+        /// 敵の種類ごとの、経験値オーブ10粒の抽選重みに掛ける倍率。
+        int orbDropWeightMultiplier;
         /// プレゼントの固定抽選率（%）。-1の通常種だけ敵本来の抽選率を使う。
         int presentChance;
     };
@@ -41,9 +41,9 @@ namespace EnemyVariants {
     constexpr Stats Get(EnemyRarity rarity) {
         switch (rarity) {
             case EnemyRarity::Variant:
-                return {2.0f, 1.5f, 1.12f, 2, 20};
+                return {2.0f, 1.5f, 1.12f, 2, 5};
             case EnemyRarity::Rare:
-                return {4.0f, 2.0f, 1.22f, 4, 100};
+                return {4.0f, 2.0f, 1.22f, 4, 20};
             default:
                 return {1.0f, 1.0f, 1.0f, 1, -1};
         }
@@ -57,8 +57,8 @@ namespace EnemyVariants {
         return base <= 0 ? 0 : static_cast<int>(std::ceil(base * Get(rarity).damageMultiplier));
     }
 
-    constexpr int Experience(int base, EnemyRarity rarity) {
-        return (std::max)(0, base) * Get(rarity).experienceMultiplier;
+    constexpr int OrbDropWeight(int base, EnemyRarity rarity) {
+        return (std::max)(0, base) * Get(rarity).orbDropWeightMultiplier;
     }
 
     constexpr int PresentChance(int base, EnemyRarity rarity) {

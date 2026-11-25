@@ -18,8 +18,8 @@ private:
 protected:
     /// プレイ時間に合わせた、現在フレームの被弾姿勢。
     EnemyHitPose HitPose();
-    // 全敵共通の撃破報酬。経験値とプレゼントを一度だけ付与する。
-    void Defeat(int experience, int presentChance);
+    // 敵ごとの10粒の抽選重みとプレゼントの抽選率から、撃破報酬を一度だけ生成する。
+    void Defeat(int orbDropWeight, int presentChance);
     // 攻撃元の整数ダメージを変更せず、現在つながっているGhostの倍率を適用する。
     int SupportedIncomingDamage(int damage) const;
     int SupportedOutgoingDamage(int damage) const;

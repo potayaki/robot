@@ -25,6 +25,7 @@
 #include "CEnemySpawn.h"
 #include "CPresentBox.h"
 #include "CSpanner.h"
+#include "CExperienceOrbManager.h"
 #include "ExplosionManager.h"
 #include "CAutoturret.h"
 #include "CBossBattle.h"
@@ -139,6 +140,7 @@ void Stage1Scene::Init() {
     m_mySceneObjects.push_back(Game::GetInstance()->AddObject<BulletManager>());
     m_mySceneObjects.push_back(Game::GetInstance()->AddObject<MissileManager>());
     m_mySceneObjects.push_back(Game::GetInstance()->AddObject<ParticleManager>());
+    m_mySceneObjects.push_back(Game::GetInstance()->AddObject<CExperienceOrbManager>());
 
     //--------------------
     //　UI　ミニマップ

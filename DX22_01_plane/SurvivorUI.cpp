@@ -94,11 +94,8 @@ void CPlayer::DrawSurvivorDebugUI() {
                          ImGuiSliderFlags_AlwaysClamp);
         ImGui::BeginDisabled(m_hp <= 0 || IsChoosingUpgrade());
         if (ImGui::Button(Text(u8"経験値を追加"))) {
-            // 撃破数やプレゼントの確定ドロップ条件を変えず、経験値だけ追加する。
-            m_progression.AddExperience(m_debugExperience);
-            if (IsChoosingUpgrade()) {
-                m_selectionDelay = m_selectionInputDelay;
-            }
+            // 撃破数を増やさず、経験値だけ追加する。
+            GainExperience(m_debugExperience);
         }
         ImGui::EndDisabled();
 
@@ -167,9 +164,9 @@ void CPlayer::DrawSurvivorDebugUI() {
     if (ImGui::CollapsingHeader(Text(u8"亜種・希少種の強さ"))) {
         for (const auto rarity : {EnemyRarity::Normal, EnemyRarity::Variant, EnemyRarity::Rare}) {
             const auto stats = EnemyVariants::Get(rarity);
-            ImGui::Text(Text(u8"%s：HP %.0f倍 / 攻撃 %.1f倍 / 速度 %.2f倍 / EXP %d倍"),
+            ImGui::Text(Text(u8"%s：HP %.0f倍 / 攻撃 %.1f倍 / 速度 %.2f倍 / 10粒の抽選重み %d倍"),
                         Text(EnemyVariants::Name(rarity)), stats.healthMultiplier, stats.damageMultiplier,
-                        stats.speedMultiplier, stats.experienceMultiplier);
+                        stats.speedMultiplier, stats.orbDropWeightMultiplier);
         }
         ImGui::TextWrapped("%s", Text(u8"攻撃力の端数は切り上げ。予告時間は通常種と共通です。"));
         ImGui::Text(Text(u8"プレゼント抽選：亜種 %d%% / 希少種 %d%%"),
@@ -247,7 +244,7 @@ void CPlayer::DrawSurvivorUI() {
 
     // ----- 2. 画面上部のレベル・HP・経験値ゲージ -----
     const float width = (std::min)(560.0f, display.x * 0.48f);
-    // 経験値は撃破と同時に直接加算する。ゲージで次のレベルまでの残量を示す。
+    // オーブの回収で増えた経験値をゲージに反映する。
     // 上部中央の既存タイマーと重ならないよう、その下に配置する。
     ImGui::SetNextWindowPos(ImVec2(display.x * 0.5f, 110.0f), 0, ImVec2(0.5f, 0.0f));
     ImGui::SetNextWindowSize(ImVec2(width, 0));

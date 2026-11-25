@@ -32,11 +32,11 @@ private:
     /// キノコの当たり判定半径。接地位置の計算にも使用する。
     float m_collisionRadius = 14.0f;
 
-    /// 武器で撃破されたときに渡す経験値。
-    int m_experience = 3;
+    /// 武器で撃破されたときに経験値オーブ10粒を落とす抽選の基礎重み。
+    int m_orbDropWeight = 3;
 
     /// 武器で撃破されたときのプレゼント確率（%）。
-    int m_presentChance = 10;
+    int m_presentChance = 2;
 
     /// このオブジェクトの見た目を描画するモデル。
     std::unique_ptr<MushroomModel> m_model;

@@ -40,6 +40,7 @@ $cases = @(
     @{ Name = 'BoarChargeTests'; Sources = @() },
     @{ Name = 'MushroomFuseTests'; Sources = @() },
     @{ Name = 'EnemyRarityTests'; Sources = @() },
+    @{ Name = 'ExperienceOrbTests'; Sources = @() },
     @{ Name = 'EnemySpawnTests'; Sources = @() },
     @{ Name = 'EnemyCrowdTests'; Sources = @() },
     @{ Name = 'EnemyTintTests'; Sources = @('EnemyTint.cpp') },

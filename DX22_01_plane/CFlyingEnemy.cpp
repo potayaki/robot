@@ -220,5 +220,5 @@ void CFlyingEnemy::OnHit(int& damage) {
         return;
     }
 
-    Defeat(m_experience, m_dropPercent); // 飛行型にも共通の経験値・地面へのプレゼント配置を適用する。
+    Defeat(m_orbDropWeight, m_dropPercent);
 }

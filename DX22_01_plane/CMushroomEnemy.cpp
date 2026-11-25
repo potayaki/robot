@@ -88,6 +88,6 @@ void CMushroomEnemy::OnHit(int& damage) {
     }
     m_hp -= SupportedIncomingDamage(damage);
     if (m_hp <= 0) {
-        Defeat(m_experience, m_presentChance);
+        Defeat(m_orbDropWeight, m_presentChance);
     }
 }

@@ -29,7 +29,7 @@ int main() {
     assert(!debugGrowth.DebugGrantUpgrade(UpgradeId::Count));
     assert(!debugGrowth.DebugGrantUpgrade(UpgradeId::Heal));
     assert(!debugGrowth.DebugGrantUpgrade(static_cast<UpgradeId>(-1)));
-    debugGrowth.AddExperience(6);
+    debugGrowth.AddExperience(UpgradeBalance::InitialRequiredExperience + 1);
     const int experienceBefore = debugGrowth.Experience();
     for (int i = 0; i < static_cast<int>(UpgradeId::Count); ++i) {
         const auto id = static_cast<UpgradeId>(i);
@@ -90,10 +90,15 @@ int main() {
     UpgradeId reward = UpgradeId::Heal;
     assert(!growth.Select(0, reward));
     growth.AddExperience(-5);
-    growth.AddExperience(4);
-    assert(growth.Level() == 1 && growth.Experience() == 400);
+    // 敵1体から36 EXPを回収したときは、戦闘を続けたままゲージが36/40まで進む。
+    growth.AddExperience(36);
+    assert(growth.Level() == 1 && !growth.IsChoosing() && growth.Experience() == 3600);
+    assert(growth.RequiredExperience() == 4000);
+    growth.AddExperience(3);
+    assert(growth.Level() == 1 && growth.Experience() == 3900);
     growth.AddExperience(1);
     assert(growth.Level() == 2 && growth.Experience() == 0 && growth.PendingChoices() == 1);
+    assert(growth.RequiredExperience() == 5500);
     assert(growth.Choices().size() == 3);
     assert(std::set<UpgradeId>(growth.Choices().begin(), growth.Choices().end()).size() == 3);
     const auto offered = growth.Choices();
@@ -104,8 +109,9 @@ int main() {
 
     // Multiple level-ups must retain overflow XP and require one selection per level.
     SurvivorProgression burst(42);
-    burst.AddExperience(24); // thresholds: 5 + 8 + 11
-    assert(burst.Level() == 4 && burst.Experience() == 0 && burst.PendingChoices() == 3);
+    burst.AddExperience(40 + 55 + 70 + 5);
+    assert(burst.Level() == 4 && burst.Experience() == 500 && burst.PendingChoices() == 3);
+    assert(burst.RequiredExperience() == 8500);
     for (int pending = 3; pending > 0; --pending) {
         assert(burst.Select(0, reward));
         assert(burst.PendingChoices() == pending - 1);
@@ -114,7 +120,7 @@ int main() {
 
     // Presents never consume pending level rewards; exhausted upgrades are excluded.
     SurvivorProgression chest(17);
-    chest.AddExperience(5);
+    chest.AddExperience(UpgradeBalance::InitialRequiredExperience);
     for (int i = 0; i < 200; ++i) {
         const auto item = chest.GrantPresent();
         assert(chest.PendingChoices() == 1 && chest.Level() == 2);

@@ -2,6 +2,7 @@
 /// @brief CPlayerのスキル取得、自動武器、回復、被ダメージ処理。
 
 #include "CPlayer.h"
+#include "CExperienceOrbManager.h"
 #include "Game.h"
 #include "Ground.h"
 #include "EnemyTarget.h"
@@ -42,10 +43,20 @@ namespace {
     }
 } // namespace
 
-void CPlayer::OnEnemyDefeated(int experience) {
-    // 敵のDefeatから呼ばれる入口。撃破数と経験値をまとめて更新する。
+void CPlayer::OnEnemyDefeated(const Vector3& position, int orbDropWeight) {
+    if (m_hp <= 0) {
+        return;
+    }
     ++m_kills;
-    // 死亡後に残った弾の撃破でレベルアップ画面を開き、分解演出を止めないようにする。
+    // ボス戦の進行判定に使う撃破数をこのフレームで更新する。
+    auto* game = Game::GetInstance();
+    const auto managers = game->GetObjects<CExperienceOrbManager>(true);
+    auto* manager = managers.empty() ? game->AddObject<CExperienceOrbManager>() : managers.front();
+    manager->Drop(position, orbDropWeight);
+}
+
+void CPlayer::GainExperience(int experience) {
+    // 自機が倒れた後にレベルアップ選択で死亡演出を止めない。
     if (m_hp <= 0) {
         return;
     }
