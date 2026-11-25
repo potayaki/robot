@@ -275,7 +275,7 @@ void CPlayer::DrawSurvivorUI() {
     ImGui::TextUnformatted(Text(u8"装備 / スキル"));
     ImGui::Separator();
     ImGui::TextUnformatted(Text(u8"通常弾：左クリック"));
-    ImGui::TextUnformatted(Text(u8"ミサイル：右クリック"));
+    ImGui::TextUnformatted(Text(u8"ミサイル：右クリックで白い×へ"));
 
     // 一覧は最大6種類まで。所持数は全部数え、残りの数と詳細画面の案内を出す。
     int ownedCount = 0;

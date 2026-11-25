@@ -66,6 +66,11 @@ public:
     /// 発射元から目標へ、指定した水平オフセット角（度）の軌道で発射する。
     void Shoot(Object& shooter, Object& target, float angleOffsetDegrees);
 
+    /// HUDが生存中の敵と照合する。プールへ戻ったミサイルには追尾先がない。
+    const Object* GetTrackingTarget() const {
+        return GetActive() ? m_target : nullptr;
+    }
+
     /// 現在のワールド位置を中心とする当たり判定の球を返す。
     Collision::Sphere GetCollisionSphere() override {
         return {m_position, m_colRadius};

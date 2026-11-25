@@ -17,6 +17,12 @@
 #include "CEmitter.h"
 #include <string>
 
+class EnemyTarget;
+
+namespace AimCursor {
+    class Region;
+}
+
 class CPlayer : public Object {
 private:
     /// 射撃クリックで報酬を即決しないようにする入力待ち時間（秒）。
@@ -160,6 +166,9 @@ public:
     void Move();
     //床との当たり判定
     void isGrounded();
+    /// 次の一斉射で狙う敵を照準中心に近い順で返す。発射とHUDで共用する。
+    std::vector<EnemyTarget*> GetMissileLockTargets(const AimCursor::Region& cursor,
+                                                    const std::vector<EnemyTarget*>& enemies) const;
     void StartMissile();
 
     DirectX::SimpleMath::Vector3 GetVelocity() {

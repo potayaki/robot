@@ -20,7 +20,46 @@ aiMatrix4x4 World(aiVector3D position, float yaw = 0) {
     return aiMatrix4x4(aiVector3D(0.025f), aiQuaternion(aiVector3D(0, 1, 0), yaw), position);
 }
 
+void CheckSupportWeightShift(const RobotAnimationRig& original) {
+    const float dt = 1.0f / 60;
+    const auto basis = aiMatrix3x3(World(aiVector3D(), 0.7f));
+    const auto forward = (basis * aiVector3D(0, 0, 1)).Normalize();
+    const auto lateral = (basis * aiVector3D(1, 0, 0)).Normalize();
+    for (float speed : {60.0f, -60.0f}) {
+        auto rig = original;
+        RobotSpiderIK ik;
+        assert(ik.Init(rig));
+        aiVector3D position;
+        bool shiftedLeft = false, shiftedRight = false;
+        for (int frame = 0; frame < 180; ++frame) {
+            position += forward * (speed * dt);
+            ik.Update(rig, dt, World(position, 0.7f), 0, true);
+            const auto& feet = ik.GetFeet();
+            const auto swing = std::find_if(feet.begin(), feet.end(), [](const auto& foot) {
+                return foot.swinging && foot.progress > 0.8f;
+            });
+            if (frame > 60 && swing != feet.end()) {
+                float support = 0.0f;
+                for (const auto& foot : feet) {
+                    if (!foot.swinging) {
+                        support += (foot.position - position) * lateral;
+                    }
+                }
+                const float shift = ik.GetBodyOffset() * lateral;
+                shiftedLeft |= support < 0.0f && shift < -0.10f;
+                shiftedRight |= support > 0.0f && shift > 0.10f;
+            }
+        }
+        assert(shiftedLeft && shiftedRight);
+        for (int frame = 0; frame < 60; ++frame) {
+            ik.Update(rig, dt, World(position, 0.7f), 0, true);
+        }
+        assert(std::abs(ik.GetBodyOffset() * lateral) < 0.001f);
+    }
+}
+
 void CheckStrideAndStopping(const RobotAnimationRig& original) {
+    CheckSupportWeightShift(original);
     for (int fps : {30, 60, 144}) {
         const float dt = 1.0f / fps;
         // 足を上げた直後・途中・着地直前のいずれで操作を離しても、Idleへ戻らない。
@@ -87,6 +126,68 @@ void CheckStrideAndStopping(const RobotAnimationRig& original) {
     }
 }
 
+void CheckDiagonalReversals(const RobotAnimationRig& original) {
+    const aiVector3D diagonals[] = {{1, 0, 1}, {-1, 0, 1}, {-1, 0, -1}, {1, 0, -1}};
+    for (int fps : {30, 60, 144}) {
+        const float dt = 1.0f / fps;
+        float maxError = 0.0f, maxSlide = 0.0f;
+        const auto advance = [&](RobotSpiderIK& ik, RobotAnimationRig& rig, const aiVector3D& position) {
+            const auto previousFeet = ik.GetFeet();
+            const auto previousContacts = ik.GetSolvedContacts();
+            ik.Update(rig, dt, World(position), -5, true);
+            maxError = (std::max)(maxError, ik.GetContactError());
+            int support = 0;
+            for (size_t i = 0; i < previousFeet.size(); ++i) {
+                const auto& foot = ik.GetFeet()[i];
+                support += !foot.swinging;
+                if (!foot.swinging && !previousFeet[i].swinging &&
+                    foot.stepNumber == previousFeet[i].stepNumber) {
+                    const auto slide = (ik.GetSolvedContacts()[i] - previousContacts[i]).Length();
+                    maxSlide = (std::max)(maxSlide, slide);
+                }
+            }
+            assert(support >= 3);
+            return support;
+        };
+        for (auto direction : diagonals) {
+            const auto frameTravel = direction.Normalize() * (60.0f * dt);
+            // 一周期（歩幅20 / 速度60）を6等分し、両方の3本組の一歩の途中で反転する。
+            for (int phase = 0; phase < 6; ++phase) {
+                const int turnFrame = fps + phase * fps / 18;
+                auto turnRig = original;
+                RobotSpiderIK turnIK;
+                assert(turnIK.Init(turnRig));
+                aiVector3D turnPosition(0, -5, 0);
+                turnIK.Update(turnRig, dt, World(turnPosition), -5, true);
+                for (int frame = 0; frame < turnFrame; ++frame) {
+                    turnPosition += frameTravel;
+                    advance(turnIK, turnRig, turnPosition);
+                }
+                // 同じ歩行姿勢から、即反転・1フレーム停止・全脚が着地してからの反転を比べる。
+                const int fullStopFrames = fps / 5;
+                for (int pauseFrames : {0, 1, fullStopFrames}) {
+                    auto rig = turnRig;
+                    auto ik = turnIK;
+                    auto position = turnPosition;
+                    for (int frame = 0; frame < pauseFrames; ++frame) {
+                        const int support = advance(ik, rig, position);
+                        if (frame + 1 == fullStopFrames) {
+                            assert(support == RobotSpiderIK::LegCount);
+                        }
+                    }
+                    for (int frame = 0; frame < fps / 2; ++frame) {
+                        position -= frameTravel;
+                        advance(ik, rig, position);
+                    }
+                }
+            }
+        }
+        std::cout << fps << "fps diagonal reversal error=" << maxError << " planted slide=" << maxSlide
+                  << std::endl;
+        assert(maxError < 0.15f && maxSlide < 0.15f);
+    }
+}
+
 void CheckSlopedContacts(const RobotAnimationRig& original) {
     auto rig = original;
     RobotSpiderIK ik;
@@ -114,91 +215,175 @@ void CheckSlopedContacts(const RobotAnimationRig& original) {
     }
 }
 
-void CheckSlopedJump(const RobotAnimationRig& original, bool walking) {
+void CheckSlopedJump(const RobotAnimationRig& original, bool walking, int fps, bool steep = false) {
     auto rig = original;
     RobotSpiderIK ik;
     assert(ik.Init(rig));
-    constexpr float dt = 1.0f / 60;
-    const auto takeoffHeight = [](float x, float z) { return 0.25f * x + 0.35f * z; };
-    const auto landingHeight = [](float x, float z) { return -0.2f * x - 0.15f * z; };
-    const auto restUp = aiMatrix3x3(*original.FindNodeTransform("Root_M")).Inverse() * aiVector3D(0, 1, 0);
-    const auto checkBodyUp = [&](const aiMatrix4x4& world, aiVector3D expected) {
-        auto actual = aiMatrix3x3(world * *rig.FindNodeTransform("Root_M")) * restUp;
-        assert((actual.Normalize() - expected.Normalize()).Length() < 0.001f);
+    const float dt = 1.0f / fps;
+    const int root = rig.FindNode("Root_M");
+    const int top = rig.FindNode("Top_M");
+    const auto restRoot = original.GetMatrices()[root];
+    const auto restUp = aiMatrix3x3(restRoot).Inverse() * aiVector3D(0, 1, 0);
+    const auto bodyUp = [&](const aiMatrix4x4& world) {
+        auto actual = aiMatrix3x3(world * rig.GetMatrices()[root]) * restUp;
+        return actual.Normalize();
     };
+    // FBXの基準姿勢を使い、胴体からの足先の変位をモデル軸・ワールド単位で比較する。
+    const auto bodyFeet = [&](const aiMatrix4x4& world) {
+        const auto toRest = restRoot * (world * rig.GetMatrices()[root]).Inverse();
+        auto feet = ik.GetSolvedContacts();
+        for (auto& foot : feet) {
+            foot = (toRest * foot - restRoot * aiVector3D()) * 0.025f;
+        }
+        return feet;
+    };
+    const auto distanceXZ = [](aiVector3D a, aiVector3D b) { return std::hypot(a.x - b.x, a.z - b.z); };
 
-    ik.Update(rig, dt, World(aiVector3D()), 0, false);
+    const aiVector3D takeoffSlope = steep ? aiVector3D(0.25f, 0, 0.35f) : aiVector3D(0.07f, 0, 0.04f);
+    const aiVector3D landingSlope = steep ? aiVector3D(-0.2f, 0, -0.15f) : aiVector3D(-0.04f, 0, -0.03f);
+    const auto normal = [](aiVector3D slope) { return aiVector3D(-slope.x, 1, -slope.z).Normalize(); };
+    const auto takeoffHeight = [&](float x, float z) { return takeoffSlope.x * x + takeoffSlope.z * z; };
     aiVector3D position;
     auto takeoff = World(position, 0.4f);
+    ik.Update(rig, dt, takeoff, 0, true);
+    const auto stance = bodyFeet(takeoff);
+    ik.Reset();
+    ik.Update(rig, dt, takeoff, 0, false);
     ik.Update(rig, dt, takeoff, 0, true, takeoffHeight);
-    const aiVector3D takeoffNormal(-0.25f, 1, -0.35f);
-    checkBodyUp(takeoff, takeoffNormal);
-
+    assert((bodyUp(takeoff) - normal(takeoffSlope)).Length() < 0.001f);
     if (walking) {
-        // 一歩の途中で実際に足が浮いた姿勢から踏み切る。
-        const auto raisedFoot = [&](const RobotSpiderIK::Foot& foot) {
+        const auto raised = [&](const RobotSpiderIK::Foot& foot) {
             return foot.swinging && foot.position.y > takeoffHeight(foot.position.x, foot.position.z) + 0.4f;
         };
-        for (int frame = 0; frame < 60; ++frame) {
+        for (int frame = 0; frame < fps; ++frame) {
             position.z += 60.0f * dt;
             position.y = takeoffHeight(position.x, position.z);
             takeoff = World(position, 0.4f);
             rig.Update(RobotMotion::Idle, dt);
             ik.Update(rig, dt, takeoff, position.y, true, takeoffHeight);
-            if (std::any_of(ik.GetFeet().begin(), ik.GetFeet().end(), raisedFoot)) {
+            if (std::any_of(ik.GetFeet().begin(), ik.GetFeet().end(), raised)) {
                 break;
             }
         }
-        assert(std::any_of(ik.GetFeet().begin(), ik.GetFeet().end(), raisedFoot));
+        assert(std::any_of(ik.GetFeet().begin(), ik.GetFeet().end(), raised));
     }
-    const int root = rig.FindNode("Root_M");
-    const int top = rig.FindNode("Top_M");
-    const auto takeoffPose = rig.GetMatrices();
-    const auto inverseRoot = aiMatrix4x4(takeoffPose[root]).Inverse();
-    const auto takeoffContacts = ik.GetSolvedContacts();
-    const auto inverseTakeoffBody = (takeoff * takeoffPose[root]).Inverse();
-
-    int airborneQueries = 0;
+    const auto topAtTakeoff = aiMatrix4x4(rig.GetMatrices()[root]).Inverse() * rig.GetMatrices()[top];
+    const float travel = walking ? 8.0f : 0.0f;
+    const auto destination = position + aiVector3D(travel, 0, 0);
+    const auto landingHeight = [&](float x, float z) {
+        return destination.y + landingSlope.x * (x - destination.x) + landingSlope.z * (z - destination.z);
+    };
+    std::vector<aiVector3D> queries;
     const auto terrainBelow = [&](float x, float z) {
-        ++airborneQueries;
+        queries.emplace_back(x, 0.0f, z);
         return landingHeight(x, z);
     };
-    for (int frame = 1; frame <= 60; ++frame) {
-        const float t = frame * dt;
-        position.x += walking ? 15.0f * dt : 0;
-        const auto world = World(position + aiVector3D(0, 24 * t * (1 - t), 0), 0.4f + 0.8f * t);
-        rig.Update(RobotMotion::Idle, dt, 1, t, 0.4f * t);
-        ik.Update(rig, dt, world, landingHeight(position.x, position.z), false, terrainBelow);
-        if (!walking) {
-            checkBodyUp(world, takeoffNormal);
-        }
-        // 胴体の揺れ・旋回後も全24関節の位置と向きが踏切時の腰に対して一致する。
-        const auto& pose = rig.GetMatrices();
-        const auto inverseAirborneRoot = aiMatrix4x4(pose[root]).Inverse();
-        for (const auto& leg : LegJoints) {
-            for (int joint : leg) {
-                assert((inverseAirborneRoot * pose[joint]).Equal(inverseRoot * takeoffPose[joint], 0.001f));
+
+    // 同じ重力で、静止からは2秒、歩行からは4/3秒の放物線をたどる。
+    const int frames = walking ? fps * 4 / 3 : fps * 2;
+    const float duration = frames * dt;
+    const float slopeRise = 9.0f * std::hypot(takeoffSlope.x, takeoffSlope.z);
+    auto apex = stance, gathered = stance;
+    auto previous = bodyFeet(takeoff);
+    auto previousUp = bodyUp(takeoff);
+    for (int frame = 1; frame < frames; ++frame) {
+        const float time = frame * dt;
+        const float phase = static_cast<float>(frame) / frames;
+        const float horizontalPhase = (std::min)(phase / 0.8f, 1.0f);
+        const float travelRatio = horizontalPhase * horizontalPhase * (3 - 2 * horizontalPhase);
+        const float height = 0.5f * 28.8f * time * (duration - time);
+        const auto center = position + aiVector3D(travel * travelRatio, height, 0);
+        const auto world = World(center, 0.4f + 0.8f * travelRatio);
+        const float ground = landingHeight(center.x, center.z);
+        const size_t queryCount = queries.size();
+        rig.Update(RobotMotion::Idle, dt, 1, phase, 0.4f * phase);
+        ik.Update(rig, dt, world, ground, false, terrainBelow);
+        // この表示フレームの平均上下速度。IKの細分更新にも同じ直線補間が入る。
+        const float fallSpeed = 28.8f * (time - 0.5f * (duration + dt));
+        const float approachHeight = (std::max)(3.0f, fallSpeed * 0.22f) + slopeRise;
+        if (frame <= frames / 2 || center.y - ground > approachHeight + 0.001f) {
+            assert(queries.size() == queryCount);
+            if (!walking) {
+                assert((bodyUp(world) - normal(takeoffSlope)).Length() < 0.001f);
             }
         }
-        const auto footTransform = world * pose[root] * inverseTakeoffBody;
-        for (size_t i = 0; i < takeoffContacts.size(); ++i) {
-            assert((ik.GetSolvedContacts()[i] - footTransform * takeoffContacts[i]).Length() < 0.001f);
+        const auto up = bodyUp(world);
+        assert((up - previousUp).Length() < 10.0f * dt + 0.005f);
+        previousUp = up;
+        const auto feet = bodyFeet(world);
+        for (size_t i = 0; i < feet.size(); ++i) {
+            assert((feet[i] - previous[i]).Length() < 70.0f * dt + 0.02f);
             assert((ik.GetFeet()[i].position - ik.GetSolvedContacts()[i]).Length() < 0.15f);
+            for (int segment = 0; segment < 3; ++segment) {
+                const int a = LegJoints[i][segment], b = LegJoints[i][segment + 1];
+                const auto length = [&](const auto& pose) {
+                    return (pose[a] * aiVector3D() - pose[b] * aiVector3D()).Length();
+                };
+                assert(std::abs(length(original.GetMatrices()) - length(rig.GetMatrices())) < 0.02f);
+            }
         }
-        if (frame == 60) {
-            assert(!(inverseAirborneRoot * pose[top]).Equal(inverseRoot * takeoffPose[top], 0.01f));
+        if (frame == frames / 2) {
+            apex = feet;
+            const auto topNow = aiMatrix4x4(rig.GetMatrices()[root]).Inverse() * rig.GetMatrices()[top];
+            assert(!topNow.Equal(topAtTakeoff, 0.01f));
+        }
+        // 急坂では低い側の脚が先に地面へ向かうため、全脚の持ち上げは下降前半で確かめる。
+        if (steep && frame == frames * 13 / 20) {
+            for (size_t i = 0; i < feet.size(); ++i) {
+                assert(feet[i].y > apex[i].y + 0.15f);
+            }
+        }
+        if (frame == frames * 3 / 4) {
+            gathered = feet;
+        }
+        previous = feet;
+    }
+
+    const auto beforeLanding = ik.GetSolvedContacts();
+    const auto world = World(destination, 1.2f);
+    rig.Update(RobotMotion::Idle, dt);
+    ik.Update(rig, dt, world, destination.y, true, landingHeight);
+    if (!walking) {
+        assert((previousUp - normal(landingSlope)).Length() < 0.08f);
+        assert((bodyUp(world) - normal(landingSlope)).Length() < 0.001f);
+    }
+    const auto landed = ik.GetSolvedContacts();
+    for (size_t i = 0; i < landed.size(); ++i) {
+        assert(distanceXZ(apex[i], {}) > distanceXZ(stance[i], {}) + 0.2f);
+        assert(distanceXZ(gathered[i], {}) < distanceXZ(apex[i], {}) - 0.3f);
+        assert(distanceXZ(gathered[i], {}) < distanceXZ(stance[i], {}) - 0.1f);
+        if (!steep) {
+            assert(gathered[i].y > apex[i].y + 0.15f);
+            assert(previous[i].y < gathered[i].y - 0.1f);
+        }
+        assert(distanceXZ(previous[i], {}) < distanceXZ(stance[i], {}) - 0.1f);
+        assert(std::any_of(queries.begin(), queries.end(),
+                           [&](aiVector3D query) { return distanceXZ(query, beforeLanding[i]) < 0.4f; }));
+        assert(distanceXZ(landed[i], beforeLanding[i]) < 12.0f * dt + 0.02f);
+        const float finalClearance =
+            beforeLanding[i].y - landingHeight(beforeLanding[i].x, beforeLanding[i].z);
+        assert(finalClearance >= -0.01f && finalClearance < 60.0f * dt + 0.05f);
+        assert(!ik.GetFeet()[i].swinging);
+        assert(std::abs(landed[i].y - landingHeight(landed[i].x, landed[i].z)) < 0.01f);
+    }
+    for (int frame = 0; frame < fps / 3; ++frame) {
+        rig.Update(RobotMotion::Idle, dt);
+        ik.Update(rig, dt, world, destination.y, true, landingHeight);
+        for (size_t i = 0; i < landed.size(); ++i) {
+            assert(!ik.GetFeet()[i].swinging && (ik.GetSolvedContacts()[i] - landed[i]).Length() < 0.01f);
         }
     }
-    assert(airborneQueries == 0);
 
-    position.y = landingHeight(position.x, position.z);
-    const auto landing = World(position, 1.2f);
-    ik.Update(rig, dt, landing, position.y, true, landingHeight);
-    if (!walking) {
-        checkBodyUp(landing, aiVector3D(0.2f, 1, 0.15f));
+    for (int frame = 1; frame <= fps; ++frame) {
+        auto center = destination + aiVector3D(0, 0, 30.0f * frame * dt);
+        center.y = landingHeight(center.x, center.z);
+        rig.Update(RobotMotion::Idle, dt);
+        ik.Update(rig, dt, World(center, 1.2f), center.y, true, landingHeight);
+        const auto& feet = ik.GetFeet();
+        assert(std::count_if(feet.begin(), feet.end(), [](const auto& f) { return !f.swinging; }) >= 3);
     }
     for (const auto& foot : ik.GetFeet()) {
-        assert(std::abs(foot.position.y - landingHeight(foot.position.x, foot.position.z)) < 0.001f);
+        assert(foot.stepNumber > 0);
     }
 }
 
@@ -291,6 +476,82 @@ void CheckLiveSettings(const RobotAnimationRig& original) {
     std::cout << "Live stance/height preview, no drift, paused clock and setting bounds passed.\n";
 }
 
+void CheckBodyAndFootControls(const RobotAnimationRig& original) {
+    auto rig = original;
+    RobotSpiderIK ik;
+    assert(ik.Init(rig));
+    constexpr float dt = 1.0f / 60;
+    constexpr float yaw = 0.67f;
+    const auto heightAt = [](float x, float z) { return 0.08f * x - 0.05f * z; };
+    const float ground = heightAt(12, -4);
+    const auto world = World(aiVector3D(12, ground, -4), yaw);
+    const auto heading = aiQuaternion(aiVector3D(0, 1, 0), yaw).GetMatrix();
+    for (int frame = 0; frame < 120; ++frame) {
+        rig.Update(RobotMotion::Idle, dt);
+        ik.Update(rig, dt, world, ground, true, heightAt);
+    }
+    const auto clockBefore = rig.GetTime();
+    const auto baseRoot = *rig.FindNodeTransform("Root_M");
+    const auto baseCenter = world * (baseRoot * aiVector3D());
+    const aiMatrix3x3 restOrientation(*original.FindNodeTransform("Root_M"));
+    const auto slopeOrientation = aiMatrix3x3(baseRoot) * aiMatrix3x3(restOrientation).Inverse();
+    const auto baseFeet = ik.GetFeet();
+    std::array<aiVector3D, RobotSpiderIK::LegCount> targets;
+    for (size_t i = 0; i < targets.size(); ++i) {
+        targets[i] = baseFeet[i].position;
+    }
+    const auto checkFeet = [&] {
+        for (size_t i = 0; i < targets.size(); ++i) {
+            assert(!ik.GetFeet()[i].swinging && ik.GetFeet()[i].stepNumber == baseFeet[i].stepNumber);
+            assert((ik.GetFeet()[i].position - targets[i]).Length() < 0.001f);
+            assert((ik.GetSolvedContacts()[i] - targets[i]).Length() < 0.005f);
+        }
+    };
+
+    auto settings = ik.m_settings;
+    settings.bodyRight = 0.45f;
+    settings.bodyForward = -0.3f;
+    settings.bodyHeight += 0.15f;
+    const auto shift = heading * aiVector3D(-settings.bodyRight, 0.15f, -settings.bodyForward);
+    // 各軸を個別に回し、旋回済みの機体でも胴体だけが意図した軸・向きへ回ることを確認する。
+    for (int axis = 0; axis < 3; ++axis) {
+        settings.bodyRotation = {};
+        settings.bodyRotation[axis] = 0.08f;
+        ik.ApplySettings(rig, settings, heightAt);
+        const auto root = *rig.FindNodeTransform("Root_M");
+        assert((world * (root * aiVector3D()) - baseCenter - shift).Length() < 0.001f);
+        aiVector3D localAxis;
+        localAxis[axis] = 1;
+        const auto rotation = aiQuaternion(localAxis, settings.bodyRotation[axis]).GetMatrix();
+        assert(aiMatrix3x3(root).Equal(slopeOrientation * rotation * restOrientation, 0.001f));
+        checkFeet();
+    }
+    assert(rig.GetTime() == clockBefore);
+
+    // 右中脚だけを横・上・前へ動かす。高さの基準は移動先の地表。
+    constexpr size_t selected = 1;
+    settings.footOffsets[selected] = aiVector3D(0.7f, 0.8f, 0.4f);
+    const auto offset = settings.footOffsets[selected];
+    targets[selected] += heading * aiVector3D(-offset.x, 0, -offset.z);
+    targets[selected].y = heightAt(targets[selected].x, targets[selected].z) + offset.y;
+    const auto posedRoot = *rig.FindNodeTransform("Root_M");
+    ik.ApplySettings(rig, settings, heightAt);
+    checkFeet();
+    assert(rig.GetTime() == clockBefore);
+    assert(rig.FindNodeTransform("Root_M")->Equal(posedRoot, 0.001f));
+    for (int frame = 0; frame < 30; ++frame) {
+        rig.Update(RobotMotion::Idle, dt);
+        ik.Update(rig, dt, world, ground, true, heightAt);
+        checkFeet();
+        assert(rig.FindNodeTransform("Root_M")->Equal(posedRoot, 0.001f));
+    }
+
+    ik.ApplySettings(rig, RobotSpiderIK::Settings{}, heightAt);
+    targets[selected] = baseFeet[selected].position;
+    checkFeet();
+    assert(rig.FindNodeTransform("Root_M")->Equal(baseRoot, 0.001f));
+}
+
 void CheckExpandedStride(const RobotAnimationRig& original) {
     constexpr float MovementSpeed = 60.0f; // 通常のプレイヤー速度で、一歩の時間上限も検証する。
     constexpr float PreviousMaximumStride = 24.0f;
@@ -376,10 +637,16 @@ int main() {
     assert(original.Load("DX22_01_plane/assets/model/Player", error));
     original.SetLowerBodyScale(1.40f);
     CheckStrideAndStopping(original);
+    CheckDiagonalReversals(original);
     CheckLiveSettings(original);
+    CheckBodyAndFootControls(original);
     CheckSlopedContacts(original);
-    CheckSlopedJump(original, false);
-    CheckSlopedJump(original, true);
+    for (int fps : {30, 60, 144}) {
+        CheckSlopedJump(original, false, fps);
+        CheckSlopedJump(original, true, fps);
+        CheckSlopedJump(original, false, fps, true);
+        CheckSlopedJump(original, true, fps, true);
+    }
     CheckExpandedStride(original);
     const auto rest = original.GetMatrices();
     for (int fps : {30, 60, 144}) {

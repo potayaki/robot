@@ -17,9 +17,36 @@ namespace {
         // 小さな旋回ではacosだと1付近の丸め誤差が増えるため、外積と内積から測る。
         return std::atan2(a.Cross(b).Length(), a.Dot(b)) * 180.0f / 3.14159265f;
     }
+
+    void CheckMissileMarkerProjection() {
+        // −Xを向くカメラ。ワールドの+Zが画面右、+Yが画面上になる。
+        const Vector3 eye(100, 25, 40);
+        const Vector3 forward(-1, 0, 0);
+        const float focalLength = 360.0f / std::tan(AimCursor::FieldOfView * 0.5f);
+        const Vector2 mouse(0.20f * focalLength, 0.05f * focalLength);
+        const AimCursor::Region cursor(eye, eye + forward, mouse, 720);
+        const Vector3 nearOffset(-200, 10, 40);
+        Vector2 nearHud, farHud;
+        float nearScale, farScale;
+        assert(cursor.TryProject(eye + nearOffset, nearHud, nearScale));
+        assert(cursor.TryProject(eye + nearOffset * 2, farHud, farScale));
+        assert((nearHud - mouse).Length() < 0.001f && (nearHud - farHud).Length() < 0.001f);
+        assert(std::abs(nearScale - focalLength / 200.0f) < 0.001f);
+        assert(std::abs(farScale * 2 - nearScale) < 0.001f);
+        assert(!cursor.TryProject(eye - nearOffset, farHud, farScale));
+
+        // 近距離で枠の端にいる敵より、同じ照準の中央に重なる遠方の敵を優先する。
+        const Vector3 edge = eye + Vector3(-100, 5, 28);
+        float centerScore, edgeScore;
+        assert(cursor.TryGetMissileScore(eye + nearOffset * 2, 1, centerScore));
+        assert(cursor.TryGetMissileScore(edge, 1, edgeScore));
+        assert(centerScore > edgeScore);
+        assert(!cursor.TryGetBulletScore(edge, BulletHoming::MaxRank, edgeScore));
+    }
 } // namespace
 
 int main() {
+    CheckMissileMarkerProjection();
     const Vector3 zero(0, 0, 0);
     const Vector3 velocity(0, 0, 25);
     const Vector3 target(100, 60, 200);

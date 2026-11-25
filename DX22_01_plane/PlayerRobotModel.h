@@ -37,6 +37,10 @@ class PlayerRobotModel : public Object {
     RobotSpiderIK m_spiderIK;
     /// IKに必要な関節を取得できたか。失敗時は素材のアニメーションを使う。
     bool m_ikReady = false;
+#ifdef _DEBUG
+    /// IK調整で足先を操作する脚番号。右後・右中・右前・左後・左中・左前の順。
+    int m_debugLeg = 0;
+#endif
     /// 死亡時に分離した各部品の姿勢と動き。
     RobotDebris m_debris;
     /// 通常の機体の頂点を保持するGPUバッファ。

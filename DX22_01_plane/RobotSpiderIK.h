@@ -36,6 +36,14 @@ public:
         static constexpr float MinStepHeight = 0.2f;
         /// 足を持ち上げる高さの上限。
         static constexpr float MaxStepHeight = 2.0f;
+        /// 胴体を接地点から前後・左右にずらせる距離（ワールド単位）。
+        static constexpr float MaxBodyShift = 2.0f;
+        /// 胴体の手動回転の各軸の上限（ラジアン）。
+        static constexpr float MaxBodyAngle = 0.25f;
+        /// 足先を基準位置から前後・左右にずらせる距離（ワールド単位）。
+        static constexpr float MaxFootShift = 3.0f;
+        /// 個別の足先を地表から持ち上げられる高さ（ワールド単位）。
+        static constexpr float MaxFootLift = 4.0f;
         /// 足先の到達誤差がこれを超えたら表示。
         static constexpr float ContactWarningDistance = 0.3f;
     };
@@ -52,9 +60,17 @@ public:
         /// 振り出しの頂点で足を持ち上げる高さ。
         float stepHeight = 1.0f;
         /// 空中の足を外へ回す距離。腰の真下へ脚が折れ込むのを防ぐ。
-        float swingOutward = 1.2f;
+        float swingOutward = 0.9f;
         /// 足を接地させたまま腰を上下する調整量。
-        float bodyHeight = 0.4f;
+        float bodyHeight = 0.6f;
+        /// 足を固定したまま胴体を機体の右へずらす距離（ワールド単位）。
+        float bodyRight = 0.0f;
+        /// 足を固定したまま胴体を機体の前へずらす距離（ワールド単位）。
+        float bodyForward = 0.0f;
+        /// 胴体の追加回転。モデル軸のXがピッチ、Yがヨー、Zがロール（ラジアン）。
+        aiVector3D bodyRotation;
+        /// 各足の基準接地点からの距離。Xは機体の右、Yは地表からの高さ、Zは前（ワールド単位）。
+        std::array<aiVector3D, LegCount> footOffsets{};
         /// 腰から足先までの水平距離の倍率。1.0で素材の元の幅。
         float stanceWidth = 0.90f;
         /// 胴体の位置が目標へ戻る速さ（Hz）。大きいほど素早く戻る。
@@ -78,10 +94,14 @@ public:
         aiVector3D velocity;
         /// 腰から外側へ向かう水平の単位ベクトル。
         aiVector3D outward;
+        /// この一歩の頂点で足を外側へ回す距離（ワールド単位）。
+        float arcWidth = 0.0f;
         /// 外側へ回り込む弧の現在のずれ。次の補間の前に取り除く。
         aiVector3D arcOffset;
         /// trueなら足を持ち上げて移動中、falseなら接地中。
         bool swinging = false;
+        /// 真逆へ切り返した遊脚は、直前に離れた接地点まで軌道を逆にたどる。
+        bool retracing = false;
         /// 一歩の進行率。0で開始、1で着地。
         float progress = 0.0f;
         /// 一歩にかける秒数。振り出し開始時に必ず設定する。
@@ -166,15 +186,19 @@ private:
     std::array<aiVector3D, LegCount> m_solvedContacts;
     /// 下半身の拡大を反映済みの基準骨行列（モデル座標）。
     std::vector<aiMatrix4x4> m_rest;
-    /// 最後に接地したときのIK計算後・照準適用前の骨行列（モデル座標）。
-    std::vector<aiMatrix4x4> m_groundPose;
-    /// 保存した姿勢から踏切時の胴体の傾きと揺れを取り除く逆変換。
-    aiMatrix4x4 m_inverseGroundBody;
+    /// 踏み切る直前の実際の足先（モデル座標）。歩行の途中でも同じ姿勢から開き始める。
+    std::array<aiVector3D, LegCount> m_takeoffFeet{};
+    /// 今回のジャンプで観測した上昇速度の最大値（ワールド単位/秒）。
+    float m_launchSpeed = 0.0f;
+    /// 本体のワールドY方向の速度。頂点を境に符号が変わる（ワールド単位/秒）。
+    float m_verticalSpeed = 0.0f;
+    /// 本体のモデル原点から地表までの高さ（ワールド単位）。
+    float m_groundClearance = 0.0f;
     /// 胴体の揺れと移動への遅れ（ワールド座標の変位）。
     Spring m_body;
     /// 胴体の前後・左右への傾き（モデル座標の角度）。
     Spring m_tilt;
-    /// 支持面のX・Z方向の高さ勾配（ワールド座標）。空中では踏切時の値を保つ。
+    /// 最後に接地した面のX・Z方向の高さ勾配（ワールド座標）。着地姿勢への補間の起点。
     aiVector3D m_supportGradient;
     /// 前回の細分更新時の本体位置。移動速度の計算に使う。
     aiVector3D m_previousPosition;
@@ -198,16 +222,24 @@ private:
     aiMatrix4x4 m_previousWorld;
 
     aiVector3D GetHome(const Leg& leg) const;
+    /// 歩行と旋回で目指すワールド座標の足位置。高さは着地点の地表に合わせて決める。
+    aiVector3D GetWorldHome(size_t index, const aiMatrix4x4& world) const;
+    /// 指定地点の地表に、個別の足の持ち上げ量を加えたワールドY座標。
+    float GetFootHeight(size_t index, const aiVector3D& point, const HeightAt& heightAt) const;
     void ResetContacts(const aiMatrix4x4& world, const HeightAt& heightAt, bool grounded);
     bool UpdateSwingingFeet(float dt, const aiMatrix4x4& world, const HeightAt& heightAt, bool moving,
                             const aiVector3D& velocity, float stepSeconds);
+    void StartWalk(const aiMatrix4x4& world, const HeightAt& heightAt, const aiVector3D& velocity,
+                   float stepSeconds, float dt);
     void BeginTripodStep(int group, const aiMatrix4x4& world, const HeightAt& heightAt,
                          const aiVector3D& velocity, float duration, float stepSeconds);
     void UpdateBodyMotion(float dt, const aiMatrix4x4& world, bool grounded, float speed,
                           const aiVector3D& acceleration);
     void Step(RobotAnimationRig& rig, float dt, const aiMatrix4x4& world, const HeightAt& heightAt,
-              bool grounded);
+              bool grounded, float groundY);
     void Solve(RobotAnimationRig& rig, const aiMatrix4x4& world, const HeightAt& heightAt);
+    void PoseAirborneFeet(const aiMatrix4x4& world, const aiMatrix4x4& body, const HeightAt& heightAt,
+                          float tuck, float approach);
     void SolveLegs(RobotAnimationRig& rig, const aiMatrix4x4& inverseWorld);
     void TransformBranch(RobotAnimationRig& rig, int root, const aiMatrix4x4& transform);
 };

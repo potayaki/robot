@@ -176,36 +176,67 @@ void PlayerRobotModel::DrawIKDebugUI() {
     };
     auto tuning = m_spiderIK.m_settings; // そのフレームの編集内容。変更後にまとめてIKへ渡す。
     bool changed = false; // スライダーや初期化ボタンで値が変更されたか。
+    const auto slider = [&](const char8_t* label, float& value, float low, float high,
+                            const char* format = "%.2f") {
+        changed |= ImGui::SliderFloat(text(label), &value, low, high, format, ImGuiSliderFlags_AlwaysClamp);
+    };
 
     ImGui::PushID("SpiderIK");
     ImGui::Separator();
     ImGui::TextUnformatted(text(u8"6本脚のIK調整"));
 
-    changed |= ImGui::SliderFloat(text(u8"歩幅"), &tuning.strideLength, Limits::MinStrideLength,
-                                  Limits::MaxStrideLength, "%.1f", ImGuiSliderFlags_AlwaysClamp);
+    slider(u8"歩幅", tuning.strideLength, Limits::MinStrideLength, Limits::MaxStrideLength, "%.1f");
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("%s", text(u8"同じ足の着地から次の着地までの希望距離。大きくすると大股になります。"
                                      u8"脚の長さに合う範囲で調整してください。"));
     }
 
-    changed |= ImGui::SliderFloat(text(u8"足の開き"), &tuning.stanceWidth, Limits::MinStanceWidth,
-                                  Limits::MaxStanceWidth, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+    slider(u8"足の開き", tuning.stanceWidth, Limits::MinStanceWidth, Limits::MaxStanceWidth);
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip(
             "%s", text(u8"大きいほど足先を外へ広げます。1.00が素材の元の接地幅です。停止中も反映されます。"));
     }
 
-    changed |= ImGui::SliderFloat(text(u8"腰の高さ"), &tuning.bodyHeight, Limits::MinBodyHeight,
-                                  Limits::MaxBodyHeight, "%.2f", ImGuiSliderFlags_AlwaysClamp);
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip(
-            "%s", text(u8"足先を接地させたまま腰を上下します。足の開きと組み合わせて脚の傾きを調整します。"));
-    }
-
-    changed |= ImGui::SliderFloat(text(u8"足を上げる高さ"), &tuning.stepHeight, Limits::MinStepHeight,
-                                  Limits::MaxStepHeight, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+    slider(u8"足を上げる高さ", tuning.stepHeight, Limits::MinStepHeight, Limits::MaxStepHeight);
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("%s", text(u8"一歩の途中で足を持ち上げる高さです。接地中の足の位置は変えません。"));
+    }
+
+    if (ImGui::TreeNode(text(u8"胴体の姿勢"))) {
+        slider(u8"左右", tuning.bodyRight, -Limits::MaxBodyShift, Limits::MaxBodyShift);
+        slider(u8"前後", tuning.bodyForward, -Limits::MaxBodyShift, Limits::MaxBodyShift);
+        slider(u8"腰の高さ", tuning.bodyHeight, Limits::MinBodyHeight, Limits::MaxBodyHeight);
+
+        const float maxDegrees = DirectX::XMConvertToDegrees(Limits::MaxBodyAngle);
+        const auto angle = [&](const char8_t* label, float& radians) {
+            changed |= ImGui::SliderAngle(text(label), &radians, -maxDegrees, maxDegrees, text(u8"%.1f度"),
+                                          ImGuiSliderFlags_AlwaysClamp);
+        };
+        angle(u8"前後の傾き", tuning.bodyRotation.x);
+        angle(u8"左右の旋回", tuning.bodyRotation.y);
+        angle(u8"左右の傾き", tuning.bodyRotation.z);
+        if (ImGui::Button(text(u8"胴体の姿勢を戻す"))) {
+            tuning.bodyRight = 0.0f;
+            tuning.bodyForward = 0.0f;
+            tuning.bodyHeight = RobotSpiderIK::Settings{}.bodyHeight;
+            tuning.bodyRotation = {};
+            changed = true;
+        }
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNode(text(u8"足先の位置"))) {
+        ImGui::Combo(text(u8"操作する脚"), &m_debugLeg,
+                     text(u8"右後脚\0右中脚\0右前脚\0左後脚\0左中脚\0左前脚\0"));
+        auto& offset = tuning.footOffsets[m_debugLeg];
+        slider(u8"左右", offset.x, -Limits::MaxFootShift, Limits::MaxFootShift);
+        slider(u8"前後", offset.z, -Limits::MaxFootShift, Limits::MaxFootShift);
+        slider(u8"持ち上げ", offset.y, 0.0f, Limits::MaxFootLift);
+        if (ImGui::Button(text(u8"この足先を戻す"))) {
+            offset = {};
+            changed = true;
+        }
+        ImGui::TreePop();
     }
 
     if (ImGui::Button(text(u8"IK設定を初期値に戻す"))) {
@@ -214,16 +245,15 @@ void PlayerRobotModel::DrawIKDebugUI() {
     }
 
     if (changed) {
-        // 時間を進めず骨行列だけ作り直す。一時停止中でも足の開きや腰の高さを確認できる。
+        // 時間を進めず骨行列だけ作り直し、一時停止中の姿勢にも反映する。
         m_spiderIK.ApplySettings(m_rig, tuning, CurrentGroundHeight());
     }
 
     ImGui::TextWrapped("%s",
-                       text(u8"変更は実行中のみ有効です。足の開き・腰の高さは一時停止中も確認できます。"));
+                       text(u8"変更は実行中のみ有効です。胴体と足先の姿勢は一時停止中も調整できます。"));
     if (m_spiderIK.GetContactError() > Limits::ContactWarningDistance) {
-        ImGui::TextWrapped(
-            "%s",
-            text(u8"脚の届く範囲を超えています。歩幅・足の開き・腰の高さの組み合わせを調整してください。"));
+        ImGui::TextWrapped("%s",
+                           text(u8"脚の届く範囲を超えています。歩幅や胴体と足先の位置を調整してください。"));
     }
     ImGui::PopID();
 }

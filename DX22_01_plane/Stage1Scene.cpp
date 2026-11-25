@@ -30,6 +30,10 @@
 #include "CBossBattle.h"
 #include "AimCursor.h"
 #include "CForestStage.h"
+#include "Application.h"
+#include "EnemyTarget.h"
+#include "imgui.h"
+#include <algorithm>
 using namespace DirectX::SimpleMath;
 
 // コンストラクタ
@@ -118,6 +122,7 @@ void Stage1Scene::Init() {
     //--------------------
     m_missileCrosshair = Game::GetInstance()->AddUI<Texture2D>();
     m_missileCrosshair->SetTexture("assets/texture/crosshair1310.png");
+    m_lockOnTexture.Load("assets/texture/LockOn.png");
     m_missileCrosshair->SetScale(AimCursor::MissileDiameter, AimCursor::MissileDiameter, 10000.0f);
     m_mySceneObjects.push_back(m_missileCrosshair);
 
@@ -175,14 +180,70 @@ void Stage1Scene::Update() {
 }
 
 void Stage1Scene::Draw(Camera* cam) {
-    UpdateCrosshairs();
+    const auto players = Game::GetInstance()->GetObjects<CPlayer>();
+    auto* player = players.empty() ? nullptr : players.front();
+    UpdateCrosshairs(player ? player->GetBulletHomingRank() : 0);
+    if (cam && player && player->GetHp() > 0 && !player->IsGameplayPaused()) {
+        DrawMissileLocks(*cam, *player);
+    }
 }
 
-void Stage1Scene::UpdateCrosshairs() {
-    const auto mouse = Input::GetMousePosition();
-    const auto players = Game::GetInstance()->GetObjects<CPlayer>();
-    const int rank = players.empty() ? 0 : players[0]->GetBulletHomingRank();
+void Stage1Scene::DrawMissileLocks(const Camera& camera, const CPlayer& player) const {
+    auto* view = m_lockOnTexture.GetShaderResourceView();
+    if (!view) {
+        return;
+    }
+    auto* game = Game::GetInstance();
+    const auto cursor = camera.GetAimCursor();
+    const auto enemies = game->GetObjects<EnemyTarget>();
+    const auto selected = player.GetMissileLockTargets(cursor, enemies);
+    std::vector<const Object*> tracked;
+    for (auto* manager : game->GetObjects<MissileManager>()) {
+        for (auto* missile : manager->GetPool()) {
+            if (auto* target = missile->GetTrackingTarget()) {
+                tracked.push_back(target);
+            }
+        }
+    }
+    if (selected.empty() && tracked.empty()) {
+        return;
+    }
 
+    // Renderer::ResizeWindowと同じく、3D画面の縦横比を保ち、上下・左右の黒帯を除く。
+    const auto* viewport = ImGui::GetMainViewport();
+    const float width = static_cast<float>(Application::GetWidth());
+    const float height = static_cast<float>(Application::GetHeight());
+    const float scale = (std::min)(viewport->Size.x / width, viewport->Size.y / height);
+    const ImVec2 center = viewport->GetCenter();
+    const ImVec2 halfSize(width * scale * 0.5f, height * scale * 0.5f);
+    auto* draw = ImGui::GetBackgroundDrawList();
+    draw->PushClipRect(ImVec2(center.x - halfSize.x, center.y - halfSize.y),
+                       ImVec2(center.x + halfSize.x, center.y + halfSize.y), true);
+    for (auto* enemy : enemies) {
+        if (enemy->IsDead() || !enemy->GetActive()) {
+            continue;
+        }
+        const bool tracking = std::find(tracked.begin(), tracked.end(), enemy) != tracked.end();
+        if (!tracking && std::find(selected.begin(), selected.end(), enemy) == selected.end()) {
+            continue;
+        }
+        const auto sphere = enemy->GetCollisionSphere();
+        Vector2 hud;
+        float pixelsPerWorld;
+        if (cursor.TryProject(sphere.center, hud, pixelsPerWorld)) {
+            const ImVec2 position(center.x + hud.x * scale, center.y - hud.y * scale);
+            const float radiusPixels = sphere.radius * pixelsPerWorld;
+            const float halfIcon = std::clamp((radiusPixels + 3.0f) * 0.5f, 8.0f, 13.0f) * scale;
+            draw->AddImage(reinterpret_cast<ImTextureID>(view),
+                           ImVec2(position.x - halfIcon, position.y - halfIcon),
+                           ImVec2(position.x + halfIcon, position.y + halfIcon));
+        }
+    }
+    draw->PopClipRect();
+}
+
+void Stage1Scene::UpdateCrosshairs(int rank) {
+    const auto mouse = Input::GetMousePosition();
     //マウス位置にクロスヘアを追従させる
     if (m_bulletCrosshair) {
         if ((rank > 0) != (m_bulletCrosshairRank > 0)) {

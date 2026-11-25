@@ -19,13 +19,6 @@
 #include <algorithm>
 #include <cmath>
 
-struct TargetInfo {
-    /// 照準候補として記録した敵。
-    EnemyTarget* enemy;
-    /// 照準方向との内積。1に近いほど画面の照準中心に近い。
-    float dotScore;
-};
-
 using namespace DirectX::SimpleMath;
 
 namespace {
@@ -391,78 +384,78 @@ void CPlayer::StartBullet(const Vector3& targetPosition) {
     m_currentBulletTime += m_bulletTime;
 }
 
-void CPlayer::StartMissile() {
-    if (m_currentMissileTime <= 0) {
-        //敵の取得
-        // ミサイルのロックオン対象にも、すべての種類の敵を含める。
-        std::vector<EnemyTarget*> enemys = Game::GetInstance()->GetObjects<EnemyTarget>();
-        std::vector<MissileManager*> mManagers = Game::GetInstance()->GetObjects<MissileManager>();
+std::vector<EnemyTarget*> CPlayer::GetMissileLockTargets(const AimCursor::Region& cursor,
+                                                         const std::vector<EnemyTarget*>& enemies) const {
+    if (m_hp <= 0) {
+        return {};
+    }
 
-        if (enemys.empty() || mManagers.empty()) {
-            return;
+    struct Candidate {
+        EnemyTarget* enemy;
+        float alignment;
+    };
+
+    std::vector<Candidate> candidates;
+    for (auto* enemy : enemies) {
+        if (!enemy || enemy->IsDead() || !enemy->GetActive()) {
+            continue;
         }
-
-        Camera* camera = Game::GetInstance()->GetCamera();
-        Vector3 rayOrigin, rayDirection;
-        if (camera == nullptr || !camera->GetMouseRay(rayOrigin, rayDirection)) {
-            return;
-        }
-        const auto cursor = camera->GetAimCursor();
-        std::vector<TargetInfo> Targets;
-
-        for (auto& enemy : enemys) {
-            if (enemy == nullptr || enemy->IsDead() || !enemy->GetActive()) {
-                continue;
-            }
-            const Collision::Sphere sphere = enemy->GetCollisionSphere();
-            // ミサイルは大きい方の照準円を使用する。通常弾のレベル別の枠とは別判定。
-            if (!cursor.Contains(sphere.center, sphere.radius)) {
-                continue;
-            }
-            //カメラから敵へのベクトル
-            Vector3 toEnemy = sphere.center - rayOrigin;
-            toEnemy.Normalize();
-
-            //マウスの方向と敵方向の角度の内積計算
-            float dot = rayDirection.Dot(toEnemy);
-
-            Targets.push_back({enemy, dot});
-        }
-
-        if (Targets.empty()) {
-            //誰もいなかった場合
-            //Targets.push_back({ enemys[0],1.0f });
-        } else {
-            //真ん中に近い順番に並べる
-            std::sort(Targets.begin(), Targets.end(),
-                      [](const TargetInfo& a, const TargetInfo& b) { return a.dotScore > b.dotScore; });
-
-            std::vector<float> angles;
-            // 左右対称の発射角（度）。従来の1～20発の並びを、この表と組数で表す。
-            constexpr float PairedMissileAngles[] = {90.0f, 45.0f,  30.0f,   15.0f,    7.5f,
-                                                     3.75f, 1.875f, 0.9375f, 0.46875f, 0.234375f};
-            const int pairCount = m_currentRocketCount / 2;
-            for (int pair = 0; pair < pairCount; ++pair) {
-                angles.push_back(PairedMissileAngles[pair]);
-                angles.push_back(-PairedMissileAngles[pair]);
-            }
-            if (m_currentRocketCount % 2 != 0) {
-                angles.push_back(0.0f); // 奇数発の最後は正面へ発射する。
-            }
-
-            for (size_t i = 0; i < angles.size(); i++) {
-                CMissile* missile = mManagers[0]->Spawn();
-                if (missile != nullptr) {
-                    // i をターゲットの数で割った余り（%）を使うことで、A→B→C→A→B... と順番に配る！
-                    EnemyTarget* target = Targets[i % Targets.size()].enemy;
-                    missile->SetDamage(UpgradeBalance::BaseMissileDamage +
-                                       UpgradeBalance::MissileDamagePerRank *
-                                           m_progression.Rank(UpgradeId::MissilePower));
-                    missile->Shoot(*this, *target, angles[i]);
-                }
-            }
-
-            m_currentMissileTime += m_missileTime; // 冷却強化の端数秒も持ち越す。
+        const auto sphere = enemy->GetCollisionSphere();
+        float alignment;
+        if (cursor.TryGetMissileScore(sphere.center, sphere.radius, alignment)) {
+            candidates.push_back({enemy, alignment});
         }
     }
+    // 角度が同じ場合は敵の登録順を保ち、照準表示と発射先の順序を揃える。
+    std::stable_sort(candidates.begin(), candidates.end(),
+                     [](const Candidate& a, const Candidate& b) { return a.alignment > b.alignment; });
+    const size_t count = (std::min)(candidates.size(), static_cast<size_t>(m_currentRocketCount));
+    std::vector<EnemyTarget*> targets;
+    targets.reserve(count);
+    for (size_t i = 0; i < count; ++i) {
+        targets.push_back(candidates[i].enemy);
+    }
+    return targets;
+}
+
+void CPlayer::StartMissile() {
+    if (m_currentMissileTime > 0) {
+        return;
+    }
+    auto* game = Game::GetInstance();
+    const auto managers = game->GetObjects<MissileManager>();
+    auto* camera = game->GetCamera();
+    if (managers.empty() || !camera) {
+        return;
+    }
+    const auto targets = GetMissileLockTargets(camera->GetAimCursor(), game->GetObjects<EnemyTarget>());
+    if (targets.empty()) {
+        return;
+    }
+
+    std::vector<float> angles;
+    // 左右対称の発射角（度）。従来の1～20発の並びを、この表と組数で表す。
+    constexpr float PairedMissileAngles[] = {90.0f, 45.0f,  30.0f,   15.0f,    7.5f,
+                                             3.75f, 1.875f, 0.9375f, 0.46875f, 0.234375f};
+    const int pairCount = m_currentRocketCount / 2;
+    for (int pair = 0; pair < pairCount; ++pair) {
+        angles.push_back(PairedMissileAngles[pair]);
+        angles.push_back(-PairedMissileAngles[pair]);
+    }
+    if (m_currentRocketCount % 2 != 0) {
+        angles.push_back(0.0f); // 奇数発の最後は正面へ発射する。
+    }
+
+    for (size_t i = 0; i < angles.size(); ++i) {
+        CMissile* missile = managers[0]->Spawn();
+        if (missile != nullptr) {
+            // 敵より弾数が多いときは、照準中心に近い敵から順番に繰り返し配る。
+            EnemyTarget* target = targets[i % targets.size()];
+            missile->SetDamage(UpgradeBalance::BaseMissileDamage +
+                               UpgradeBalance::MissileDamagePerRank *
+                                   m_progression.Rank(UpgradeId::MissilePower));
+            missile->Shoot(*this, *target, angles[i]);
+        }
+    }
+    m_currentMissileTime += m_missileTime; // 冷却強化の端数秒も持ち越す。
 }

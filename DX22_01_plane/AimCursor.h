@@ -54,8 +54,8 @@ namespace AimCursor {
             m_valid = true;
         }
 
-        // 画面上のカーソル中心からの距離の二乗。弾から敵へのワールド距離とは区別する。
-        bool TryGetCursorDistanceSquared(const Vector3& enemyCenter, float& distanceSquared) const {
+        // 敵の中心を中央原点・Y上向きのHUD座標へ投影し、同じ深度での1ワールド単位の画素数を返す。
+        bool TryProject(const Vector3& enemyCenter, Vector2& hudPosition, float& pixelsPerWorld) const {
             if (!m_valid) {
                 return false;
             }
@@ -65,11 +65,18 @@ namespace AimCursor {
                 return false; // カメラの背後は候補にしない。
             }
 
-            // 敵の中心を画面中央原点・Y上向きのUI座標へ投影し、表示中の円に入るか調べる。
-            // 角度だけの判定と違い、画面端を狙っても円の外側へ誘導されない。
-            const float x = toEnemy.Dot(m_right) * m_focalLength / depth - m_cursor.x;
-            const float y = toEnemy.Dot(m_up) * m_focalLength / depth - m_cursor.y;
-            distanceSquared = x * x + y * y;
+            pixelsPerWorld = m_focalLength / depth;
+            hudPosition = Vector2(toEnemy.Dot(m_right), toEnemy.Dot(m_up)) * pixelsPerWorld;
+            return std::isfinite(hudPosition.x) && std::isfinite(hudPosition.y);
+        }
+
+        bool TryGetCursorDistanceSquared(const Vector3& enemyCenter, float& distanceSquared) const {
+            Vector2 position;
+            float pixelsPerWorld;
+            if (!TryProject(enemyCenter, position, pixelsPerWorld)) {
+                return false;
+            }
+            distanceSquared = (position - m_cursor).LengthSquared();
             return std::isfinite(distanceSquared);
         }
 
@@ -98,6 +105,17 @@ namespace AimCursor {
             }
             const Vector3 perpendicular = toEnemy - m_cursorRay * alongRay;
             return perpendicular.LengthSquared() <= enemyRadius * enemyRadius;
+        }
+
+        // ロックできる敵だけ、発射順に使うマウスレイとの内積を返す。
+        bool TryGetMissileScore(const Vector3& enemyCenter, float enemyRadius, float& alignment) const {
+            if (!Contains(enemyCenter, enemyRadius)) {
+                return false;
+            }
+            Vector3 direction = enemyCenter - m_origin;
+            direction.Normalize();
+            alignment = direction.Dot(m_cursorRay);
+            return true;
         }
     };
 } // namespace AimCursor
