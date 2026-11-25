@@ -46,9 +46,10 @@ namespace {
         {u8"右側の装備一覧",
          u8"取得したスキルとレベルを表示。「効果の詳細を見る」か Tab で、威力や発動間隔を確認できる。"},
         {u8"レベルアップ",
-         u8"敵が落とす緑の粒に近づくと、自機に吸い寄せて経験値を獲得する。"
+         u8"敵が落とす緑の粒に近づくと経験値を獲得する。回収マグネットを取ると、遠くの粒も引き寄せられる。"
          u8"レベルアップしたらクリックか数字キー 1～3 で強化を選ぶ。"},
-        {u8"補給", u8"プレゼントに近づくと武器やスキルを入手する。スパナはHPを回復する。"},
+        {u8"補給", u8"プレゼントに近づくと武器やスキルを入手する。スパナは敵を倒すと3%の確率で落ち、"
+                   u8"拾うと最大HPの25%を回復する。"},
     };
     constexpr Entry Skills[] = {
         {u8"レベルアップとプレゼント",
@@ -64,11 +65,12 @@ namespace {
     constexpr UpgradeId BulletSkills[] = {UpgradeId::BulletPower, UpgradeId::RapidFire, UpgradeId::MultiShot,
                                           UpgradeId::BulletHoming};
     constexpr UpgradeId MissileSkills[] = {UpgradeId::MissilePower, UpgradeId::MissileVolley,
-                                           UpgradeId::MissileReload};
+                                           UpgradeId::MissileReload, UpgradeId::BlastExpansion};
     constexpr UpgradeId AutoSkills[] = {UpgradeId::Orbit, UpgradeId::Turret, UpgradeId::Shockwave,
                                         UpgradeId::Lightning};
-    constexpr UpgradeId BodySkills[] = {UpgradeId::MoveSpeed, UpgradeId::Vitality, UpgradeId::Armor,
-                                        UpgradeId::Regeneration, UpgradeId::Experience};
+    constexpr UpgradeId BodySkills[] = {
+        UpgradeId::MoveSpeed,       UpgradeId::Vitality,   UpgradeId::Armor,    UpgradeId::Regeneration,
+        UpgradeId::EmergencyShield, UpgradeId::Experience, UpgradeId::OrbMagnet};
     constexpr SkillGroup SkillGroups[] = {
         {u8"通常弾", BulletSkills},
         {u8"ミサイル", MissileSkills},

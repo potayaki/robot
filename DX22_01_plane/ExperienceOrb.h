@@ -1,12 +1,13 @@
 ﻿/// @brief 経験値の粒の落下、地上での待機、プレイヤーへの吸引。
 #pragma once
+#include "SurvivorProgression.h"
 #include <SimpleMath.h>
 #include <algorithm>
 #include <cmath>
 
 struct ExperienceOrb {
     /// 地形の起伏やジャンプにかかわらず、水平距離で吸引を開始する。
-    static constexpr float MagnetRadius = 65.0f;
+    static constexpr float MagnetRadius = UpgradeBalance::OrbMagnetRadius(0);
     /// 地面で待つときの粒の中心の高さ（ワールド単位）。
     static constexpr float HoverHeight = 7.0f;
     /// 描画と吸収判定で共有するワールド座標。
@@ -28,7 +29,8 @@ struct ExperienceOrb {
 
     /// 粒が機体に届いたステップだけtrueを返す。呼び出し元は届いた粒を取り除く。
     template <class HeightAt>
-    bool Advance(float seconds, const DirectX::SimpleMath::Vector3& receiver, const HeightAt& heightAt) {
+    bool Advance(float seconds, const DirectX::SimpleMath::Vector3& receiver, const HeightAt& heightAt,
+                 float magnetRadius = MagnetRadius) {
         if (seconds <= 0.0f) {
             return false;
         }
@@ -57,7 +59,7 @@ struct ExperienceOrb {
 
         const auto offset = receiver - position;
         if (m_motion == Motion::Waiting) {
-            if (offset.x * offset.x + offset.z * offset.z > MagnetRadius * MagnetRadius) {
+            if (offset.x * offset.x + offset.z * offset.z > magnetRadius * magnetRadius) {
                 return false;
             }
             m_motion = Motion::Attracting;

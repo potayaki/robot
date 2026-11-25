@@ -174,7 +174,8 @@ void CPlayer::TakeDamage(int damage) {
     m_hp = (std::max)(0, m_hp - actualDamage);
 
     // 敵が重なった時の同時多重ヒットを抑える。選択画面ではこの時間も進まない。
-    m_damageCooldown = m_damageInvincibilitySeconds; // 被弾後、約0.33秒間は無敵。
+    m_damageCooldown =
+        UpgradeBalance::DamageInvincibilitySeconds(m_progression.Rank(UpgradeId::EmergencyShield));
 }
 
 Vector3 CPlayer::GetTurretFollowPosition() const {

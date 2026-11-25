@@ -3,6 +3,7 @@
 
 #include "../DX22_01_plane/billboard.h"
 #include "../DX22_01_plane/Application.h"
+#include "../DX22_01_plane/ExplosionManager.h"
 #include <array>
 #include <cassert>
 #include <iostream>
@@ -22,6 +23,40 @@ HWND Application::m_hWnd = nullptr;
 
 namespace {
     std::array<ComPtr<ID3D11Buffer>, 6> constantBuffers;
+
+#ifdef _DEBUG
+    void CheckMissileBlastHistory() {
+        ExplosionManager manager;
+        assert(!manager.m_debugShowMissileBlast && manager.GetDisplayedDebugMissileBlast() == nullptr);
+        MissileBlastDebugSample impact;
+        impact.center = {1, 2, 3};
+        impact.hits.push_back({{4, 5, 6}, 1, false});
+        impact.outerHits = 1;
+        for (unsigned shot = 1; shot <= 20; ++shot) {
+            manager.RecordDebugMissileBlast(impact);
+            assert(manager.GetDisplayedDebugMissileBlast()->id == shot);
+        }
+        manager.m_debugSelectedBlastId = 2;
+        manager.RecordDebugMissileBlast(impact);
+        assert(manager.GetDebugMissileBlasts().size() == 20);
+        assert(manager.GetDebugMissileBlasts().front().id == 2);
+        assert(manager.GetDisplayedDebugMissileBlast()->id == 2);
+        const auto& hit = manager.GetDisplayedDebugMissileBlast()->hits.front();
+        assert(hit.center == Vector3(4, 5, 6) && !hit.full && hit.damage == 1);
+        manager.RecordDebugMissileBlast(impact);
+        assert(manager.m_debugSelectedBlastId == 0 && manager.GetDisplayedDebugMissileBlast()->id == 22);
+        manager.m_debugSelectedBlastId = 3;
+        manager.ClearDebugMissileBlasts();
+        assert(manager.m_debugSelectedBlastId == 0 && manager.GetDisplayedDebugMissileBlast() == nullptr);
+        manager.RecordDebugMissileBlast(impact);
+        assert(manager.GetDebugMissileBlasts().size() == 1 &&
+               manager.GetDisplayedDebugMissileBlast()->id == 23);
+        ExplosionManager nextStage;
+        assert(nextStage.GetDebugMissileBlasts().empty());
+        nextStage.RecordDebugMissileBlast(impact);
+        assert(nextStage.GetDisplayedDebugMissileBlast()->id == 1);
+    }
+#endif
 
     ComPtr<ID3DBlob> Compile(const char* path, const char* model) {
         ComPtr<ID3DBlob> code, errors;
@@ -160,6 +195,9 @@ void Renderer::Uninit() {
 }
 
 int main() {
+#ifdef _DEBUG
+    CheckMissileBlastHistory();
+#endif
     assert(SUCCEEDED(Renderer::Init()));
     {
         auto device = Renderer::GetDevice();

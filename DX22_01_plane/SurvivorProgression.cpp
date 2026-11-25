@@ -34,7 +34,14 @@ namespace {
          {UpgradeId::BulletHoming, u8"誘導弾",
           u8"弾用カーソルの枠内で、照準の中心に最も近い敵へ通常弾が少し曲がる。レベルが上がると枠が広がり、旋"
           u8"回も強くなる。外れた先の枠内の敵にも再誘導。",
-          BulletHoming::MaxRank}}};
+          BulletHoming::MaxRank},
+         {UpgradeId::OrbMagnet, u8"回収マグネット", u8"地面に落ちた経験値オーブを、より遠くから引き寄せる。",
+          UpgradeBalance::OrbMagnetMaxRank},
+         {UpgradeId::BlastExpansion, u8"爆風拡張",
+          u8"ミサイルの爆風が広がり、着弾地点の周りの敵を巻き込みやすくなる。",
+          UpgradeBalance::BlastExpansionMaxRank},
+         {UpgradeId::EmergencyShield, u8"緊急シールド", u8"ダメージを受けた直後の無敵時間が延びる。",
+          UpgradeBalance::EmergencyShieldMaxRank}}};
 
     // 通常のスキルとは別枠で扱う、全強化完了後の回復報酬。
     const UpgradeDefinition Recovery = {UpgradeId::Heal, u8"応急修理",
@@ -80,8 +87,7 @@ std::string GetUpgradeEffectText(UpgradeId id, int rank) {
             break;
 
         case UpgradeId::MissilePower:
-            format(u8"ミサイルダメージ：%d（基本3 + %d）",
-                   UpgradeBalance::BaseMissileDamage + UpgradeBalance::MissileDamagePerRank * rank,
+            format(u8"ミサイルダメージ：%d（基本3 + %d）", UpgradeBalance::MissileDamage(rank),
                    UpgradeBalance::MissileDamagePerRank * rank);
             break;
 
@@ -149,6 +155,24 @@ std::string GetUpgradeEffectText(UpgradeId id, int rank) {
                    u8"弾からの探索半径：%.0f",
                    BulletHoming::CrosshairSize(rank), BulletHoming::DegreesPerSecond(rank),
                    BulletHoming::SearchRadius);
+            break;
+
+        case UpgradeId::OrbMagnet:
+            format(u8"経験値オーブの回収半径：%.0f（1レベルにつき +%.0f）",
+                   UpgradeBalance::OrbMagnetRadius(rank), UpgradeBalance::OrbMagnetRadiusPerRank);
+            break;
+
+        case UpgradeId::BlastExpansion:
+            format(u8"爆風半径：基本の%d%%。中心から%.1fまで全ダメージ、その外側は%."
+                   u8"1fまで半分（端数切り上げ）。",
+                   100 + UpgradeBalance::BlastRadiusPercentPerRank * rank,
+                   UpgradeBalance::BaseMissileFullDamageRadius * UpgradeBalance::MissileBlastScale(rank),
+                   UpgradeBalance::BaseMissileBlastRadius * UpgradeBalance::MissileBlastScale(rank));
+            break;
+
+        case UpgradeId::EmergencyShield:
+            format(u8"被弾後の無敵時間：%.2f秒（1レベルにつき +%.2f秒）",
+                   UpgradeBalance::DamageInvincibilitySeconds(rank), UpgradeBalance::ShieldSecondsPerRank);
             break;
 
         case UpgradeId::Heal:

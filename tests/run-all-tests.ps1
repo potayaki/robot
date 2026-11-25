@@ -44,7 +44,7 @@ $cases = @(
     @{ Name = 'EnemySpawnTests'; Sources = @() },
     @{ Name = 'EnemyCrowdTests'; Sources = @() },
     @{ Name = 'EnemyTintTests'; Sources = @('EnemyTint.cpp') },
-    @{ Name = 'ExplosionRenderTests'; Sources = @('billboard.cpp', 'Object.cpp', 'Shader.cpp', 'Texture.cpp', 'stb_image.cpp') },
+    @{ Name = 'ExplosionRenderTests'; Sources = @('ExplosionManager.cpp', 'billboard.cpp', 'Object.cpp', 'Shader.cpp', 'Texture.cpp', 'stb_image.cpp') },
     @{ Name = 'BulletHomingTests'; Sources = @() },
     @{ Name = 'EyeTurretTests'; Sources = @() },
     @{ Name = 'MissileFlightTests'; Sources = @('Bezier.cpp') },

@@ -2,6 +2,7 @@
 /// @brief レベル・経験値・スキル抽選と、強化内容の表示用データ。
 
 #pragma once
+#include <algorithm>
 #include <array>
 #include <random>
 #include <vector>
@@ -20,6 +21,14 @@ namespace UpgradeBalance {
     inline constexpr size_t ChoiceCount = 3;
     /// 経験値スキル1段階あたりの加算率（百分率）。
     inline constexpr int ExperienceBonusPercent = 20;
+    /// 回収マグネットの最大レベルと、1段階で広がる水平半径（ワールド単位）。
+    inline constexpr int OrbMagnetMaxRank = 5;
+    inline constexpr float OrbMagnetRadiusPerRank = 20.0f;
+
+    constexpr float OrbMagnetRadius(int rank) {
+        return 65.0f + OrbMagnetRadiusPerRank * std::clamp(rank, 0, OrbMagnetMaxRank);
+    }
+
     /// 強化前の最大HP。
     inline constexpr int BaseMaxHp = 100;
     /// 装甲1段階で増える最大HPと、取得時の回復量。
@@ -36,6 +45,22 @@ namespace UpgradeBalance {
     inline constexpr int BaseMissileDamage = 3;
     /// ミサイル強化1段階あたりの追加ダメージ。
     inline constexpr int MissileDamagePerRank = 2;
+
+    constexpr int MissileDamage(int powerRank) {
+        return BaseMissileDamage + MissileDamagePerRank * powerRank;
+    }
+
+    /// 爆風拡張の最大レベル、1段階あたりの半径増加率（%）、強化前の外周半径。
+    inline constexpr int BlastExpansionMaxRank = 3;
+    inline constexpr int BlastRadiusPercentPerRank = 15;
+    /// 未強化のミサイルが全ダメージを与える内側の半径。
+    inline constexpr float BaseMissileFullDamageRadius = 65.0f;
+    inline constexpr float BaseMissileBlastRadius = 95.0f;
+
+    constexpr float MissileBlastScale(int rank) {
+        return 1.0f + BlastRadiusPercentPerRank * std::clamp(rank, 0, BlastExpansionMaxRank) / 100.0f;
+    }
+
     /// 通常弾の初期発射間隔（秒）。
     inline constexpr float BulletInterval = 0.1f;
     /// ミサイルの初期発射間隔（秒）。
@@ -76,6 +101,13 @@ namespace UpgradeBalance {
     inline constexpr float RegenerationInterval = 3.0f;
     /// 自動修復1段階あたりの回復量。
     inline constexpr int RegenerationHpPerRank = 2;
+    /// 緊急シールドの最大レベルと、被弾後の無敵時間に1段階ごとに加える秒数。
+    inline constexpr int EmergencyShieldMaxRank = 3;
+    inline constexpr float ShieldSecondsPerRank = 0.15f;
+
+    constexpr float DamageInvincibilitySeconds(int rank) {
+        return 1.0f / 3.0f + ShieldSecondsPerRank * std::clamp(rank, 0, EmergencyShieldMaxRank);
+    }
 } // namespace UpgradeBalance
 
 // 描画やDirectXから独立した成長ルール。抽選・上限・複数レベル分の選択をここで管理する。
@@ -96,6 +128,9 @@ enum class UpgradeId {
     Regeneration, // 自動回復
     Experience, // 撃破経験値の増加
     BulletHoming, // 通常弾の誘導
+    OrbMagnet, // 経験値オーブの吸引範囲
+    BlastExpansion, // ミサイルの爆風半径
+    EmergencyShield, // 被弾後の無敵時間
     Count, // 通常の強化の種類数。ランク配列のサイズに使用する。
     Heal // 全強化が最大のときだけ使う回復報酬。ランクは持たない。
 };

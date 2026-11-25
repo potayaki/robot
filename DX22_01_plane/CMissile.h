@@ -7,6 +7,7 @@
 #include "Bezier.h"
 #include "billboard.h"
 #include "PoolManager.h"
+#include "SurvivorProgression.h"
 #include <memory>
 
 class CMissile : public Object {
@@ -15,18 +16,12 @@ private:
     static constexpr DirectX::SimpleMath::Vector3 ModelScale{5.5f};
     /// 機首の向きを求めるために先読みする軌道の割合（全行程を1とする）。
     static constexpr float DirectionLookAheadFraction = 0.01f;
-    /// 爆心からこの距離までは直撃と同じダメージを与える。
-    static constexpr float FullDamageRadius = 65.0f;
-    /// 爆風の外縁までの距離。外周では半分のダメージを切り上げる。
-    static constexpr float BlastRadius = 95.0f;
     /// 爆発による画面揺れが届く最大距離（ワールド単位）。
     static constexpr float MaxShakeDistance = 3000.0f;
     /// プレイヤーの位置で命中した場合の画面揺れの強さ。
     static constexpr float MaxShakePower = 3.0f;
     /// 命中時の画面揺れの持続時間（秒）。
     static constexpr float ShakeSeconds = 0.15f;
-    /// 爆発ビルボードの表示倍率。
-    static constexpr float ExplosionScale = 200.0f;
     /// 爆発の連番画像を1コマ表示する時間（秒）。
     static constexpr float ExplosionFrameSeconds = 0.07f;
 
@@ -36,22 +31,34 @@ private:
     Bezier m_bezier;
     /// 命中時に敵へ与えるダメージ。発射時の武器レベルで決まる。
     int m_damage = 3;
+    /// 発射時に決まる爆風半径と爆発画像の倍率。
+    float m_blastScale = 1.0f;
     /// 当たり判定の球の半径（ワールド単位）。
     float m_colRadius = 2.0f;
     /// 今回の発射で追尾する敵への非所有参照。敵リストで生存を確かめてから使う。
     Object* m_target = nullptr;
 
 public:
-    /// 爆心から敵の球までの距離に応じて、その敵へのダメージを決める。
+    /// 外周で敵に渡す、端数を切り上げた半分のダメージ。
+    static constexpr int OuterBlastDamage(int damage) {
+        return damage / 2 + damage % 2;
+    }
+
+    /// 爆心から敵の球までの距離でダメージを決め、必要なら全ダメージ帯への命中も返す。
     static int BlastDamage(int damage, const DirectX::SimpleMath::Vector3& center,
-                           const Collision::Sphere& target) {
+                           const Collision::Sphere& target, float blastScale = 1.0f,
+                           bool* fullHit = nullptr) {
         const float squaredDistance = (center - target.center).LengthSquared();
-        const float fullRadius = FullDamageRadius + target.radius;
-        const float outerRadius = BlastRadius + target.radius;
+        const float fullRadius = UpgradeBalance::BaseMissileFullDamageRadius * blastScale + target.radius;
+        const float outerRadius = UpgradeBalance::BaseMissileBlastRadius * blastScale + target.radius;
+        const bool full = damage > 0 && squaredDistance <= fullRadius * fullRadius;
+        if (fullHit) {
+            *fullHit = full;
+        }
         if (damage <= 0 || squaredDistance > outerRadius * outerRadius) {
             return 0;
         }
-        return squaredDistance <= fullRadius * fullRadius ? damage : damage / 2 + damage % 2;
+        return full ? damage : OuterBlastDamage(damage);
     }
 
     /// プールの初期化時にミサイル用の共有モデルを取得する。
@@ -63,8 +70,8 @@ public:
     /// このミサイルが持つモデル参照を解放する。
     void Uninit() override;
 
-    /// 発射元から目標へ、指定した水平オフセット角（度）の軌道で発射する。
-    void Shoot(Object& shooter, Object& target, float angleOffsetDegrees);
+    /// 指定した水平オフセット角（度）で発射し、この弾の爆風拡張レベルを確定する。
+    void Shoot(Object& shooter, Object& target, float angleOffsetDegrees, int blastRank = 0);
 
     /// HUDが生存中の敵と照合する。プールへ戻ったミサイルには追尾先がない。
     const Object* GetTrackingTarget() const {

@@ -6,6 +6,8 @@
 #include <random>
 #include <vector>
 
+class CPlayer;
+
 class CExperienceOrbManager : public Object {
 public:
     void Init() override;
@@ -14,6 +16,12 @@ public:
     void Uninit() override;
     /// 撃破した敵のワールド座標から8〜10粒を落とす。重みが0以下なら報酬はない。
     void Drop(const DirectX::SimpleMath::Vector3& position, int dropWeight);
+
+#ifdef _DEBUG
+    /// 自機の足元に現在の水平回収半径を表示する。
+    bool m_debugShowMagnetRadius = false;
+    void DrawDebugUI(CPlayer& player);
+#endif
 
 private:
     /// 敵や短命の演出パーティクルと独立して、回収されるまでステージに残す。

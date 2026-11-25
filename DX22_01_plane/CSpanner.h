@@ -4,12 +4,14 @@
 #pragma once
 #include "TestModel.h"
 
+class CPlayer;
+
 // Enemy drop: repairs the robot when collected.
 class CSpanner : public Object {
 public:
     // Drop chance for every enemy defeat, in percent. 0 = never, 100 = always.
     /// 敵撃破時に回復スパナが出現する確率（パーセント）。
-    inline static int m_spawnChancePercent = 5;
+    inline static int m_spawnChancePercent = 3;
     /// 拾ったときに最大HPの何パーセントを回復するか。
     int m_healPercent = 25;
     /// 回復スパナの基本倍率。脈動による拡縮を掛ける前の大きさ。
@@ -33,6 +35,10 @@ public:
     void Uninit() override;
     static void LoadResource();
     static void UnloadResource();
+#ifdef _DEBUG
+    /// 実プレイのドロップ率を調整し、回復確認用のスパナを自機の近くに置く。
+    static void DrawDebugUI(CPlayer& player);
+#endif
 
     Collision::Sphere GetCollisionSphere() override {
         return {m_position, m_pickupRadius};
@@ -53,7 +59,7 @@ private:
     /// 共有資源を使用しているインスタンス数。最後の終了時に資源を解放する。
     inline static int m_instanceCount = 0;
     /// 同時に存在できる回復アイテムの上限数。
-    int m_maxCount = 15;
+    static constexpr int MaxCount = 15;
     /// プレイヤーがアイテムを拾える判定半径。
     float m_pickupRadius = 14.0f;
     /// 現在の動作または演出を開始してからの経過秒数。

@@ -4,10 +4,57 @@
 #include "../DX22_01_plane/SurvivorProgression.h"
 #include <cassert>
 #include "../DX22_01_plane/BulletHoming.h"
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
 #include <iostream>
 #include <set>
 
+namespace {
+    void CheckOrbMagnetRewards() {
+        SurvivorProgression growth(124);
+        const auto id = UpgradeId::OrbMagnet;
+        const int maxRank = GetUpgradeDefinition(id).maxRank;
+        assert(maxRank == 5);
+        // 実際のレベルアップ候補から最大まで選ぶ。経験値倍率を変える学習回路は選ばない。
+        while (growth.Rank(id) < maxRank) {
+            growth.AddExperience(growth.RequiredExperience() / UpgradeBalance::ExperienceUnit);
+            const auto& choices = growth.Choices();
+            auto choice = std::find(choices.begin(), choices.end(), id);
+            if (choice == choices.end()) {
+                choice = std::find_if(choices.begin(), choices.end(), [](UpgradeId candidate) {
+                    return candidate != UpgradeId::Experience && candidate != UpgradeId::Heal;
+                });
+            }
+            UpgradeId granted;
+            assert(choice != choices.end() && growth.Select(choice - choices.begin(), granted));
+            if (granted == id) {
+                const int rank = growth.Rank(id);
+                const auto radius = static_cast<int>(UpgradeBalance::OrbMagnetRadius(rank));
+                assert(GetUpgradeEffectText(id, rank).find(std::to_string(radius)) != std::string::npos);
+            }
+        }
+        growth.AddExperience(1);
+        assert(growth.Experience() == UpgradeBalance::ExperienceUnit);
+    }
+
+    void CheckEmergencyShield() {
+        const auto id = UpgradeId::EmergencyShield;
+        const int maxRank = GetUpgradeDefinition(id).maxRank;
+        assert(maxRank == 3);
+        for (int rank = 0; rank <= maxRank; ++rank) {
+            const float seconds = UpgradeBalance::DamageInvincibilitySeconds(rank);
+            assert(std::abs(seconds - (1.0f / 3.0f + 0.15f * rank)) < 0.0001f);
+            char displaySeconds[16];
+            std::snprintf(displaySeconds, sizeof(displaySeconds), "%.2f", seconds);
+            assert(GetUpgradeEffectText(id, rank).find(displaySeconds) != std::string::npos);
+        }
+    }
+} // namespace
+
 int main() {
+    CheckOrbMagnetRewards();
+    CheckEmergencyShield();
     // 全レベルで攻撃力・射程が上昇し、攻撃間隔が短縮される。表示文も単体追従仕様。
     auto previousTurret = GetTurretStats(1);
     for (int rank = 1; rank <= 5; ++rank) {
@@ -98,7 +145,9 @@ int main() {
     assert(growth.Level() == 1 && growth.Experience() == 3900);
     growth.AddExperience(1);
     assert(growth.Level() == 2 && growth.Experience() == 0 && growth.PendingChoices() == 1);
-    assert(growth.RequiredExperience() == 5500);
+    constexpr int secondThreshold =
+        UpgradeBalance::InitialRequiredExperience + UpgradeBalance::RequiredExperiencePerLevel;
+    assert(growth.RequiredExperience() == secondThreshold * UpgradeBalance::ExperienceUnit);
     assert(growth.Choices().size() == 3);
     assert(std::set<UpgradeId>(growth.Choices().begin(), growth.Choices().end()).size() == 3);
     const auto offered = growth.Choices();
@@ -109,9 +158,11 @@ int main() {
 
     // Multiple level-ups must retain overflow XP and require one selection per level.
     SurvivorProgression burst(42);
-    burst.AddExperience(40 + 55 + 70 + 5);
+    constexpr int thirdThreshold = secondThreshold + UpgradeBalance::RequiredExperiencePerLevel;
+    burst.AddExperience(UpgradeBalance::InitialRequiredExperience + secondThreshold + thirdThreshold + 5);
     assert(burst.Level() == 4 && burst.Experience() == 500 && burst.PendingChoices() == 3);
-    assert(burst.RequiredExperience() == 8500);
+    assert(burst.RequiredExperience() ==
+           (thirdThreshold + UpgradeBalance::RequiredExperiencePerLevel) * UpgradeBalance::ExperienceUnit);
     for (int pending = 3; pending > 0; --pending) {
         assert(burst.Select(0, reward));
         assert(burst.PendingChoices() == pending - 1);

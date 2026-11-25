@@ -1,6 +1,7 @@
 ﻿/// @brief 経験値の粒の着地、待機、追尾と、到着前に報酬が発生しないことを確認する。
 #include "../DX22_01_plane/ExperienceOrb.h"
 #include "../DX22_01_plane/ExperienceOrbDrop.h"
+#include "../DX22_01_plane/SurvivorProgression.h"
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -102,6 +103,32 @@ namespace {
         assert(orb.position == receiver);
     }
 
+    void CheckUpgradedMagnetRange(int fps) {
+        const float step = 1.0f / fps;
+        const auto flatGround = [](float, float) { return 0.0f; };
+        assert(UpgradeBalance::OrbMagnetRadius(0) == 65.0f);
+        for (int rank = 1; rank <= 5; ++rank) {
+            const float radius = UpgradeBalance::OrbMagnetRadius(rank);
+            const float previousRadius = UpgradeBalance::OrbMagnetRadius(rank - 1);
+            assert(radius == previousRadius + 20.0f);
+            ExperienceOrb orb({0, ExperienceOrb::HoverHeight, 0}, 0, 3, 0, Vector3::Zero);
+            Vector3 receiver(0, 180, radius + 1.0f);
+            // 強化済みでも、境界の外に落ちた粒はその場で待つ。
+            assert(!orb.Advance(step, receiver, flatGround, radius));
+            assert(!orb.Advance(step, receiver, flatGround, radius) && !orb.IsAttracting());
+
+            // 同じ粒・同じプレイヤー位置で、強化した瞬間に水平境界上の粒が追尾を始める。
+            receiver.z = radius;
+            assert(!orb.Advance(step, receiver, flatGround, previousRadius) && !orb.IsAttracting());
+            assert(!orb.Advance(step, receiver, flatGround, radius) && orb.IsAttracting());
+            bool collected = false;
+            for (int frame = 0; frame < 3 * fps && !collected; ++frame) {
+                collected = orb.Advance(step, receiver, flatGround, radius);
+            }
+            assert(collected && orb.position == receiver && orb.experience == 3);
+        }
+    }
+
     float CheckCloseDrop(int fps) {
         const float step = 1.0f / fps;
         const Vector3 receiver(0, 12, 0);
@@ -173,6 +200,7 @@ int main() {
     const auto airborne = CheckAirborneScatter(60);
     for (const int fps : {30, 60, 144}) {
         CheckDistantDropAndPickup(fps);
+        CheckUpgradedMagnetRange(fps);
         CheckScatterAndPartialPickup(fps);
         assert(Vector3::Distance(airborne, CheckAirborneScatter(fps)) < 0.01f);
         assert(std::abs(CheckCloseDrop(fps) - referenceTime) <= 1.0f / 30);

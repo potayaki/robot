@@ -62,6 +62,30 @@ int main() {
     assert(CMissile::BlastDamage(4, impact, {impact + Vector3(105, 0, 0), 10}) == 2);
     assert(CMissile::BlastDamage(4, impact, {impact + Vector3(0, 106, 0), 10}) == 0);
     assert(CMissile::BlastDamage(0, impact, {impact, 10}) == 0);
+    // 威力1なら内外のダメージ値が一致しても、デバッグ表示は実際に重なった帯を区別する。
+    bool fullHit;
+    assert(CMissile::BlastDamage(1, impact, {impact + Vector3(75, 0, 0), 10}, 1.0f, &fullHit) == 1 &&
+           fullHit);
+    assert(CMissile::BlastDamage(1, impact, {impact + Vector3(76, 0, 0), 10}, 1.0f, &fullHit) == 1 &&
+           !fullHit);
+    assert(CMissile::BlastDamage(1, impact, {impact + Vector3(106, 0, 0), 10}, 1.0f, &fullHit) == 0 &&
+           !fullHit);
+
+    // 爆風拡張は全ダメージ帯と半減帯の両方を広げる。敵の半径やダメージ値は変えない。
+    constexpr std::array expectedScales{1.0f, 1.15f, 1.30f, 1.45f};
+    for (int rank = 0; rank <= 3; ++rank) {
+        const float scale = UpgradeBalance::MissileBlastScale(rank);
+        assert(std::abs(scale - expectedScales[rank]) < 0.00001f);
+        const float inner = 65.0f * expectedScales[rank] + 10.0f;
+        const float outer = 95.0f * expectedScales[rank] + 10.0f;
+        const auto damageAt = [&](float distance) {
+            return CMissile::BlastDamage(5, impact, {impact + Vector3(0, distance, 0), 10}, scale);
+        };
+        assert(damageAt(inner - 0.01f) == 5);
+        assert(damageAt(inner + 0.01f) == 3);
+        assert(damageAt(outer - 0.01f) == 3);
+        assert(damageAt(outer + 0.01f) == 0);
+    }
 
     // 地上・空中とも距離が伸びるほど到達時間が長くなり、FPSによる差は1フレーム以内。
     for (float spread : {0.0f, 45.0f, -90.0f}) {

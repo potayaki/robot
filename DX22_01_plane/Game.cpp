@@ -33,6 +33,8 @@
 #include "CPresentBox.h"
 #include "CSpanner.h"
 #include "CStagePrimitive.h"
+#include "Ground.h"
+#include "ForestTerrain.h"
 #endif
 Game* Game::m_instance; //ゲームインスタンス
 
@@ -269,8 +271,7 @@ void Game::Update(double elapsedSeconds) {
             if (ImGui::Button("Restore HP")) {
                 GUIPlayer[0]->SetHP(GUIPlayer[0]->GetMaxHp());
             }
-            ImGui::SliderInt("Spanner drop chance (%)", &CSpanner::m_spawnChancePercent, 0, 100, "%d%%",
-                             ImGuiSliderFlags_AlwaysClamp);
+            CSpanner::DrawDebugUI(*GUIPlayer[0]);
 
             // 武器の抽選を待たずに、砲台の攻撃方向とレーザー表示を確認するための操作。
             if (ImGui::Button("Get / upgrade companion")) {
@@ -521,9 +522,10 @@ void Game::Draw() {
         battle->DrawBarrier(&m_instance->m_camera);
     }
 
+    const auto players = m_instance->GetObjects<CPlayer>();
 #ifdef _DEBUG
+    std::vector<CollisionDebugDraw::Marker> markers;
     if (m_instance->m_showCollision) {
-        std::vector<CollisionDebugDraw::Sphere> spheres;
         auto addSphere = [&](Object* obj) {
             if (!obj || obj->IsDead() || !obj->GetActive()) {
                 return;
@@ -546,7 +548,7 @@ void Game::Draw() {
             } else if (dynamic_cast<CMissile*>(obj)) {
                 color = DirectX::SimpleMath::Color(0.9f, 0.4f, 1, 1);
             }
-            spheres.push_back({shape, color});
+            markers.push_back({shape, color});
         };
 
         // 1. 通常のオブジェクト（Player, Enemy）を描画
@@ -569,14 +571,39 @@ void Game::Draw() {
                 }
             }
         }
-
-        m_instance->m_collisionDebug.Draw(&m_instance->m_camera, spheres);
     }
+    // 命中後に敵が移動・消滅しても、着弾時の爆心・命中位置と実際の半径を表示する。
+    for (auto* manager : m_instance->GetObjects<ExplosionManager>()) {
+        if (!manager->m_debugShowMissileBlast) {
+            continue;
+        }
+        if (const auto* blast = manager->GetDisplayedDebugMissileBlast()) {
+            constexpr DirectX::SimpleMath::Color fullColor(1.0f, 0.45f, 0.12f, 1.0f);
+            constexpr DirectX::SimpleMath::Color outerColor(0.2f, 0.8f, 1.0f, 1.0f);
+            markers.push_back({{blast->center, blast->fullRadius}, fullColor});
+            markers.push_back({{blast->center, blast->outerRadius}, outerColor});
+            markers.push_back({{blast->center, 2.5f}, DirectX::SimpleMath::Color(1, 1, 1, 1)});
+            for (const auto& hit : blast->hits) {
+                markers.push_back({{hit.center, 4.0f}, hit.full ? fullColor : outerColor});
+            }
+        }
+    }
+    for (auto* manager : m_instance->GetObjects<CExperienceOrbManager>()) {
+        if (manager->m_debugShowMagnetRadius && !players.empty() && players.front()->GetHp() > 0) {
+            auto* player = players.front();
+            auto center = player->GetCollisionSphere().center;
+            const auto* ground = Ground::Current();
+            center.y = (ground ? ground->HeightAt(center.x, center.z) : ForestLayout::GroundY) + 1.0f;
+            markers.push_back({{center, player->GetExperienceOrbMagnetRadius()},
+                               DirectX::SimpleMath::Color(0.35f, 1.0f, 0.45f, 1.0f),
+                               true});
+        }
+    }
+    m_instance->m_collisionDebug.Draw(&m_instance->m_camera, markers);
 #endif // _DEBUG
 
-    const auto glitchPlayers = m_instance->GetObjects<CPlayer>();
-    if (!glitchPlayers.empty()) {
-        auto player = glitchPlayers[0];
+    if (!players.empty()) {
+        auto player = players.front();
         const float glitchTime = static_cast<float>(m_instance->m_gameTime) + m_instance->m_deathElapsed;
         m_instance->m_lowHealthGlitch.Draw(LowHealthGlitchStrength(player->GetHp(), player->GetMaxHp()),
                                            glitchTime);

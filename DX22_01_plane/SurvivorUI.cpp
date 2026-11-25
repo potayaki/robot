@@ -12,6 +12,11 @@
 #include "CBoarEnemy.h"
 #include "CGhostEnemy.h"
 #include "EnemyRarity.h"
+#include "CExperienceOrbManager.h"
+#include "CMissile.h"
+#include "ExplosionManager.h"
+#include <cmath>
+#include <cstdio>
 #endif
 
 namespace {
@@ -28,6 +33,113 @@ namespace {
 } // namespace
 
 #ifdef _DEBUG
+namespace {
+    constexpr ImVec4 FullBlastColor(1.0f, 0.45f, 0.12f, 1.0f);
+    constexpr ImVec4 OuterBlastColor(0.2f, 0.8f, 1.0f, 1.0f);
+
+    void SelectDebugBlast(ExplosionManager& manager) {
+        const auto& history = manager.GetDebugMissileBlasts();
+        if (history.empty()) {
+            return;
+        }
+        char preview[64];
+        if (manager.m_debugSelectedBlastId == 0) {
+            std::snprintf(preview, sizeof(preview), Text(u8"最新を追う（#%u）"), history.back().id);
+        } else {
+            std::snprintf(preview, sizeof(preview), Text(u8"着弾 #%u"), manager.m_debugSelectedBlastId);
+        }
+        if (ImGui::BeginCombo(Text(u8"着弾履歴"), preview)) {
+            if (ImGui::Selectable(Text(u8"最新を追う"), manager.m_debugSelectedBlastId == 0)) {
+                manager.m_debugSelectedBlastId = 0;
+            }
+            for (auto it = history.rbegin(); it != history.rend(); ++it) {
+                char label[96];
+                std::snprintf(label, sizeof(label), Text(u8"#%u　%.2f秒　命中 %zu 体"), it->id, it->gameTime,
+                              it->hits.size());
+                if (ImGui::Selectable(label, manager.m_debugSelectedBlastId == it->id)) {
+                    manager.m_debugSelectedBlastId = it->id;
+                }
+            }
+            ImGui::EndCombo();
+        }
+        if (ImGui::SmallButton(Text(u8"着弾履歴をクリア"))) {
+            manager.ClearDebugMissileBlasts();
+        }
+    }
+
+    // ワールド上の二つの球を真上から表示する。敵の中心が球の外でも、体が重なると命中する。
+    void DrawBlastDiagram(float inner, float outer, const MissileBlastDebugSample* sample) {
+        constexpr float side = 104.0f;
+        const ImVec2 pos = ImGui::GetCursorScreenPos();
+        const ImVec2 center(pos.x + side * 0.5f, pos.y + side * 0.5f);
+        float extent = UpgradeBalance::BaseMissileBlastRadius *
+                       UpgradeBalance::MissileBlastScale(UpgradeBalance::BlastExpansionMaxRank);
+        if (sample) {
+            for (const auto& hit : sample->hits) {
+                extent = (std::max)({extent, std::abs(hit.center.x - sample->center.x),
+                                     std::abs(hit.center.z - sample->center.z)});
+            }
+        }
+        const float scale = (side * 0.5f - 4.0f) / extent;
+        auto* draw = ImGui::GetWindowDrawList();
+        draw->AddCircleFilled(center, outer * scale, IM_COL32(30, 90, 115, 110));
+        draw->AddCircleFilled(center, inner * scale, IM_COL32(140, 65, 24, 150));
+        draw->AddCircle(center, outer * scale, ImGui::GetColorU32(OuterBlastColor));
+        draw->AddCircle(center, inner * scale, ImGui::GetColorU32(FullBlastColor));
+        if (sample) {
+            for (const auto& hit : sample->hits) {
+                const ImVec2 dot(center.x + (hit.center.x - sample->center.x) * scale,
+                                 center.y - (hit.center.z - sample->center.z) * scale);
+                draw->AddCircleFilled(dot, 3.0f,
+                                      ImGui::GetColorU32(hit.full ? FullBlastColor : OuterBlastColor));
+                if (ImGui::IsWindowHovered() &&
+                    ImGui::IsMouseHoveringRect(ImVec2(dot.x - 4, dot.y - 4), ImVec2(dot.x + 4, dot.y + 4))) {
+                    ImGui::SetTooltip(Text(u8"命中時の敵の中心（X, Y, Z）：%.1f, %.1f, %.1f\n%d ダメージ"),
+                                      hit.center.x, hit.center.y, hit.center.z, hit.damage);
+                }
+            }
+        }
+        draw->AddCircleFilled(center, 1.5f, IM_COL32_WHITE);
+        ImGui::Dummy(ImVec2(side, side));
+    }
+
+    void DrawMissileBlastDebugUI(ExplosionManager& manager, int rank, int damage) {
+        ImGui::Checkbox(Text(u8"着弾位置に爆風と命中した敵を表示"), &manager.m_debugShowMissileBlast);
+        SelectDebugBlast(manager);
+        const auto* sample = manager.GetDisplayedDebugMissileBlast();
+        const float scale = UpgradeBalance::MissileBlastScale(rank);
+        const float inner = sample ? sample->fullRadius : UpgradeBalance::BaseMissileFullDamageRadius * scale;
+        const float outer = sample ? sample->outerRadius : UpgradeBalance::BaseMissileBlastRadius * scale;
+        if (sample) {
+            ImGui::Text(Text(u8"着弾 #%u（%.2f秒）　命中 %zu 体"), sample->id, sample->gameTime,
+                        sample->hits.size());
+        } else {
+            ImGui::Text(Text(u8"次の発射　爆風拡張 Lv.%d"), rank);
+        }
+        const bool sideBySide = ImGui::GetContentRegionAvail().x >= 330.0f;
+        DrawBlastDiagram(inner, outer, sample);
+        if (sideBySide) {
+            ImGui::SameLine();
+        }
+        ImGui::BeginGroup();
+        ImGui::TextColored(FullBlastColor, Text(u8"内側　半径 %.1f / %d ダメージ"), inner,
+                           sample ? sample->fullDamage : damage);
+        ImGui::TextColored(OuterBlastColor, Text(u8"外周　半径 %.1f / %d ダメージ"), outer,
+                           sample ? sample->outerDamage : CMissile::OuterBlastDamage(damage));
+        if (sample) {
+            ImGui::Text(Text(u8"内側 %d 体 / 外周 %d 体"), sample->fullHits, sample->outerHits);
+        }
+        ImGui::EndGroup();
+        if (sample) {
+            ImGui::TextWrapped(Text(u8"次の発射（爆風拡張 Lv.%d）：内側 %.1f / 外周 %.1f"), rank,
+                               UpgradeBalance::BaseMissileFullDamageRadius * scale,
+                               UpgradeBalance::BaseMissileBlastRadius * scale);
+        }
+        ImGui::TextWrapped("%s", Text(u8"図は真上から見た爆風です。白い点は爆心、色付きの点は命中時の敵の中心"
+                                      u8"です。ダメージは敵の防御補正前の値です。"));
+    }
+} // namespace
+
 void CPlayer::DrawSurvivorDebugUI() {
     const auto display = ImGui::GetIO().DisplaySize;
     ImGui::SetNextWindowPos(ImVec2(12, 245), ImGuiCond_FirstUseEver);
@@ -51,6 +163,18 @@ void CPlayer::DrawSurvivorDebugUI() {
 
     if (m_debugPaused) {
         Game::GetInstance()->GetCamera()->DrawDebugFreeCameraUI();
+    }
+
+    if (ImGui::CollapsingHeader(Text(u8"ミサイルの爆風"))) {
+        for (auto* manager : Game::GetInstance()->GetObjects<ExplosionManager>()) {
+            const int damage = UpgradeBalance::MissileDamage(m_progression.Rank(UpgradeId::MissilePower));
+            DrawMissileBlastDebugUI(*manager, m_progression.Rank(UpgradeId::BlastExpansion), damage);
+        }
+    }
+    if (ImGui::CollapsingHeader(Text(u8"経験値オーブの回収"))) {
+        for (auto* manager : Game::GetInstance()->GetObjects<CExperienceOrbManager>()) {
+            manager->DrawDebugUI(*this);
+        }
     }
 
     for (auto battle : Game::GetInstance()->GetObjects<CBossBattle>()) {
@@ -331,7 +455,11 @@ void CPlayer::DrawSurvivorUI() {
                     1 + m_progression.Rank(UpgradeId::BulletPower),
                     1 + m_progression.Rank(UpgradeId::MultiShot), m_bulletTime);
         ImGui::Text(Text(u8"ミサイル：右クリック / ダメージ%d / %d発 / 平均発射間隔%.2f秒"),
-                    3 + 2 * m_progression.Rank(UpgradeId::MissilePower), m_currentRocketCount, m_missileTime);
+                    UpgradeBalance::MissileDamage(m_progression.Rank(UpgradeId::MissilePower)),
+                    m_currentRocketCount, m_missileTime);
+        const auto blastEffect =
+            GetUpgradeEffectText(UpgradeId::BlastExpansion, m_progression.Rank(UpgradeId::BlastExpansion));
+        ImGui::TextWrapped("%s", blastEffect.c_str());
         if (ownedCount == 0) {
             ImGui::Spacing();
             ImGui::TextWrapped(

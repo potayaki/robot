@@ -7,6 +7,12 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#ifdef _DEBUG
+#include "CBossBattle.h"
+#include "CForestStage.h"
+#include "Ground.h"
+#include "imgui.h"
+#endif
 
 using namespace DirectX::SimpleMath;
 
@@ -28,13 +34,47 @@ void CSpanner::UnloadResource() {
 }
 
 void CSpanner::Init() {
-    if (!m_sharedModel || m_instanceCount >= m_maxCount) {
+    if (!m_sharedModel || m_instanceCount >= MaxCount) {
         Destroy();
         return;
     }
     ++m_instanceCount;
     m_counted = true;
 }
+
+#ifdef _DEBUG
+void CSpanner::DrawDebugUI(CPlayer& player) {
+    const auto text = [](const char8_t* value) { return reinterpret_cast<const char*>(value); };
+    ImGui::SliderInt(text(u8"スパナのドロップ率"), &m_spawnChancePercent, 0, 100, "%d%%",
+                     ImGuiSliderFlags_AlwaysClamp);
+    ImGui::Text(text(u8"地上のスパナ %d / %d"), m_instanceCount, MaxCount);
+    ImGui::BeginDisabled(player.IsDead() || player.GetHp() <= 0 || !m_sharedModel ||
+                         m_instanceCount >= MaxCount);
+    if (ImGui::Button(text(u8"HPを50%以下にして正面にスパナを置く"))) {
+        auto* game = Game::GetInstance();
+        const float yaw = game->GetCamera()->GetCameraDirection();
+        const auto origin = player.GetPosition();
+        const float radius = player.GetCollisionSphere().radius;
+        // 普段は拾うまで少し歩ける位置に置き、壁際では自機が到達できる側に寄せる。
+        constexpr float distance = 50.0f;
+        auto position = origin + Vector3(-std::sin(yaw), 0, -std::cos(yaw)) * distance;
+        for (auto* forest : game->GetObjects<CForestStage>()) {
+            position = forest->ConstrainMovement(origin, position, radius);
+        }
+        for (auto* battle : game->GetObjects<CBossBattle>()) {
+            position = battle->ConstrainPosition(position, radius);
+        }
+        const auto* ground = Ground::Current();
+        position.y = ground ? ground->HeightAt(position.x, position.z) : ForestLayout::GroundY;
+        auto* spanner = game->AddObject<CSpanner>();
+        if (!spanner->IsDead()) {
+            spanner->SetPosition(position);
+            player.SetHP((std::min)(player.GetHp(), player.GetMaxHp() / 2));
+        }
+    }
+    ImGui::EndDisabled();
+}
+#endif
 
 void CSpanner::Update() {
     if (IsDead()) {

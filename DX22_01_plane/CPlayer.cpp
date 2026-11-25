@@ -446,15 +446,14 @@ void CPlayer::StartMissile() {
         angles.push_back(0.0f); // 奇数発の最後は正面へ発射する。
     }
 
+    const int blastRank = m_progression.Rank(UpgradeId::BlastExpansion);
     for (size_t i = 0; i < angles.size(); ++i) {
         CMissile* missile = managers[0]->Spawn();
         if (missile != nullptr) {
             // 敵より弾数が多いときは、照準中心に近い敵から順番に繰り返し配る。
             EnemyTarget* target = targets[i % targets.size()];
-            missile->SetDamage(UpgradeBalance::BaseMissileDamage +
-                               UpgradeBalance::MissileDamagePerRank *
-                                   m_progression.Rank(UpgradeId::MissilePower));
-            missile->Shoot(*this, *target, angles[i]);
+            missile->SetDamage(UpgradeBalance::MissileDamage(m_progression.Rank(UpgradeId::MissilePower)));
+            missile->Shoot(*this, *target, angles[i], blastRank);
         }
     }
     m_currentMissileTime += m_missileTime; // 冷却強化の端数秒も持ち越す。

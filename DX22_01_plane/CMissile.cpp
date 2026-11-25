@@ -10,6 +10,9 @@
 #include "CPlayer.h"
 #include "Collision.h"
 #include "ExplosionManager.h"
+#ifdef _DEBUG
+#include <utility>
+#endif
 
 void CMissile::Init() {
     static std::weak_ptr<TestModel> cachedMissileModel;
@@ -86,17 +89,39 @@ void CMissile::Update() {
     // 直撃も爆風に含め、重なった敵は1体につき一度だけ撃破処理へ渡す。
     SetActive(false);
     GameSettings::PlayExplosionSound();
+#ifdef _DEBUG
+    MissileBlastDebugSample sample;
+    sample.center = m_position;
+    sample.gameTime = game->m_gameTime;
+    sample.fullRadius = UpgradeBalance::BaseMissileFullDamageRadius * m_blastScale;
+    sample.outerRadius = UpgradeBalance::BaseMissileBlastRadius * m_blastScale;
+    sample.fullDamage = m_damage;
+    sample.outerDamage = OuterBlastDamage(m_damage);
+#endif
     for (EnemyTarget* enemy : enemies) {
         if (enemy && enemy->GetActive() && !enemy->IsDead()) {
-            int damage = BlastDamage(m_damage, m_position, enemy->GetCollisionSphere());
+            const auto sphere = enemy->GetCollisionSphere();
+            bool fullHit;
+            int damage = BlastDamage(m_damage, m_position, sphere, m_blastScale, &fullHit);
             if (damage > 0) {
+#ifdef _DEBUG
+                sample.hits.push_back({sphere.center, damage, fullHit});
+                if (fullHit) {
+                    ++sample.fullHits;
+                } else {
+                    ++sample.outerHits;
+                }
+#endif
                 enemy->OnDirectionalHit(damage, enemy->GetPosition() - m_position);
             }
         }
     }
     const auto explosionManagers = game->GetObjects<ExplosionManager>();
     if (!explosionManagers.empty() && explosionManagers[0] != nullptr) {
-        explosionManagers[0]->CreateExplosion(m_position);
+#ifdef _DEBUG
+        explosionManagers[0]->RecordDebugMissileBlast(std::move(sample));
+#endif
+        explosionManagers[0]->CreateExplosion(m_position, m_blastScale);
     }
 
     // プレイヤーから遠い爆発ほど画面揺れを弱める。
@@ -113,7 +138,7 @@ void CMissile::Update() {
     if (!billboardPools.empty()) {
         if (billboard* explosion = billboardPools[0]->Spawn()) {
             explosion->SetPosition(m_position.x, m_position.y, m_position.z);
-            explosion->SetScale(ExplosionScale, ExplosionScale, ExplosionScale);
+            explosion->SetScale(ExplosionManager::BaseDisplaySize * m_blastScale);
             explosion->SetAnim(ExplosionFrameSeconds, false);
         }
     }
@@ -129,11 +154,12 @@ void CMissile::Uninit() {
     m_sharedModel.reset();
 }
 
-void CMissile::Shoot(Object& shooter, Object& target, float angleOffsetDegrees) {
+void CMissile::Shoot(Object& shooter, Object& target, float angleOffsetDegrees, int blastRank) {
     // プールから再利用したときも、前回の命中状態を引き継がない。
     SetActive(true);
     // 前回の着弾地点と今回の軌道をつながず、発射位置から当たり判定を開始する。
     m_position = shooter.GetPosition();
     m_target = &target;
+    m_blastScale = UpgradeBalance::MissileBlastScale(blastRank);
     m_bezier.Create(shooter, target, angleOffsetDegrees);
 }

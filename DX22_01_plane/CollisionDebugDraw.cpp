@@ -7,17 +7,21 @@
 
 using namespace DirectX::SimpleMath;
 
+namespace {
+    constexpr unsigned CircleSegments = 64;
+    constexpr unsigned CircleVertices = CircleSegments * 2;
+} // namespace
+
 void CollisionDebugDraw::Init() {
     Uninit();
-    constexpr unsigned segments = 64;
     std::vector<VERTEX_3D> vertices;
-    vertices.reserve(3 * segments * 2);
+    vertices.reserve(3 * CircleVertices);
 
     // XY・YZ・XZ平面の3つの円で球を示す。面の塗りつぶしや三角形の対角線は描かない。
     for (unsigned plane = 0; plane < 3; ++plane) {
-        for (unsigned segment = 0; segment < segments; ++segment) {
+        for (unsigned segment = 0; segment < CircleSegments; ++segment) {
             for (unsigned endpoint = 0; endpoint < 2; ++endpoint) {
-                const float angle = DirectX::XM_2PI * (segment + endpoint) / segments;
+                const float angle = DirectX::XM_2PI * (segment + endpoint) / CircleSegments;
                 const float c = std::cos(angle);
                 const float s = std::sin(angle);
                 VERTEX_3D vertex{};
@@ -34,7 +38,6 @@ void CollisionDebugDraw::Init() {
         }
     }
     m_vertices.Create(vertices);
-    m_vertexCount = static_cast<unsigned>(vertices.size());
     m_shader.Create("shader/debugCollisionVS.hlsl", "shader/debugCollisionPS.hlsl");
 
     // モデルごとのマテリアルがb4を差し替えるため、線の色も専用バッファで明示的に設定する。
@@ -62,8 +65,8 @@ void CollisionDebugDraw::Init() {
     m_ready = true;
 }
 
-void CollisionDebugDraw::Draw(Camera* camera, const std::vector<Sphere>& spheres) {
-    if (!m_ready || !camera || spheres.empty()) {
+void CollisionDebugDraw::Draw(Camera* camera, const std::vector<Marker>& markers) {
+    if (!m_ready || !camera || markers.empty()) {
         return;
     }
     auto context = Renderer::GetDeviceContext();
@@ -91,18 +94,20 @@ void CollisionDebugDraw::Draw(Camera* camera, const std::vector<Sphere>& spheres
     m_vertices.SetGPU();
     context->VSSetConstantBuffers(4, 1, m_materialBuffer.GetAddressOf());
 
-    for (const auto& sphere : spheres) {
-        if (sphere.shape.radius <= 0.0f) {
+    for (const auto& marker : markers) {
+        if (marker.bounds.radius <= 0.0f) {
             continue;
         }
         Matrix world =
-            Matrix::CreateScale(sphere.shape.radius) * Matrix::CreateTranslation(sphere.shape.center);
+            Matrix::CreateScale(marker.bounds.radius) * Matrix::CreateTranslation(marker.bounds.center);
         Renderer::SetWorldMatrix(&world);
         MATERIAL material{};
-        material.Diffuse = sphere.color;
+        material.Diffuse = marker.color;
         material.TextureEnable = FALSE;
         context->UpdateSubresource(m_materialBuffer.Get(), 0, nullptr, &material, 0, 0);
-        context->Draw(m_vertexCount, 0);
+        // 3番目の円がXZ平面。球と水平リングで同じ頂点バッファを使う。
+        const unsigned first = marker.horizontalOnly ? 2 * CircleVertices : 0;
+        context->Draw(3 * CircleVertices - first, first);
     }
 
     context->OMSetBlendState(previousBlend.Get(), blendFactor, sampleMask);
@@ -114,7 +119,6 @@ void CollisionDebugDraw::Draw(Camera* camera, const std::vector<Sphere>& spheres
 
 void CollisionDebugDraw::Uninit() {
     m_ready = false;
-    m_vertexCount = 0;
     m_shader = Shader{};
     m_vertices = VertexBuffer<VERTEX_3D>{};
     m_materialBuffer.Reset();

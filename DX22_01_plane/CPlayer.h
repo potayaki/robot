@@ -29,9 +29,6 @@ private:
     float m_selectionInputDelay = 0.2f;
     /// 強化を取得した通知の表示時間（秒）。
     float m_rewardNoticeDuration = 4.0f;
-    /// 被弾後に接触ダメージの連続発生を防ぐ時間（秒）。
-    float m_damageInvincibilitySeconds = 1.0f / 3.0f;
-
     /// 重力加速度（ワールド単位/秒²）。
     float m_gravity = 28.8f;
 
@@ -216,6 +213,11 @@ public:
     // 照準の表示と飛翔中の弾で、同じ現在レベルを参照する。
     int GetBulletHomingRank() const {
         return m_progression.Rank(UpgradeId::BulletHoming);
+    }
+
+    /// 地面の経験値オーブを引き寄せ始める水平半径（ワールド単位）。
+    float GetExperienceOrbMagnetRadius() const {
+        return UpgradeBalance::OrbMagnetRadius(m_progression.Rank(UpgradeId::OrbMagnet));
     }
 
     // Game::UpdateはIsGameplayPausedを見てゲーム進行を止める。Debug停止中の自由視点は別更新。
