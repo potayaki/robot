@@ -1,6 +1,29 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <CopyFileToFolders Include="assets\audio\menu.mp3">
+      <Filter>リソース ファイル</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="assets\audio\shot.mp3">
+      <Filter>リソース ファイル</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="assets\audio\impact.mp3">
+      <Filter>リソース ファイル</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="assets\audio\defeat.mp3">
+      <Filter>リソース ファイル</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="assets\audio\experience.mp3">
+      <Filter>リソース ファイル</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="assets\audio\start_click.mp3">
+      <Filter>リソース ファイル</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="assets\audio\start_shot.mp3">
+      <Filter>リソース ファイル</Filter>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="FbxImportSettings.h">
       <Filter>ヘッダー ファイル\Model</Filter>
     </ClInclude>

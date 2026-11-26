@@ -4,11 +4,14 @@
 #include "Renderer.h"
 #include "imgui.h"
 #include <ShlObj.h>
+#include <mfapi.h>
+#include <mfidl.h>
+#include <mfreadwrite.h>
 #include <xaudio2.h>
 #include <array>
 #include <charconv>
-#include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -17,6 +20,9 @@
 #include <wrl/client.h>
 
 #pragma comment(lib, "xaudio2.lib")
+#pragma comment(lib, "mfplat.lib")
+#pragma comment(lib, "mfreadwrite.lib")
+#pragma comment(lib, "mfuuid.lib")
 #pragma comment(lib, "shell32.lib")
 #pragma comment(lib, "ole32.lib")
 
@@ -105,10 +111,96 @@ namespace {
         dirty = saveError = false;
     }
 
-    // 短い電子音を起動時に一度作る。音声出力が使えない場合もプレイは続けられる。
-    struct GameAudio {
-        static constexpr unsigned SampleRate = 24000;
+    // LAMEのInfo/Xingタグに記録された元の長さを使い、圧縮時の余白だけを除く。
+    void TrimMp3Padding(const wchar_t* path, size_t blockAlign, std::vector<BYTE>& pcm) {
+        std::ifstream input(std::filesystem::path(path), std::ios::binary);
+        std::array<BYTE, 10> id3{};
+        if (!input.read(reinterpret_cast<char*>(id3.data()), id3.size()) || !blockAlign) {
+            return;
+        }
+        std::streamoff frameOffset = 0;
+        if (std::memcmp(id3.data(), "ID3", 3) == 0) {
+            for (size_t i = 6; i < id3.size(); ++i) {
+                frameOffset = (frameOffset << 7) | (id3[i] & 0x7f);
+            }
+            frameOffset += id3.size();
+            if (id3[3] == 4 && (id3[5] & 0x10)) {
+                frameOffset += 10; // ID3v2.4の任意フッター
+            }
+        }
+        input.seekg(frameOffset);
+        std::array<BYTE, 192> header{};
+        if (!input.read(reinterpret_cast<char*>(header.data()), header.size()) || header[0] != 0xff ||
+            (header[1] & 0xe6) != 0xe2) {
+            return;
+        }
+        const bool mpeg1 = (header[1] & 0x18) == 0x18;
+        const bool mono = (header[3] & 0xc0) == 0xc0;
+        const size_t sideInfo = mpeg1 ? (mono ? 17 : 32) : (mono ? 9 : 17);
+        const BYTE* xing = header.data() + 4 + sideInfo;
+        if ((std::memcmp(xing, "Info", 4) && std::memcmp(xing, "Xing", 4)) || !(xing[7] & 1)) {
+            return;
+        }
+        const uint32_t frameCount =
+            (uint32_t{xing[8]} << 24) | (uint32_t{xing[9]} << 16) | (uint32_t{xing[10]} << 8) | xing[11];
+        // 可変長のXingフィールド（ファイル長・シーク表・品質）の次がLAMEタグ。
+        const BYTE* lame =
+            xing + 12 + ((xing[7] & 2) ? 4 : 0) + ((xing[7] & 4) ? 100 : 0) + ((xing[7] & 8) ? 4 : 0);
+        if (std::memcmp(lame, "LAME", 4) != 0) {
+            return;
+        }
+        const size_t delay = (lame[21] << 4) | (lame[22] >> 4);
+        const size_t padding = ((lame[22] & 0x0f) << 8) | lame[23];
+        const size_t samplesPerFrame = mpeg1 ? 1152 : 576;
+        const uint64_t encoded = uint64_t{frameCount} * samplesPerFrame;
+        constexpr size_t decoderDelay = 529;
+        const size_t decoded = pcm.size() / blockAlign;
+        // Windowsのデコーダーがタグの1フレームを含め、既に528サンプルを省いた場合に限る。
+        if (encoded + samplesPerFrame != decoded + decoderDelay - 1 || encoded <= delay + padding ||
+            padding < decoderDelay) {
+            return;
+        }
+        const size_t begin = samplesPerFrame + delay + 1;
+        const size_t length = static_cast<size_t>(encoded - delay - padding);
+        pcm.resize((begin + length) * blockAlign);
+        pcm.erase(pcm.begin(), pcm.begin() + begin * blockAlign);
+    }
 
+    // 短い効果音は起動時にPCMへ展開し、戦闘中はファイルを開かずに再生する。
+    bool ReadPcmSamples(IMFSourceReader* reader, std::vector<BYTE>& pcm) {
+        DWORD flags = 0;
+        do {
+            Microsoft::WRL::ComPtr<IMFSample> sample;
+            if (FAILED(reader->ReadSample(MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, nullptr, &flags, nullptr,
+                                          sample.GetAddressOf())) ||
+                (flags & (MF_SOURCE_READERF_ERROR | MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED))) {
+                return false;
+            }
+            if (!sample) {
+                continue;
+            }
+            Microsoft::WRL::ComPtr<IMFMediaBuffer> buffer;
+            if (FAILED(sample->ConvertToContiguousBuffer(buffer.GetAddressOf()))) {
+                return false;
+            }
+            BYTE* data = nullptr;
+            DWORD length = 0;
+            if (FAILED(buffer->Lock(&data, nullptr, &length))) {
+                return false;
+            }
+            const bool fits = length <= XAUDIO2_MAX_BUFFER_BYTES - pcm.size();
+            if (fits && length > 0) {
+                pcm.insert(pcm.end(), data, data + length);
+            }
+            buffer->Unlock();
+            if (!fits) {
+                return false;
+            }
+        } while (!(flags & MF_SOURCE_READERF_ENDOFSTREAM));
+        return !pcm.empty();
+    }
+
+    struct GameAudio {
         enum Cue {
             Menu,
             Shot,
@@ -120,7 +212,7 @@ namespace {
             Count
         };
 
-        std::array<std::vector<float>, Count> samples{};
+        std::array<std::vector<BYTE>, Count> samples{};
         Microsoft::WRL::ComPtr<IXAudio2> engine;
         IXAudio2MasteringVoice* master = nullptr;
         std::array<IXAudio2SourceVoice*, Count> voices{};
@@ -137,6 +229,42 @@ namespace {
             }
         }
 
+        bool LoadCue(Cue cue, const wchar_t* path) {
+            using Microsoft::WRL::ComPtr;
+            ComPtr<IMFSourceReader> reader;
+            ComPtr<IMFMediaType> request;
+            ComPtr<IMFMediaType> output;
+            constexpr DWORD stream = MF_SOURCE_READER_FIRST_AUDIO_STREAM;
+            if (FAILED(MFCreateSourceReaderFromURL(path, nullptr, reader.GetAddressOf())) ||
+                FAILED(MFCreateMediaType(request.GetAddressOf())) ||
+                FAILED(request->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio)) ||
+                FAILED(request->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM)) ||
+                FAILED(reader->SetCurrentMediaType(stream, nullptr, request.Get())) ||
+                FAILED(reader->GetCurrentMediaType(stream, output.GetAddressOf()))) {
+                return false;
+            }
+
+            std::vector<BYTE> pcm;
+            if (!ReadPcmSamples(reader.Get(), pcm)) {
+                return false;
+            }
+            WAVEFORMATEX* format = nullptr;
+            UINT32 formatSize = 0;
+            if (FAILED(MFCreateWaveFormatExFromMFMediaType(output.Get(), &format, &formatSize))) {
+                return false;
+            }
+            TrimMp3Padding(path, format->nBlockAlign, pcm);
+            const HRESULT result = engine->CreateSourceVoice(&voices[cue], format);
+            if (SUCCEEDED(result)) {
+                samples[cue].swap(pcm);
+                if (cue == Shot) {
+                    engine->CreateSourceVoice(&alternateShot, format);
+                }
+            }
+            CoTaskMemFree(format);
+            return SUCCEEDED(result);
+        }
+
         void Init() {
             const HRESULT com = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
             ownsCom = SUCCEEDED(com);
@@ -147,81 +275,22 @@ namespace {
                 FAILED(engine->CreateMasteringVoice(&master))) {
                 return;
             }
-            WAVEFORMATEX format{};
-            format.wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
-            format.nChannels = 1;
-            format.nSamplesPerSec = SampleRate;
-            format.wBitsPerSample = 32;
-            format.nBlockAlign = sizeof(float);
-            format.nAvgBytesPerSec = SampleRate * format.nBlockAlign;
-            constexpr double TwoPi = 6.283185307179586;
-            samples[Menu].resize(2400);
-            for (unsigned i = 0; i < samples[Menu].size(); ++i) {
-                const double t = static_cast<double>(i) / SampleRate;
-                const double fade = (1.0 - std::exp(-t * 950.0)) *
-                                    (1.0 - static_cast<double>(i) / (samples[Menu].size() - 1));
-                samples[Menu][i] =
-                    static_cast<float>(0.20 * fade * std::exp(-t * 22) *
-                                       (std::sin(TwoPi * 660 * t) + 0.24 * std::sin(TwoPi * 990 * t)));
+            if (FAILED(MFStartup(MF_VERSION))) {
+                return;
             }
-            // 発射は低い機械音、命中は短い金属音、撃破には下降する低音と明るい余韻を重ねる。
-            samples[Shot].resize(SampleRate * 75 / 1000);
-            samples[Impact].resize(SampleRate * 55 / 1000);
-            samples[Defeat].resize(SampleRate * 18 / 100);
-            uint32_t grain = 719u;
-            for (size_t i = 0; i < samples[Defeat].size(); ++i) {
-                const double t = static_cast<double>(i) / SampleRate;
-                const double attack = 1.0 - std::exp(-t * 2200.0);
-                grain = grain * 1664525u + 1013904223u;
-                const double noiseSample = 2.0 * grain / UINT32_MAX - 1.0;
-                if (i < samples[Shot].size()) {
-                    const double body = std::sin(TwoPi * (90.0 * t + 1.2 * (1.0 - std::exp(-t * 75.0))));
-                    samples[Shot][i] =
-                        static_cast<float>(attack * (0.26 * std::exp(-t * 65.0) * body +
-                                                     0.22 * std::exp(-t * 104.0) * noiseSample));
+            constexpr std::array paths{L"assets/audio/menu.mp3",       L"assets/audio/shot.mp3",
+                                       L"assets/audio/impact.mp3",     L"assets/audio/defeat.mp3",
+                                       L"assets/audio/experience.mp3", L"assets/audio/start_click.mp3",
+                                       L"assets/audio/start_shot.mp3"};
+            static_assert(paths.size() == Count);
+            for (size_t i = 0; i < paths.size(); ++i) {
+                if (!LoadCue(static_cast<Cue>(i), paths[i])) {
+                    OutputDebugStringW(L"Could not load sound effect: ");
+                    OutputDebugStringW(paths[i]);
+                    OutputDebugStringW(L"\n");
                 }
-                if (i < samples[Impact].size()) {
-                    const double tick = std::sin(TwoPi * 1180.0 * t) + 0.5 * std::sin(TwoPi * 2130.0 * t);
-                    samples[Impact][i] = static_cast<float>(attack * std::exp(-t * 92.0) * 0.21 * tick);
-                }
-                const double drop = std::sin(TwoPi * (64.0 * t + 3.0 * (1.0 - std::exp(-t * 30.0))));
-                const double ring = std::sin(TwoPi * 590.0 * t) + 0.55 * std::sin(TwoPi * 885.0 * t);
-                samples[Defeat][i] = static_cast<float>(
-                    attack * (0.34 * std::exp(-t * 26.0) * drop + 0.17 * std::exp(-t * 35.0) * ring));
             }
-            // 回収は撃破音より軽い上昇チャイム。単音の周波数を760Hzから1220Hzへ滑らかに上げる。
-            constexpr double pickupDuration = 0.105;
-            samples[Experience].resize(static_cast<size_t>(SampleRate * pickupDuration));
-            for (size_t i = 0; i < samples[Experience].size(); ++i) {
-                const double t = static_cast<double>(i) / SampleRate;
-                const double progress = static_cast<double>(i) / (samples[Experience].size() - 1);
-                const double phase = TwoPi * t * (760.0 + 230.0 * progress);
-                const double envelope = (1.0 - std::exp(-t * 800.0)) * std::exp(-t * 18.0) * (1.0 - progress);
-                samples[Experience][i] = static_cast<float>(0.20 * envelope * std::sin(phase));
-            }
-            // 展示が起動する短い金属音と、低音が少し残る発砲音。
-            samples[StartClick].resize(SampleRate * 6 / 100);
-            for (size_t i = 0; i < samples[StartClick].size(); ++i) {
-                const double t = static_cast<double>(i) / SampleRate;
-                const double attack = 1.0 - std::exp(-t * 2800.0);
-                samples[StartClick][i] = static_cast<float>(
-                    attack * std::exp(-t * 125.0) *
-                    (0.26 * std::sin(TwoPi * 1560 * t) + 0.16 * std::sin(TwoPi * 2980 * t)));
-            }
-            samples[StartShot].resize(SampleRate * 36 / 100);
-            uint32_t noise = 771u;
-            for (size_t i = 0; i < samples[StartShot].size(); ++i) {
-                const double t = static_cast<double>(i) / SampleRate;
-                noise = noise * 1664525u + 1013904223u;
-                const double crack = (2.0 * noise / UINT32_MAX - 1.0) * std::exp(-t * 56.0);
-                const double body = std::sin(TwoPi * (82.0 * t + 2.5 * (1.0 - std::exp(-t * 50.0))));
-                samples[StartShot][i] = static_cast<float>(
-                    (1.0 - std::exp(-t * 1700.0)) * (0.42 * crack + 0.44 * std::exp(-t * 19.0) * body));
-            }
-            for (auto& voice : voices) {
-                engine->CreateSourceVoice(&voice, &format);
-            }
-            engine->CreateSourceVoice(&alternateShot, &format);
+            MFShutdown();
             ApplyVolume();
         }
 
@@ -244,8 +313,8 @@ namespace {
                 voice->SetFrequencyRatio(0.94f + 0.12f * static_cast<float>(pitchState >> 16) / 65535.0f);
             }
             XAUDIO2_BUFFER buffer{};
-            buffer.pAudioData = reinterpret_cast<const BYTE*>(samples[cue].data());
-            buffer.AudioBytes = static_cast<UINT32>(samples[cue].size() * sizeof(float));
+            buffer.pAudioData = samples[cue].data();
+            buffer.AudioBytes = static_cast<UINT32>(samples[cue].size());
             buffer.Flags = XAUDIO2_END_OF_STREAM;
             if (SUCCEEDED(voice->SubmitSourceBuffer(&buffer))) {
                 voice->Start();

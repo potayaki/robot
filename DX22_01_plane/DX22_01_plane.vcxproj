@@ -400,6 +400,20 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
     </FxCompile>
   </ItemGroup>
+  <ItemDefinitionGroup>
+    <CopyFileToFolders>
+      <DestinationFolders>$(OutDir)%(RelativeDir)</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="assets\audio\menu.mp3" />
+    <CopyFileToFolders Include="assets\audio\shot.mp3" />
+    <CopyFileToFolders Include="assets\audio\impact.mp3" />
+    <CopyFileToFolders Include="assets\audio\defeat.mp3" />
+    <CopyFileToFolders Include="assets\audio\experience.mp3" />
+    <CopyFileToFolders Include="assets\audio\start_click.mp3" />
+    <CopyFileToFolders Include="assets\audio\start_shot.mp3" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Target Name="ValidateAssimpInstallation" BeforeTargets="PrepareForBuild" Condition="'$(Platform)'=='x64'">
     <Error Condition="'$(AssimpRoot)'=='' or !Exists('$(AssimpRoot)\include\assimp\Importer.hpp') or !Exists('$(AssimpRoot)\lib\$(AssimpBinaryName).lib') or !Exists('$(AssimpRoot)\bin\$(AssimpBinaryName).dll')"
